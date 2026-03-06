@@ -7,3 +7,5 @@ pandas~=2.2.1
 python-dotenv~=1.0.1
 flask~=3.0.3
 flask-restx~=1.3.0
+pydantic~=2.8.0
+sentence-transformers~=3.0.1
