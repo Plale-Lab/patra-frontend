@@ -82,7 +82,11 @@
                 <IconSearch :size="22" stroke-width="1.8" />
               </div>
               <div>
+<<<<<<< Updated upstream
                 <div class="quick-link-title">Explore Models</div>
+=======
+                <div class="quick-link-title">Explore Model Cards</div>
+>>>>>>> Stashed changes
                 <div class="quick-link-desc">Browse & search all models</div>
               </div>
               <IconChevronRight :size="18" class="quick-link-arrow" />

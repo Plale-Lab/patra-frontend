@@ -1,10 +1,14 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar-brand">
+<<<<<<< Updated upstream
       <div class="sidebar-logo">
         <IconDatabase :size="22" stroke-width="2" />
       </div>
       <span class="sidebar-title">Patra KB</span>
+=======
+      <img src="/img/logo.png" alt="Patra" class="sidebar-logo-img" />
+>>>>>>> Stashed changes
     </div>
 
     <nav class="sidebar-nav">
@@ -15,9 +19,20 @@
       </RouterLink>
 
       <div class="sidebar-section-label">EXPLORE</div>
+<<<<<<< Updated upstream
       <RouterLink to="/explore" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore') }">
         <IconSearch :size="20" stroke-width="1.8" />
         <span>Browse Models</span>
+=======
+      <RouterLink to="/explore-model-cards" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-model-cards') }">
+        <IconSearch :size="20" stroke-width="1.8" />
+        <span>Browse Model Cards</span>
+      </RouterLink>
+      
+      <RouterLink to="/explore-datasheets" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-datasheets') }">
+        <IconSearch :size="20" stroke-width="1.8" />
+        <span>Browse Datasheets</span>
+>>>>>>> Stashed changes
       </RouterLink>
 
       <div class="sidebar-section-label">CONTRIBUTE</div>
@@ -84,7 +99,11 @@
       <!-- Not logged in — show JWT login trigger -->
       <button class="sidebar-login-btn" v-else @click="showLogin = true">
         <IconLogin :size="18" stroke-width="1.8" />
+<<<<<<< Updated upstream
         <span>Team Login</span>
+=======
+        <span>Tapis Login</span>
+>>>>>>> Stashed changes
       </button>
     </div>
 
@@ -95,14 +114,22 @@
           <div class="login-modal-header">
             <div class="login-modal-brand">
               <IconKey :size="20" stroke-width="2" />
+<<<<<<< Updated upstream
               <span>Tapis JWT Login</span>
+=======
+              <span>Tapis Login</span>
+>>>>>>> Stashed changes
             </div>
             <button class="btn-icon" @click="closeLogin"><IconX :size="18" /></button>
           </div>
 
           <div class="login-modal-body">
             <p class="login-desc">
+<<<<<<< Updated upstream
               Authenticate via <a href="https://tapis.readthedocs.io" target="_blank">Tapis</a> JWT to
+=======
+              Authenticate via <a href="https://tapis.readthedocs.io" target="_blank">Tapis</a> to
+>>>>>>> Stashed changes
               access private models and admin features.
             </p>
 
@@ -146,7 +173,11 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import {
   IconLayoutDashboard, IconCube, IconUsersGroup,
+<<<<<<< Updated upstream
   IconFileText, IconSettings, IconDatabase, IconSearch,
+=======
+  IconFileText, IconSettings, IconSearch,
+>>>>>>> Stashed changes
   IconUpload, IconMessageCircle, IconClipboardCheck,
   IconListDetails, IconLogout, IconLogin, IconKey,
   IconUser, IconLock, IconX, IconAlertTriangle,
@@ -188,6 +219,7 @@ function handleLogout() {
 }
 
 .sidebar-brand {
+<<<<<<< Updated upstream
   display: flex; align-items: center; gap: 10px;
   padding: 20px 22px;
   border-bottom: 1px solid var(--color-border);
@@ -198,6 +230,18 @@ function handleLogout() {
   display: flex; align-items: center; justify-content: center;
 }
 .sidebar-title { font-weight: 700; font-size: 1.1rem; color: var(--color-text); }
+=======
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+.sidebar-logo-img {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  object-fit: contain;
+}
+>>>>>>> Stashed changes
 
 .sidebar-nav { flex: 1; padding: 12px 12px; overflow-y: auto; }
 

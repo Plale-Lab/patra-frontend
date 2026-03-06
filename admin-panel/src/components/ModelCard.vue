@@ -1,5 +1,9 @@
 <template>
+<<<<<<< Updated upstream
   <RouterLink :to="`/explore/${model.id}`" class="model-card">
+=======
+  <RouterLink :to="`/explore-model-cards/${model.id}`" class="model-card">
+>>>>>>> Stashed changes
     <div class="model-card-header">
       <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
         {{ model.is_private ? 'Private' : 'Public' }}

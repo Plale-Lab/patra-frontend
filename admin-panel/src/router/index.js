@@ -7,7 +7,13 @@ import ModelsView from '../views/ModelsView.vue'
 import AuditLogView from '../views/AuditLogView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ExploreView from '../views/ExploreView.vue'
+<<<<<<< Updated upstream
 import ModelDetailView from '../views/ModelDetailView.vue'
+=======
+import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
+import ModelDetailView from '../views/ModelDetailView.vue'
+import DatasheetDetailView from '../views/DatasheetDetailView.vue'
+>>>>>>> Stashed changes
 import SubmitView from '../views/SubmitView.vue'
 import TicketSubmitView from '../views/TicketSubmitView.vue'
 import SubmissionsReviewView from '../views/SubmissionsReviewView.vue'
@@ -17,8 +23,15 @@ import TicketManagementView from '../views/TicketManagementView.vue'
 const routes = [
     // Open-access routes (anyone)
     { path: '/', name: 'Dashboard', component: DashboardView },
+<<<<<<< Updated upstream
     { path: '/explore', name: 'Explore', component: ExploreView },
     { path: '/explore/:id', name: 'ModelDetail', component: ModelDetailView },
+=======
+    { path: '/explore-model-cards', name: 'ExploreModelCards', component: ExploreView },
+    { path: '/explore-model-cards/:id', name: 'ModelDetail', component: ModelDetailView },
+    { path: '/explore-datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
+    { path: '/explore-datasheets/:id', name: 'DatasheetDetail', component: DatasheetDetailView },
+>>>>>>> Stashed changes
     { path: '/submit', name: 'Submit', component: SubmitView },
     { path: '/tickets', name: 'Tickets', component: TicketSubmitView },
 

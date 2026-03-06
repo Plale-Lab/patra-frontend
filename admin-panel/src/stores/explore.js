@@ -7,6 +7,10 @@ export const useExploreStore = defineStore('explore', () => {
     const models = ref([])
     const currentModel = ref(null)
     const datasheets = ref([])
+<<<<<<< Updated upstream
+=======
+    const currentDatasheet = ref(null)
+>>>>>>> Stashed changes
     const deployments = ref([])
     const loading = ref(false)
     const error = ref(null)
@@ -98,12 +102,39 @@ export const useExploreStore = defineStore('explore', () => {
     }
 
     async function fetchDatasheets() {
+<<<<<<< Updated upstream
+=======
+        loading.value = true
+        error.value = null
+>>>>>>> Stashed changes
         try {
             const res = await fetch(`${API_BASE}/datasheets`)
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             datasheets.value = await res.json()
         } catch (e) {
+<<<<<<< Updated upstream
             datasheets.value = []
+=======
+            error.value = e.message
+            datasheets.value = []
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function fetchDatasheetById(id) {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await fetch(`${API_BASE}/datasheet/${id}`)
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            currentDatasheet.value = await res.json()
+        } catch (e) {
+            error.value = e.message
+            console.error('Failed to fetch datasheet:', e)
+        } finally {
+            loading.value = false
+>>>>>>> Stashed changes
         }
     }
 
@@ -116,9 +147,16 @@ export const useExploreStore = defineStore('explore', () => {
     }
 
     return {
+<<<<<<< Updated upstream
         models, currentModel, datasheets, deployments, loading, error,
         searchQuery, selectedCategories, selectedFrameworks, selectedAuthor, visibilityFilter,
         allCategories, allFrameworks, allAuthors, filteredModels,
         fetchModels, fetchModelById, fetchDeployments, fetchDatasheets, resetFilters,
+=======
+        models, currentModel, datasheets, currentDatasheet, deployments, loading, error,
+        searchQuery, selectedCategories, selectedFrameworks, selectedAuthor, visibilityFilter,
+        allCategories, allFrameworks, allAuthors, filteredModels,
+        fetchModels, fetchModelById, fetchDeployments, fetchDatasheets, fetchDatasheetById, resetFilters,
+>>>>>>> Stashed changes
     }
 })

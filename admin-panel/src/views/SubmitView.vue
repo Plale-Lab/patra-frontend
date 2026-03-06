@@ -9,7 +9,11 @@
     <div class="success-banner" v-if="submitted">
       <IconCircleCheck :size="20" stroke-width="1.8" />
       <div>
+<<<<<<< Updated upstream
         <strong>Submission received!</strong> Your {{ form.type === 'model_card' ? 'model card' : 'datasheet' }} has been submitted for review. An admin will review it shortly.
+=======
+        <strong>Submission received!</strong> Your {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} has been submitted for review. An admin will review it shortly.
+>>>>>>> Stashed changes
       </div>
       <button class="btn btn-outline btn-sm" @click="resetForm">Submit Another</button>
     </div>
@@ -17,10 +21,17 @@
     <template v-else>
       <!-- Type Tabs -->
       <div class="tabs">
+<<<<<<< Updated upstream
         <button class="tab" :class="{ active: form.type === 'model_card' }" @click="form.type = 'model_card'">
           <IconCube :size="16" stroke-width="1.8" /> Model Card
         </button>
         <button class="tab" :class="{ active: form.type === 'datasheet' }" @click="form.type = 'datasheet'">
+=======
+        <button class="tab" :class="{ active: activeTab === 'model_card' }" @click="switchTab('model_card')">
+          <IconCube :size="16" stroke-width="1.8" /> Model Card
+        </button>
+        <button class="tab" :class="{ active: activeTab === 'datasheet' }" @click="switchTab('datasheet')">
+>>>>>>> Stashed changes
           <IconTable :size="16" stroke-width="1.8" /> Datasheet
         </button>
       </div>
@@ -30,6 +41,7 @@
         <div class="card submit-form">
           <div class="card-header">
             <span class="flex items-center gap-8">
+<<<<<<< Updated upstream
               <component :is="form.type === 'model_card' ? IconCube : IconTable" :size="18" stroke-width="1.8" />
               {{ form.type === 'model_card' ? 'Model Card Details' : 'Datasheet Details' }}
             </span>
@@ -142,6 +154,30 @@
               <div class="form-group">
                 <label class="form-label">Download URL</label>
                 <input class="form-input" v-model="form.downloadUrl" placeholder="https://..." />
+=======
+              <component :is="activeTab === 'model_card' ? IconCube : IconTable" :size="18" stroke-width="1.8" />
+              {{ activeTab === 'model_card' ? 'Model Card Details' : 'Datasheet Details' }}
+            </span>
+          </div>
+          <div class="card-body">
+            <!-- Submitter name (always shown) -->
+            <div class="form-group">
+              <label class="form-label">Your Name <span class="required">*</span></label>
+              <input class="form-input" v-model="submittedBy" placeholder="e.g. Alice Chen" />
+            </div>
+
+            <!-- Schema-driven fields -->
+            <template v-for="(fieldSchema, fieldKey) in visibleProperties" :key="fieldKey">
+              <!-- Two-column row for short fields -->
+              <div v-if="isShortField(fieldKey, fieldSchema)" class="form-group">
+                <SchemaField
+                  :fieldKey="fieldKey"
+                  :fieldSchema="fieldSchema"
+                  :modelValue="formData[fieldKey]"
+                  :isRequired="isFieldRequired(fieldKey)"
+                  @update:modelValue="formData[fieldKey] = $event"
+                />
+>>>>>>> Stashed changes
               </div>
             </template>
           </div>
@@ -175,12 +211,19 @@
 </template>
 
 <script setup>
+<<<<<<< Updated upstream
 import { ref, reactive, computed } from 'vue'
 import { useSubmissionsStore } from '../stores/submissions'
+=======
+import { ref, reactive, computed, watch } from 'vue'
+import { useSubmissionsStore } from '../stores/submissions'
+import SchemaField from '../components/SchemaField.vue'
+>>>>>>> Stashed changes
 import {
   IconCube, IconTable, IconInfoCircle, IconSend, IconCircleCheck,
 } from '@tabler/icons-vue'
 
+<<<<<<< Updated upstream
 const store = useSubmissionsStore()
 const submitted = ref(false)
 
@@ -195,6 +238,85 @@ const form = reactive({
   description: '', source: '', datapoints: null, features: '', downloadUrl: '',
 })
 
+=======
+// Import schemas at build time
+import modelSchema from '../../../schema/patra-model-schema.json'
+import datasheetSchema from '../../../schema/patra-datasheet-schema.json'
+
+const store = useSubmissionsStore()
+const submitted = ref(false)
+const activeTab = ref('model_card')
+const submittedBy = ref('')
+
+// Build initial empty form data from schema
+function buildInitialData(schema) {
+  const data = {}
+  const props = schema.properties || {}
+  for (const [key, def] of Object.entries(props)) {
+    if (key === 'id' || key === 'identifier') continue // skip auto-generated fields
+    if (def.enum) {
+      data[key] = ''
+    } else if (def.type === 'number') {
+      data[key] = null
+    } else if (def.type === 'array' || (Array.isArray(def.type) && def.type.includes('array'))) {
+      data[key] = []
+    } else if (def.type === 'object' || (Array.isArray(def.type) && def.type.includes('object'))) {
+      // Build nested object defaults
+      const nested = {}
+      if (def.properties) {
+        for (const [sk, sd] of Object.entries(def.properties)) {
+          if (sd.enum) nested[sk] = ''
+          else if (sd.type === 'number') nested[sk] = null
+          else if (sd.type === 'array') nested[sk] = []
+          else if (sd.type === 'object') nested[sk] = {}
+          else nested[sk] = ''
+        }
+      }
+      data[key] = nested
+    } else {
+      data[key] = ''
+    }
+  }
+  return data
+}
+
+const formData = reactive(buildInitialData(modelSchema))
+
+// Switch tab → reinitialize form data
+function switchTab(tab) {
+  activeTab.value = tab
+  const schema = tab === 'model_card' ? modelSchema : datasheetSchema
+  const newData = buildInitialData(schema)
+  // Clear and reassign
+  Object.keys(formData).forEach(k => delete formData[k])
+  Object.assign(formData, newData)
+}
+
+const currentSchema = computed(() =>
+  activeTab.value === 'model_card' ? modelSchema : datasheetSchema
+)
+
+// Fields to render (exclude 'id')
+const visibleProperties = computed(() => {
+  const props = currentSchema.value.properties || {}
+  const result = {}
+  for (const [key, def] of Object.entries(props)) {
+    if (key === 'id' || key === 'identifier') continue
+    result[key] = def
+  }
+  return result
+})
+
+function isFieldRequired(fieldKey) {
+  return (currentSchema.value.required || []).includes(fieldKey)
+}
+
+function isShortField(fieldKey, fieldSchema) {
+  // All fields rendered — SchemaField handles rendering logic
+  return true
+}
+
+>>>>>>> Stashed changes
 const steps = [
   { title: 'Fill the form', desc: 'Provide details about your model or dataset.' },
   { title: 'Submit for review', desc: 'Your submission enters a review queue.' },
@@ -203,6 +325,7 @@ const steps = [
 ]
 
 const canSubmit = computed(() => {
+<<<<<<< Updated upstream
   if (!form.submittedBy || !form.name || !form.version) return false
   if (form.type === 'model_card' && !form.shortDescription) return false
   if (form.type === 'datasheet' && !form.description) return false
@@ -229,17 +352,64 @@ async function handleSubmit() {
     }
   }
   const result = await store.createSubmission(form.type, data, form.submittedBy)
+=======
+  if (!submittedBy.value) return false
+  const required = currentSchema.value.required || []
+  for (const key of required) {
+    const val = formData[key]
+    if (val === null || val === undefined || val === '') return false
+    if (typeof val === 'object' && !Array.isArray(val)) {
+      // Check nested required fields
+      const propSchema = (currentSchema.value.properties || {})[key]
+      if (propSchema && propSchema.required) {
+        for (const subKey of propSchema.required) {
+          const subVal = val[subKey]
+          if (subVal === null || subVal === undefined || subVal === '') return false
+        }
+      }
+    }
+    if (Array.isArray(val) && (currentSchema.value.properties?.[key]?.minItems > 0) && val.length === 0) return false
+  }
+  return true
+})
+
+// Clean form data — remove empty values
+function cleanData(obj) {
+  const result = {}
+  for (const [key, val] of Object.entries(obj)) {
+    if (val === null || val === undefined || val === '') continue
+    if (Array.isArray(val) && val.length === 0) continue
+    if (typeof val === 'object' && !Array.isArray(val)) {
+      const cleaned = cleanData(val)
+      if (Object.keys(cleaned).length > 0) result[key] = cleaned
+    } else {
+      result[key] = val
+    }
+  }
+  return result
+}
+
+async function handleSubmit() {
+  const data = cleanData(formData)
+  const type = activeTab.value
+  const result = await store.createSubmission(type, data, submittedBy.value)
+>>>>>>> Stashed changes
   if (result) submitted.value = true
 }
 
 function resetForm() {
   submitted.value = false
+<<<<<<< Updated upstream
   Object.assign(form, {
     type: 'model_card', submittedBy: '', name: '', version: '', license: '',
     shortDescription: '', category: '', inputType: '', framework: '',
     testAccuracy: null, keywords: '', isPrivate: false,
     description: '', source: '', datapoints: null, features: '', downloadUrl: '',
   })
+=======
+  submittedBy.value = ''
+  switchTab('model_card')
+>>>>>>> Stashed changes
 }
 </script>
 
@@ -313,6 +483,9 @@ function resetForm() {
   font-size: .92rem;
 }
 .success-banner strong { display: block; margin-bottom: 2px; }
+<<<<<<< Updated upstream
 
 .filter-chips { display: flex; gap: 6px; }
+=======
+>>>>>>> Stashed changes
 </style>

@@ -1,8 +1,13 @@
 <template>
   <div>
     <!-- Back link -->
+<<<<<<< Updated upstream
     <RouterLink to="/explore" class="back-link">
       <IconArrowLeft :size="16" stroke-width="2" /> Back to Explore
+=======
+    <RouterLink to="/explore-model-cards" class="back-link">
+      <IconArrowLeft :size="16" stroke-width="2" /> Back to Model Cards
+>>>>>>> Stashed changes
     </RouterLink>
 
     <!-- Loading -->
@@ -15,7 +20,11 @@
     <div class="empty-state" v-else-if="!model">
       <IconAlertCircle :size="48" stroke-width="1.2" />
       <h3>Model not found</h3>
+<<<<<<< Updated upstream
       <RouterLink to="/explore" class="btn btn-primary">← Back to Explore</RouterLink>
+=======
+      <RouterLink to="/explore-model-cards" class="btn btn-primary">← Back to Model Cards</RouterLink>
+>>>>>>> Stashed changes
     </div>
 
     <!-- Detail Content -->

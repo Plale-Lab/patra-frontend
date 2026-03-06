@@ -1,0 +1,288 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataCite 4.7 Subset Schema",
+  "description": "A subset schema based on DataCite 4.7 and our_pick.md selections. The properties map to the snake_case keys defined in our_pick.md while respecting the data types and nested properties of the official DataCite Kernel 4.7 schema.",
+  "type": "object",
+  "required": [
+    "identifier",
+    "creator",
+    "title",
+    "publisher",
+    "publication_year",
+    "resource_type"
+  ],
+  "properties": {
+    "identifier": {
+      "type": "object",
+      "description": "The Identifier is a unique string that identifies a resource.",
+      "required": ["identifier", "identifierType"],
+      "properties": {
+        "identifier": {
+          "type": "string"
+        },
+        "identifierType": {
+          "type": "string",
+          "description": "The type of the Identifier (e.g., DOI, Handle, ARK)."
+        }
+      }
+    },
+    "creator": {
+      "type": "array",
+      "description": "The main researchers involved in producing the data, or the authors of the publication.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["creatorName"],
+        "properties": {
+          "creatorName": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "nameType": {
+                "type": "string",
+                "enum": ["Organizational", "Personal"]
+              }
+            }
+          },
+          "givenName": { "type": "string" },
+          "familyName": { "type": "string" },
+          "nameIdentifiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["nameIdentifier", "nameIdentifierScheme"],
+              "properties": {
+                "nameIdentifier": { "type": "string" },
+                "nameIdentifierScheme": { "type": "string" },
+                "schemeURI": { "type": "string", "format": "uri" }
+              }
+            }
+          },
+          "affiliations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["affiliation"],
+              "properties": {
+                "affiliation": { "type": "string" },
+                "affiliationIdentifier": { "type": "string" },
+                "affiliationIdentifierScheme": { "type": "string" },
+                "schemeURI": { "type": "string", "format": "uri" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "title": {
+      "type": "array",
+      "description": "A name or title by which a resource is known.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "titleType": {
+            "type": "string",
+            "enum": ["AlternativeTitle", "Subtitle", "TranslatedTitle", "Other"]
+          },
+          "lang": { "type": "string" }
+        }
+      }
+    },
+    "publisher": {
+      "type": "object",
+      "description": "The name of the entity that holds, archives, publishes prints, distributes, releases, issues, or produces the resource.",
+      "required": ["publisher"],
+      "properties": {
+        "publisher": { "type": "string" },
+        "publisherIdentifier": { "type": "string" },
+        "publisherIdentifierScheme": { "type": "string" },
+        "schemeURI": { "type": "string", "format": "uri" },
+        "lang": { "type": "string" }
+      }
+    },
+    "publication_year": {
+      "type": "string",
+      "description": "The year when the data was or will be made publicly available. YYYY format.",
+      "pattern": "^[0-9]{4}$"
+    },
+    "resource_type": {
+      "type": "object",
+      "description": "A description of the resource.",
+      "required": ["resourceTypeGeneral"],
+      "properties": {
+        "resourceType": { "type": "string" },
+        "resourceTypeGeneral": {
+          "type": "string",
+          "enum": [
+            "Audiovisual", "Book", "BookChapter", "Collection", "ComputationalNotebook",
+            "ConferencePaper", "ConferenceProceeding", "DataPaper", "Dataset",
+            "Dissertation", "Event", "Image", "Instrument", "InteractiveResource",
+            "Journal", "JournalArticle", "Model", "OutputManagementPlan", "PeerReview",
+            "PhysicalObject", "Preprint", "Project", "Report", "Service", "Software",
+            "Sound", "Standard", "StudyRegistration", "Text", "Workflow", "Other"
+          ]
+        }
+      }
+    },
+    "date": {
+      "type": "array",
+      "description": "Different dates relevant to the work.",
+      "items": {
+        "type": "object",
+        "required": ["date", "dateType"],
+        "properties": {
+          "date": { "type": "string" },
+          "dateType": {
+            "type": "string",
+            "enum": [
+              "Accepted", "Available", "Copyrighted", "Collected", "Created",
+              "Issued", "Submitted", "Updated", "Valid", "Withdrawn", "Other"
+            ]
+          },
+          "dateInformation": { "type": "string" }
+        }
+      }
+    },
+    "alternate_identifier": {
+      "type": "array",
+      "description": "An identifier or identifiers other than the primary Identifier applied to the resource being registered.",
+      "items": {
+        "type": "object",
+        "required": ["alternateIdentifier", "alternateIdentifierType"],
+        "properties": {
+          "alternateIdentifier": { "type": "string" },
+          "alternateIdentifierType": { "type": "string" }
+        }
+      }
+    },
+    "related_identifier": {
+      "type": "array",
+      "description": "Identifiers of related resources. These must be globally unique identifiers.",
+      "items": {
+        "type": "object",
+        "required": ["relatedIdentifier", "relatedIdentifierType", "relationType"],
+        "properties": {
+          "relatedIdentifier": { "type": "string" },
+          "relatedIdentifierType": { "type": "string" },
+          "relationType": { "type": "string" },
+          "resourceTypeGeneral": { "type": "string" },
+          "relatedMetadataScheme": { "type": "string" },
+          "schemeURI": { "type": "string", "format": "uri" },
+          "schemeType": { "type": "string" }
+        }
+      }
+    },
+    "size": {
+      "type": "array",
+      "description": "Unstructured size information about the resource.",
+      "items": { "type": "string" }
+    },
+    "format": {
+      "type": "array",
+      "description": "Technical format of the resource.",
+      "items": { "type": "string" }
+    },
+    "version": {
+      "type": "string",
+      "description": "The version number of the resource."
+    },
+    "rights": {
+      "type": "array",
+      "description": "Any rights information for this resource.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rights": { "type": "string" },
+          "rightsURI": { "type": "string", "format": "uri" },
+          "rightsIdentifier": { "type": "string" },
+          "rightsIdentifierScheme": { "type": "string" },
+          "schemeURI": { "type": "string", "format": "uri" },
+          "lang": { "type": "string" }
+        }
+      }
+    },
+    "description": {
+      "type": "array",
+      "description": "All additional information that does not fit in any of the other categories.",
+      "items": {
+        "type": "object",
+        "required": ["description", "descriptionType"],
+        "properties": {
+          "description": { "type": "string" },
+          "descriptionType": {
+            "type": "string",
+            "enum": [
+              "Abstract", "Methods", "SeriesInformation", "TableOfContents",
+              "TechnicalInfo", "Other"
+            ]
+          },
+          "lang": { "type": "string" }
+        }
+      }
+    },
+    "geo_location": {
+      "type": "array",
+      "description": "Spatial region or named place where the data was gathered or about which the data is focused.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "geoLocationPlace": { "type": "string" },
+          "geoLocationPoint": {
+            "type": "object",
+            "required": ["pointLongitude", "pointLatitude"],
+            "properties": {
+              "pointLongitude": { "type": "number" },
+              "pointLatitude": { "type": "number" }
+            }
+          },
+          "geoLocationBox": {
+            "type": "object",
+            "required": ["westBoundLongitude", "eastBoundLongitude", "southBoundLatitude", "northBoundLatitude"],
+            "properties": {
+              "westBoundLongitude": { "type": "number" },
+              "eastBoundLongitude": { "type": "number" },
+              "southBoundLatitude": { "type": "number" },
+              "northBoundLatitude": { "type": "number" }
+            }
+          },
+          "geoLocationPolygon": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["polygonPoint"],
+              "properties": {
+                "polygonPoint": {
+                  "type": "object",
+                  "required": ["pointLongitude", "pointLatitude"],
+                  "properties": {
+                    "pointLongitude": { "type": "number" },
+                    "pointLatitude": { "type": "number" }
+                  }
+                },
+                "inPolygonPoint": {
+                  "type": "object",
+                  "required": ["pointLongitude", "pointLatitude"],
+                  "properties": {
+                    "pointLongitude": { "type": "number" },
+                    "pointLatitude": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "category": {
+      "type": "array",
+      "description": "Category or subject information (maps conceptually to DataCite Subjects). Provided explicitly in our_pick.md.",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

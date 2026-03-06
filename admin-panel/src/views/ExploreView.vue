@@ -1,7 +1,11 @@
 <template>
   <div>
     <div class="page-header">
+<<<<<<< Updated upstream
       <h1>Explore Models</h1>
+=======
+      <h1>Browse Model Cards</h1>
+>>>>>>> Stashed changes
       <p>Browse and query the Patra Knowledge Base model cards</p>
     </div>
 
