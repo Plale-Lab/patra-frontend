@@ -1,0 +1,102 @@
+[
+  {
+    "case_id": "bbox_exact",
+    "target_schema": {
+      "name": "bbox_exact_target",
+      "format": "jpeg",
+      "fields": ["x", "y", "width", "height", "label"]
+    },
+    "expected_top1": "1",
+    "expected_top3": ["1", "6", "7"]
+  },
+  {
+    "case_id": "bbox_synonym",
+    "target_schema": {
+      "name": "bbox_synonym_target",
+      "format": "jpeg",
+      "fields": ["x", "y", "w", "h", "label"]
+    },
+    "expected_top1": "6",
+    "expected_top3": ["6", "1", "7"]
+  },
+  {
+    "case_id": "segmask_exact",
+    "target_schema": {
+      "name": "segmask_target",
+      "format": "png",
+      "fields": ["mask", "label", "area"]
+    },
+    "expected_top1": "2",
+    "expected_top3": ["2", "12", "8"]
+  },
+  {
+    "case_id": "csv_classification_exact",
+    "target_schema": {
+      "name": "csv_classification_target",
+      "format": "csv",
+      "fields": ["image_path", "label", "confidence"]
+    },
+    "expected_top1": "4",
+    "expected_top3": ["4", "11", "10"]
+  },
+  {
+    "case_id": "timeseries_exact",
+    "target_schema": {
+      "name": "timeseries_exact_target",
+      "format": "parquet",
+      "fields": ["timestamp", "values", "anomaly_flag"]
+    },
+    "expected_top1": "5",
+    "expected_top3": ["5", "13", "19"]
+  },
+  {
+    "case_id": "tabular_window_exact",
+    "target_schema": {
+      "name": "tabular_window_target",
+      "format": "parquet",
+      "fields": ["sensor_id", "window_start", "window_end", "features", "label"]
+    },
+    "expected_top1": "3",
+    "expected_top3": ["3", "13", "17"]
+  },
+  {
+    "case_id": "author_creator_memory",
+    "target_schema": {
+      "name": "creator_memory_target",
+      "format": "jsonl",
+      "fields": ["creator", "title", "text", "label"]
+    },
+    "expected_top1": "22",
+    "expected_top3": ["22", "21", "25"]
+  },
+  {
+    "case_id": "prompt_completion_exact",
+    "target_schema": {
+      "name": "prompt_completion_target",
+      "format": "jsonl",
+      "fields": ["prompt", "completion", "label"]
+    },
+    "expected_top1": "23",
+    "expected_top3": ["23", "24", "21"]
+  },
+  {
+    "case_id": "metadata_author_exact",
+    "target_schema": {
+      "name": "metadata_author_target",
+      "format": "json",
+      "fields": ["model_name", "version", "author", "license", "tags"]
+    },
+    "expected_top1": "26",
+    "expected_top3": ["26", "27", "25"]
+  },
+  {
+    "case_id": "metadata_creator_memory",
+    "target_schema": {
+      "name": "metadata_creator_target",
+      "format": "json",
+      "fields": ["dataset_name", "author", "license", "tags"]
+    },
+    "expected_top1": "27",
+    "expected_top3": ["27", "26", "25"]
+  }
+]

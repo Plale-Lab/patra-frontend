@@ -73,3 +73,11 @@ conda-meta/
 *.temp
 .tmp/
 .temp/
+
+# Schema agent local fixtures
+rest_server/data/mock_dataset_schemas.json
+rest_server/data/semantic_synonym_memory.json
+
+# Schema agent generated artifacts
+rest_server/logs/schema_agent_runs/
+rest_server/logs/schema_agent_evals/
