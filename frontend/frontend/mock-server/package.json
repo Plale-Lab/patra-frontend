@@ -1,0 +1,8 @@
+{
+  "name": "patra-frontend-mock-wrapper",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix ../../mock-server run dev",
+    "start": "npm --prefix ../../mock-server run start"
+  }
+}

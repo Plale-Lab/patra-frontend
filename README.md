@@ -148,6 +148,30 @@ Open [neo4j browser](http://localhost:7474/browser/) and log in with the credent
     make down
     ```
 
+### Frontend workspace
+
+All frontend-related code now lives in [`frontend/`](./frontend):
+
+- `frontend/app`: Vue frontend
+- `frontend/mock-server`: local mock API for frontend testing
+
+Run the frontend in normal mode:
+
+```bash
+npm --prefix frontend/app install
+npm --prefix frontend/app run dev:live
+```
+
+Run the frontend in test mode with the local mock server:
+
+```bash
+npm --prefix frontend/mock-server install
+npm --prefix frontend/mock-server run dev
+npm --prefix frontend/app run dev:mock
+```
+
+The app header also lets you switch between normal mode and test mode at runtime.
+
 ### 3. Using the MCP Server (Optional)
 
 The MCP server enables AI assistants to interact with the Patra Knowledge Graph using the Model Context Protocol. The production MCP server provides:
