@@ -4,14 +4,13 @@
 
 ## Summary
 
-Version `0.3.0` extends the `0.2.0` intake workflow with a more explicit guest-versus-member dashboard model. The application still supports manual model card and datasheet entry, asset-link intake, and bulk submission, but the homepage now behaves differently for guests and signed-in Tapis users. The frontend remains organized under the `frontend/` workspace and continues to support live API mode and local mock mode.
+Version `0.3.0` extends the `0.2.0` intake workflow with a more explicit guest-versus-member dashboard model. The application still supports manual model card and datasheet entry, asset-link intake, and bulk submission, but the homepage now behaves differently for guests and signed-in Tapis users. The repository is now frontend-only and continues to support live API mode and local mock mode.
 
 ## Workspace Structure
 
-- `frontend/app`: Vue 3 + Vite application
-- `frontend/mock-server`: local mock API for frontend development
-- `frontend/frontend/...`: wrapper packages for `npm --prefix` compatibility when running from inside `frontend/`
-- `frontend/agent-submission-plan.md`: high-automation agent-mode design document
+- `app`: Vue 3 + Vite application
+- `mock-server`: local mock API for frontend development
+- `agent-submission-plan.md`: high-automation agent-mode design document
 
 ## Runtime Modes
 
@@ -222,7 +221,7 @@ The planned agent mode is not implemented in this release. The document covers:
 - Routing uses Vue Router with `createWebHistory()`.
 - Submission intake automation in this release is intentionally limited to client-side validation and metadata inference.
 - Ticket and submission forms default to the signed-in user's display name when available.
-- `frontend/app/package.json` is aligned with this release and now reports version `0.3.0`.
+- `app/package.json` is aligned with this release and now reports version `0.3.0`.
 
 ## Validation Performed
 

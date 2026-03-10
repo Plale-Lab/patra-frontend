@@ -2,7 +2,7 @@
 
 ## Version
 
-`0.2.0`
+`0.3.0`
 
 ## Problem Statement
 
@@ -23,7 +23,7 @@ Patra should support a high-automation submission path where users only provide 
 
 ## User Experience
 
-The frontend keeps the same three submission entry modes introduced in `0.2.0`:
+The frontend keeps the same three submission entry modes introduced in `0.3.0`:
 
 - `Manual Entry`
 - `From Asset Link`
