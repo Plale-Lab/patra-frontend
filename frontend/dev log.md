@@ -1,223 +1,258 @@
 # Frontend Dev Log
 
-## Version 0.1.0
+## Version 0.3.0
 
 ## Summary
 
-Version `0.1.0` establishes the first structured frontend workspace for Patra. The frontend is now organized under a single `frontend/` directory, with the application and local mock backend separated into dedicated subprojects:
+Version `0.3.0` extends the `0.2.0` intake workflow with a more explicit guest-versus-member dashboard model. The application still supports manual model card and datasheet entry, asset-link intake, and bulk submission, but the homepage now behaves differently for guests and signed-in Tapis users. The frontend remains organized under the `frontend/` workspace and continues to support live API mode and local mock mode.
+
+## Workspace Structure
 
 - `frontend/app`: Vue 3 + Vite application
-- `frontend/mock-server`: local mock API for testing and UI development
+- `frontend/mock-server`: local mock API for frontend development
+- `frontend/frontend/...`: wrapper packages for `npm --prefix` compatibility when running from inside `frontend/`
+- `frontend/agent-submission-plan.md`: high-automation agent-mode design document
 
-This version also introduces runtime API mode switching, consolidates frontend network access behind a shared API layer, and stabilizes the current route set.
+## Runtime Modes
 
-## Implemented Functionality
-
-### Workspace and Project Structure
-
-- Consolidated all frontend-related code into the `frontend/` workspace.
-- Added a top-level frontend workspace package for common run/build entry points.
-- Added compatibility wrapper packages under `frontend/frontend/...` so commands using nested `--prefix` paths still resolve correctly when run from inside `frontend/`.
-
-### Application Modes
-
-The frontend currently supports two execution modes:
+The frontend supports two runtime modes:
 
 1. Normal mode
-   - Targets the live Patra REST API.
-   - Default base URL: `http://localhost:5002`
+   - targets the Patra REST API
+   - default base URL: `http://localhost:5002`
 
 2. Test mode
-   - Targets the local mock server for development and UI validation.
-   - Default base URL: `http://localhost:5003`
+   - targets the local mock server
+   - default base URL: `http://localhost:5003`
 
-Mode behavior:
+Mode selection is stored locally, can be changed from the header, and triggers data refetch in views that depend on backend data.
 
-- Mode selection is persisted in local storage.
-- Mode selection can be changed at runtime from the header bar.
-- Pages that depend on API data automatically refetch when the mode changes.
+## Core Application Features
 
 ### Shared API Layer
 
-- Added a centralized API configuration module.
-- Added a shared `apiFetch()` wrapper so views and stores no longer hardcode backend URLs.
-- Standardized live/mock URL resolution in one place.
+- Centralized API configuration and URL selection
+- Shared `apiFetch()` access pattern for frontend data calls
+- Single place to switch between live and mock backends
 
 ### Authentication
 
-- Implemented Tapis-based login flow through the backend `/auth/tapis` endpoint.
-- Added a local admin shortcut for development:
-  - username: `admin`
-  - password: `admin`
-- Persisted user and token state in local storage.
-- Added computed auth state:
-  - logged-in status
-  - admin status
-  - Tapis-user status
-  - display name and initials
+- Tapis login flow through `/auth/tapis`
+- Local admin shortcut for development
+- persisted auth state in local storage
+- admin/user role awareness in navigation and route guards
+- authenticated identity reused across dashboard, ticket, and submission workflows
+
+### Homepage and Dashboard Personalization
+
+The root route `/` now serves two different experiences:
+
+1. Guest homepage
+   - general product-facing landing experience
+   - platform snapshot for public models, datasheets, and support activity
+   - featured public models
+   - clear entry points for explore, submit, and tickets
+   - sign-in value framing for Tapis users
+
+2. Logged-in user dashboard
+   - personalized workspace summary
+   - `My Models`
+   - `My Recent Submissions`
+   - `My Tickets`
+   - pending-submission and asset-intake counts
+   - quick actions for submission, support, and catalog workflows
+
+Dashboard behavior:
+
+- refreshes when API mode changes
+- refreshes when auth state changes
+- avoids submission-queue fetches for guest users
 
 ### Public Routes
 
-The following public routes are available:
-
 - `/`
-  - Dashboard overview
 - `/explore-model-cards`
-  - Browse and filter model cards
 - `/explore-model-cards/:id`
-  - Model card detail page
 - `/explore-datasheets`
-  - Browse and filter datasheets
 - `/explore-datasheets/:id`
-  - Datasheet detail page
 - `/submit`
-  - Submit a model card or datasheet for review
 - `/tickets`
-  - Submit and browse support tickets
 
-Backward-compatibility redirects are in place for legacy `/explore` routes.
+Legacy explore routes continue to redirect to the current route set.
 
 ### Admin Routes
 
-The following admin-only routes are available:
-
 - `/models`
-  - Manage model and datasheet visibility
-  - Toggle field visibility for model card sections
 - `/submissions`
-  - Review pending submissions
-  - Approve or reject submitted content
-  - Add admin notes
 - `/ticket-management`
-  - Update ticket status
-  - Add admin responses
 - `/audit-log`
-  - View recent audit activity
 - `/settings`
-  - Adjust system-level frontend settings
 
-Route guards currently redirect non-admin users away from admin pages.
+Non-admin users are redirected away from admin-only routes.
 
-### Explore and Detail Workflows
+### Explore Workflows
 
-Model card browsing supports:
+Model card pages support:
 
-- text search
-- category filtering
-- framework filtering
-- author filtering
-- visibility filtering
-
-Model detail supports:
-
-- core metadata
+- search and filtering
+- detail metadata
 - AI model metadata
-- training metrics
-- bias analysis
-- XAI feature importance
-- deployment information
-- data links and keywords
+- metrics, bias analysis, and XAI sections
+- deployment and download links
 
-Datasheet browsing supports:
+Datasheet pages support:
 
-- text search
-- resource type filtering
-- publisher filtering
-- visibility filtering
+- search and filtering
+- creator and publisher metadata
+- rights, identifiers, descriptions, and geo information
 
-Datasheet detail supports:
+## Submission Features
 
-- title and description display
-- creators
-- publisher metadata
-- resource info
-- rights
-- dates
-- related identifiers
-- additional descriptions
-- geo locations
+Submission supports two content types:
 
-### Submission Workflow
+- `model_card`
+- `datasheet`
 
-Submission flow currently supports two content types:
+Each type now provides three submission modes:
 
-- model cards
-- datasheets
+- `Manual Entry`
+- `From Asset Link`
+- `Bulk Asset Links`
+
+### Manual Entry
+
+Manual entry remains the default mode for both tabs. Existing structured forms continue to work without behavioral regression and still submit through `POST /submissions`.
+
+### From Asset Link
+
+Single-link intake is intended for existing assets that should be included in the ICICLE ecosystem. The UI uses the following shared prompt copy:
+
+> Create ICICLE model card or datasheet for the existing model or dataset you want to include in the ICICLE ecosystem.
 
 Implemented behavior:
 
-- form-based submission
-- required-field gating before submit
-- success-state confirmation after submit
-- payload creation for backend review queue ingestion
+- requires submitter name
+- requires asset URL
+- supports optional display name
+- supports optional notes
+- validates URL format before submission
+- infers provider from hostname or DOI pattern
+- records `asset_host` and `asset_provider`
+- submits queue-only intake payloads without scraping or auto-completing schema fields
 
-### Ticket Workflow
+Recognized providers:
 
-User-side ticket flow supports:
+- `huggingface.co` -> `huggingface`
+- `github.com` -> `github`
+- `kaggle.com` -> `kaggle`
+- DOI input -> `doi`
+- fallback -> `other`
 
-- creating tickets
-- setting category and priority
-- reviewing recent submitted tickets
-- opening ticket detail modals
+### Bulk Asset Links
 
-Admin-side ticket flow supports:
+Bulk intake is an extension of the single-link flow and is designed for high-volume queue creation without agent automation.
 
-- filtering by status
-- reviewing ticket details
-- updating status
-- storing admin responses
+Implemented behavior:
 
-### UI and Navigation
+- accepts one URL per line
+- trims whitespace and drops empty lines
+- deduplicates links locally before submission
+- blocks the full batch if any invalid lines are present
+- shows invalid line numbers and values in the UI
+- creates one submission per asset rather than one combined batch record
+- submits with `Promise.allSettled`
+- reports total, success count, failure count, and failed links
+- preserves partial success and does not roll back completed items
 
-- Added persistent left sidebar navigation.
-- Added top header with runtime API mode controls.
-- Preserved separate public and admin navigation areas.
-- Added connection-state banners to data-heavy views when backend access fails.
+Each created submission includes batch metadata when applicable:
 
-### Mock Server
+- `batch_id`
+- `batch_index`
+- `batch_total`
+- `submission_origin`
 
-The local mock server supports the frontend development flow for:
+## Review Queue Improvements
+
+The admin submission review page now distinguishes intake origin directly in the queue.
+
+Implemented behavior:
+
+- badge for `Manual Entry`
+- badge for `Asset Link`
+- badge for `Bulk`
+- clickable asset URL in submission details
+- prioritized rendering for:
+  - `asset_url`
+  - `asset_provider`
+  - `display_name`
+  - `submitter_notes`
+  - batch position metadata
+- existing approve, reject, and admin-note actions remain unchanged
+
+This release does not add an in-app schema editor for reviewers. Link-based submissions are still intended to feed a later manual completion workflow.
+
+## Mock Server Support
+
+The local mock server continues to support:
 
 - authentication
-- model cards
-- model detail
-- deployments
-- datasheets
-- submissions
+- model cards and datasheets
+- submission creation and review
 - tickets
-- users
-- groups
+- users and groups
 
-Default mock server port is now `5003`.
+For `0.3.0`, the mock submission set includes asset-link examples so the review badges, personalized dashboard counts, and metadata views can be exercised in test mode.
+
+## Agent Mode Planning
+
+`0.3.0` continues to include a design document for a future high-automation agent workflow in [agent-submission-plan.md](./agent-submission-plan.md).
+
+The planned agent mode is not implemented in this release. The document covers:
+
+- ingestion job architecture
+- provider adapters
+- draft generation contract
+- provenance and confidence handling
+- review workflow
+- rollout stages
 
 ## Developer Notes
 
 - Frontend state management uses Pinia.
 - Routing uses Vue Router with `createWebHistory()`.
-- Network access for the main data flows has been centralized, but some parts of the admin surface still rely on local in-memory stores for demo/state simulation rather than live backend persistence.
-- `frontend/app/package.json` still carries application version `0.0.0`; this dev log documents the shipped frontend milestone as `0.1.0`.
+- Submission intake automation in this release is intentionally limited to client-side validation and metadata inference.
+- Ticket and submission forms default to the signed-in user's display name when available.
+- `frontend/app/package.json` is aligned with this release and now reports version `0.3.0`.
 
 ## Validation Performed
 
-The following checks were completed for the current implementation:
+The implementation target for this release includes:
 
-- frontend dependencies installed successfully
-- mock server dependencies installed successfully
-- production build completed successfully with Vite
-- mock server started successfully
-- mock endpoint smoke test returned HTTP `200`
+- manual model card submission remains functional
+- manual datasheet submission remains functional
+- single-link model card submission succeeds
+- single-link datasheet submission succeeds
+- invalid single-link input is blocked on the client
+- bulk submission creates one queue item per valid unique URL
+- duplicate bulk URLs are deduplicated before submission
+- bulk input with invalid lines is rejected before network submission
+- admin review displays asset-link metadata and batch badges correctly
+- guest users receive a general-purpose discovery homepage
+- logged-in Tapis users receive a personalized dashboard with user-scoped tickets, models, and submissions
+- mock mode remains usable end to end
+- live-mode production build completes successfully
 
 ## Known Limitations
 
-- Some admin pages use local/demo state instead of a production-backed API workflow.
-- `UserManagementView.vue`, `GroupsView.vue`, and `LoginView.vue` exist in the codebase, but user/group routes remain disabled in the router.
-- No formal frontend test suite is included yet.
-- Environment configuration is lightweight and intended for local developer workflows.
+- Link-based intake does not fetch remote asset metadata in `0.3.0`.
+- Reviewer-side manual completion still happens outside the frontend workflow.
+- Some admin pages still use demo-oriented state rather than a fully production-backed integration.
+- Personalized dashboard matching is currently identity-string based and depends on consistent submitter naming.
+- No formal automated frontend test suite is included yet.
 
 ## Recommended Next Steps
 
-- Promote package versioning to match documented frontend releases.
-- Add frontend linting and test automation.
-- Finish API integration for remaining demo-backed admin pages.
-- Enable or remove currently parked views to reduce dead surface area.
-- Add environment-specific documentation for local, staging, and production deployments.
+- add automated frontend tests for the new submission modes
+- define backend validation for asset-intake payload fields
+- implement reviewer-side structured completion for queued link submissions
+- build the agent-mode ingestion service described in `agent-submission-plan.md`

@@ -401,7 +401,7 @@ const deployments = [
 ];
 
 // ─── Mock Submissions (pending review) ───────────────────────────────
-let submissionIdCounter = 4;
+let submissionIdCounter = 6;
 const submissions = [
     {
         id: 'sub-001', type: 'model_card', status: 'pending',
@@ -436,6 +436,37 @@ const submissions = [
             category: 'Classification', input_type: 'Tabular', framework: 'scikit-learn',
             keywords: 'baseline, logistic regression, classification',
             is_private: false, test_accuracy: 0.72, license: 'BSD-3 Clause',
+        },
+    },
+    {
+        id: 'sub-004', type: 'model_card', status: 'pending',
+        submitted_by: 'Dana Kapoor', submitted_at: '2026-03-05T16:20:00',
+        reviewed_by: null, reviewed_at: null, admin_notes: '',
+        data: {
+            intake_method: 'asset_link',
+            asset_url: 'https://huggingface.co/google/gemma-2-2b-it',
+            asset_host: 'huggingface.co',
+            asset_provider: 'huggingface',
+            display_name: 'Gemma 2 2B IT',
+            submitter_notes: 'Please create an ICICLE model card from the existing Hugging Face model page.',
+            intake_prompt: 'Create ICICLE model card or datasheet for the existing model or dataset you want to include in the ICICLE ecosystem.',
+        },
+    },
+    {
+        id: 'sub-005', type: 'datasheet', status: 'pending',
+        submitted_by: 'Evan Brooks', submitted_at: '2026-03-05T17:10:00',
+        reviewed_by: null, reviewed_at: null, admin_notes: '',
+        data: {
+            intake_method: 'asset_link',
+            asset_url: 'https://huggingface.co/datasets/stanfordnlp/imdb',
+            asset_host: 'huggingface.co',
+            asset_provider: 'huggingface',
+            submitter_notes: 'Batch import for the review queue.',
+            intake_prompt: 'Create ICICLE model card or datasheet for the existing model or dataset you want to include in the ICICLE ecosystem.',
+            batch_id: 'batch-20260305-171000',
+            batch_index: 1,
+            batch_total: 2,
+            submission_origin: 'bulk_asset_links',
         },
     },
 ];

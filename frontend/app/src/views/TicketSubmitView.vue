@@ -133,6 +133,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useTicketsStore } from '../stores/tickets'
 import { useApiModeStore } from '../stores/apiMode'
+import { useAuthStore } from '../stores/auth'
 import {
   IconMessagePlus, IconCircleCheck, IconSend, IconList,
   IconMoodSmile, IconUser, IconClock, IconX,
@@ -140,13 +141,14 @@ import {
 
 const store = useTicketsStore()
 const apiMode = useApiModeStore()
+const auth = useAuthStore()
 const submitted = ref(false)
 const lastTicketId = ref('')
 const filter = ref('all')
 const selectedTicket = ref(null)
 
 const form = reactive({
-  submittedBy: '', subject: '', category: 'Bug Report',
+  submittedBy: auth.isLoggedIn ? auth.displayName : '', subject: '', category: 'Bug Report',
   priority: 'Medium', description: '',
 })
 
@@ -186,7 +188,13 @@ async function handleSubmit() {
 
 function resetForm() {
   submitted.value = false
-  Object.assign(form, { submittedBy: '', subject: '', category: 'Bug Report', priority: 'Medium', description: '' })
+  Object.assign(form, {
+    submittedBy: auth.isLoggedIn ? auth.displayName : '',
+    subject: '',
+    category: 'Bug Report',
+    priority: 'Medium',
+    description: '',
+  })
 }
 
 function loadTickets() {
@@ -195,6 +203,11 @@ function loadTickets() {
 
 onMounted(loadTickets)
 watch(() => apiMode.mode, loadTickets)
+watch(() => auth.displayName, (nextName, previousName) => {
+  if (!form.submittedBy.trim() || form.submittedBy === previousName) {
+    form.submittedBy = auth.isLoggedIn ? nextName : ''
+  }
+})
 </script>
 
 <style scoped>
