@@ -53,8 +53,8 @@
               <strong>{{ privateModelCount }}</strong>
             </div>
             <div class="highlight-note">
-              Sign in with Tapis from the sidebar to unlock a personalized workspace with your tickets,
-              authored assets, and submission queue.
+              Sign in with Tapis from the sidebar to unlock a personalized workspace with your authored assets
+              and contribution workflows.
             </div>
           </div>
         </div>
@@ -88,7 +88,7 @@
             <div class="stat-label">Datasheets</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" v-if="apiMode.supportsTickets">
           <div class="stat-icon" style="background: var(--color-accent-bg); color: #c68200;">
             <IconMessageCircle :size="24" stroke-width="1.8" />
           </div>
@@ -126,7 +126,7 @@
                 </div>
                 <IconChevronRight :size="18" class="quick-link-arrow" />
               </RouterLink>
-              <RouterLink to="/tickets" class="quick-link">
+              <RouterLink v-if="apiMode.supportsTickets" to="/tickets" class="quick-link">
                 <div class="quick-link-icon" style="background: var(--color-info-bg); color: var(--color-info);">
                   <IconMessageCircle :size="20" stroke-width="1.8" />
                 </div>
@@ -196,9 +196,9 @@
             <div class="member-benefits">
               <div class="benefit-row">
                 <IconClipboardCheck :size="18" stroke-width="1.8" />
-                <span>Track your own submissions and asset-link intake queue.</span>
+                <span>Track your own submissions and asset-link intake workflow.</span>
               </div>
-              <div class="benefit-row">
+              <div class="benefit-row" v-if="apiMode.supportsTickets">
                 <IconMessageCircle :size="18" stroke-width="1.8" />
                 <span>See your support tickets and follow admin responses in one place.</span>
               </div>
@@ -223,7 +223,7 @@
             <div class="stat-label">My Catalog Models</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" v-if="apiMode.supportsSubmissionQueue">
           <div class="stat-icon" style="background: var(--color-success-bg); color: var(--color-success);">
             <IconClipboardCheck :size="24" stroke-width="1.8" />
           </div>
@@ -232,7 +232,7 @@
             <div class="stat-label">My Submissions</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" v-if="apiMode.supportsTickets">
           <div class="stat-icon" style="background: var(--color-info-bg); color: var(--color-info);">
             <IconMessageCircle :size="24" stroke-width="1.8" />
           </div>
@@ -263,11 +263,11 @@
               <div>
                 <div class="workspace-title">Your personalized dashboard is live.</div>
                 <div class="workspace-text">
-                  This view tracks what you submitted, what you authored, and which support items still need follow-up.
+                  This view tracks what you submitted, what you authored, and the current state of your workspace activity.
                 </div>
               </div>
               <div class="workspace-chips">
-                <span class="chip active">{{ myPendingSubmissionCount }} pending submissions</span>
+                <span class="chip active" v-if="apiMode.supportsSubmissionQueue">{{ myPendingSubmissionCount }} pending submissions</span>
                 <span class="chip active">{{ myAssetIntakeCount }} asset-link requests</span>
               </div>
             </div>
@@ -283,7 +283,7 @@
                 </div>
                 <IconChevronRight :size="18" class="quick-link-arrow" />
               </RouterLink>
-              <RouterLink to="/tickets" class="quick-link">
+              <RouterLink v-if="apiMode.supportsTickets" to="/tickets" class="quick-link">
                 <div class="quick-link-icon" style="background: var(--color-info-bg); color: var(--color-info);">
                   <IconMessageCircle :size="20" stroke-width="1.8" />
                 </div>
@@ -337,7 +337,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" v-if="apiMode.supportsSubmissionQueue">
           <div class="card-header">
             <span>My Recent Submissions</span>
             <RouterLink v-if="auth.isAdmin" to="/submissions" class="btn btn-sm btn-outline">Review Queue</RouterLink>
@@ -363,7 +363,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" v-if="apiMode.supportsTickets">
           <div class="card-header">
             <span>My Tickets</span>
             <RouterLink to="/tickets" class="btn btn-sm btn-outline">Open Tickets</RouterLink>
@@ -513,10 +513,16 @@ async function loadDashboard() {
   const tasks = [
     exploreStore.fetchModels(),
     exploreStore.fetchDatasheets(),
-    ticketsStore.fetchTickets(),
   ]
 
-  if (auth.isLoggedIn) {
+  if (apiMode.supportsTickets) {
+    tasks.push(ticketsStore.fetchTickets())
+  } else {
+    ticketsStore.tickets = []
+    ticketsStore.error = null
+  }
+
+  if (auth.isLoggedIn && apiMode.supportsSubmissionQueue) {
     tasks.push(submissionsStore.fetchSubmissions())
   } else {
     submissionsStore.submissions = []

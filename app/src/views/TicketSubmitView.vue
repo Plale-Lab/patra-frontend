@@ -5,7 +5,16 @@
       <p>Submit a service request or report an issue</p>
     </div>
 
-    <div class="ticket-layout">
+    <div class="card" v-if="!apiMode.supportsTickets">
+      <div class="card-body">
+        <div class="ticket-empty">
+          <IconMoodSmile :size="32" stroke-width="1.2" />
+          <span>Ticketing is not available in this deployment.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticket-layout" v-else>
       <!-- Submit Form -->
       <div class="card ticket-form">
         <div class="card-header">
@@ -198,6 +207,7 @@ function resetForm() {
 }
 
 function loadTickets() {
+  if (!apiMode.supportsTickets) return
   store.fetchTickets()
 }
 

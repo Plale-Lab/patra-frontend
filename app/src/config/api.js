@@ -13,6 +13,16 @@ export const SHOW_API_MODE = resolveFeatureFlag(
   import.meta.env.VITE_SHOW_API_MODE,
   import.meta.env.DEV,
 )
+export const SUPPORTS_TICKETS = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_TICKETS,
+  import.meta.env.VITE_SUPPORTS_TICKETS,
+  false,
+)
+export const SUPPORTS_SUBMISSIONS_API = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_SUBMISSIONS_API,
+  import.meta.env.VITE_SUPPORTS_SUBMISSIONS_API,
+  false,
+)
 
 const LIVE_API_BASE_URL = normalizeBaseUrl(
   runtimeConfig.API_BASE_URL || import.meta.env.VITE_LIVE_API_BASE_URL || DEFAULT_LIVE_API_BASE_URL,
@@ -56,6 +66,8 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
       label: 'Test Mode',
       description: 'Use the local mock server for frontend testing.',
       helpText: 'Start the local mock server with `cd frontend/mock-server && npm start`.',
+      supportsTickets: true,
+      supportsSubmissionQueue: true,
     }
   }
 
@@ -65,6 +77,8 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
     label: 'Normal Mode',
     description: 'Call the real Patra REST API.',
     helpText: 'Ensure the Patra REST server is running on the live API URL.',
+    supportsTickets: SUPPORTS_TICKETS,
+    supportsSubmissionQueue: SUPPORTS_SUBMISSIONS_API,
   }
 }
 

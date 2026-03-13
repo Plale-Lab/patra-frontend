@@ -10,6 +10,17 @@
       </div>
     </div>
 
+    <div class="card" v-if="!apiMode.supportsSubmissionQueue">
+      <div class="card-body">
+        <div class="empty-state">
+          <IconInbox :size="48" stroke-width="1.2" />
+          <h3>Submission review is not available</h3>
+          <p>This deployment supports asset ingestion, but it does not expose the legacy `/submissions` review API.</p>
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
     <div class="filter-row">
       <div class="filter-chips">
         <button class="chip" :class="{ active: filter === 'all' }" @click="filter = 'all'">All ({{ store.submissions.length }})</button>
@@ -129,6 +140,7 @@
         <p>No {{ filter === 'all' ? '' : filter }} submissions to display.</p>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
@@ -249,6 +261,7 @@ async function handleReview(id, status) {
 }
 
 function loadSubmissions() {
+  if (!apiMode.supportsSubmissionQueue) return
   store.fetchSubmissions()
 }
 

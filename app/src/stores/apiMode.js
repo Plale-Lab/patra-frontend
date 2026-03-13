@@ -26,6 +26,8 @@ export const useApiModeStore = defineStore('apiMode', () => {
   const description = computed(() => meta.value.description)
   const helpText = computed(() => meta.value.helpText)
   const isMockMode = computed(() => mode.value === 'mock')
+  const supportsTickets = computed(() => Boolean(meta.value.supportsTickets))
+  const supportsSubmissionQueue = computed(() => Boolean(meta.value.supportsSubmissionQueue))
 
   function setMode(nextMode) {
     if (!isApiMode(nextMode)) return
@@ -42,6 +44,8 @@ export const useApiModeStore = defineStore('apiMode', () => {
     description,
     helpText,
     isMockMode,
+    supportsTickets,
+    supportsSubmissionQueue,
     showSelector: SHOW_API_MODE,
     setMode,
   }

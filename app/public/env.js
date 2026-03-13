@@ -3,4 +3,6 @@ window.__PATRA_CONFIG__ = window.__PATRA_CONFIG__ || {
   MOCK_API_BASE_URL: '',
   DEFAULT_API_MODE: '',
   SHOW_API_MODE: '',
+  SUPPORTS_TICKETS: '',
+  SUPPORTS_SUBMISSIONS_API: '',
 }

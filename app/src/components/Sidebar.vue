@@ -26,7 +26,7 @@
         <IconUpload :size="20" stroke-width="1.8" />
         <span>Submit</span>
       </RouterLink>
-      <RouterLink to="/tickets" class="sidebar-link" :class="{ active: $route.path === '/tickets' }">
+      <RouterLink v-if="apiMode.supportsTickets" to="/tickets" class="sidebar-link" :class="{ active: $route.path === '/tickets' }">
         <IconMessageCircle :size="20" stroke-width="1.8" />
         <span>Tickets</span>
       </RouterLink>
@@ -37,11 +37,11 @@
           <IconCube :size="20" stroke-width="1.8" />
           <span>Models & Data</span>
         </RouterLink>
-        <RouterLink to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
+        <RouterLink v-if="apiMode.supportsSubmissionQueue" to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
           <IconClipboardCheck :size="20" stroke-width="1.8" />
           <span>Review Submissions</span>
         </RouterLink>
-        <RouterLink to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
+        <RouterLink v-if="apiMode.supportsTickets" to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
           <IconListDetails :size="20" stroke-width="1.8" />
           <span>Manage Tickets</span>
         </RouterLink>
@@ -127,6 +127,7 @@
 import { ref, reactive } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useApiModeStore } from '../stores/apiMode'
 import {
   IconLayoutDashboard, IconCube, IconFileText, IconSettings, IconSearch,
   IconUpload, IconMessageCircle, IconClipboardCheck,
@@ -135,6 +136,7 @@ import {
 } from '@tabler/icons-vue'
 
 const auth = useAuthStore()
+const apiMode = useApiModeStore()
 const router = useRouter()
 const showLogin = ref(false)
 const loginForm = reactive({ username: '', password: '' })

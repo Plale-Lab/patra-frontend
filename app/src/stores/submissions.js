@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiFetch } from '../lib/api'
 import { buildAssetIntakeData, normalizeAssetInput } from '../lib/assetIntake'
+import { getApiModeMeta, getStoredApiMode } from '../config/api'
 import {
     getAssetEndpointPath,
     getSubmissionDisplayName,
@@ -12,18 +13,35 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     const submissions = ref([])
     const loading = ref(false)
     const error = ref(null)
+    const supported = ref(true)
 
     const pendingCount = computed(() => submissions.value.filter(s => s.status === 'pending').length)
 
     async function fetchSubmissions(status) {
         loading.value = true
         error.value = null
+        supported.value = supportsSubmissionQueueApi()
+
+        if (!supported.value) {
+            submissions.value = []
+            loading.value = false
+            return []
+        }
+
         try {
             const res = await apiFetch(status ? `/submissions?status=${status}` : '/submissions')
+            if (res.status === 404) {
+                supported.value = false
+                submissions.value = []
+                return []
+            }
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             submissions.value = await res.json()
+            supported.value = true
+            return submissions.value
         } catch (e) {
             error.value = e.message
+            return []
         } finally {
             loading.value = false
         }
@@ -119,12 +137,22 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     }
 
     async function reviewSubmission(id, status, adminNotes) {
+        supported.value = supportsSubmissionQueueApi()
+        if (!supported.value) {
+            error.value = 'Submission review is not available in this deployment.'
+            return null
+        }
         try {
             const res = await apiFetch(`/submissions/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, admin_notes: adminNotes }),
             })
+            if (res.status === 404) {
+                supported.value = false
+                error.value = 'Submission review is not available in this deployment.'
+                return null
+            }
             if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const updated = await res.json()
             const idx = submissions.value.findIndex(s => s.id === id)
@@ -196,10 +224,15 @@ export const useSubmissionsStore = defineStore('submissions', () => {
         return text || fallback
     }
 
+    function supportsSubmissionQueueApi() {
+        return Boolean(getApiModeMeta(getStoredApiMode()).supportsSubmissionQueue)
+    }
+
     return {
         submissions,
         loading,
         error,
+        supported,
         pendingCount,
         fetchSubmissions,
         createSubmission,
