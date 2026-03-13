@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { ADMIN_USERNAMES } from '../config/api'
 
 // Tapis base URL for JWT authentication
 const TAPIS_BASE_URL = 'https://tacc.tapis.io'
@@ -60,7 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
             user.value = {
                 username,
                 name: username,
-                role: 'user',
+                role: ADMIN_USERNAMES.includes(String(username).trim().toLowerCase()) ? 'admin' : 'user',
                 auth_type: 'tapis',
             }
             token.value = issuedToken

@@ -4,7 +4,6 @@ import { apiFetch } from '../lib/api'
 import { buildAssetIntakeData, normalizeAssetInput } from '../lib/assetIntake'
 import { getApiModeMeta, getStoredApiMode } from '../config/api'
 import {
-    getAssetEndpointPath,
     getSubmissionDisplayName,
     mapSubmissionToAssetPayload,
 } from '../lib/submissionPayloads'
@@ -74,20 +73,23 @@ export const useSubmissionsStore = defineStore('submissions', () => {
             )]
 
             const batchId = createBatchId()
-            const assets = uniqueUrls.map((url, index) => mapSubmissionToAssetPayload(
-                type,
-                buildAssetIntakeData({
+            const items = uniqueUrls.map((url, index) => {
+                const queueData = buildAssetIntakeData({
                     assetUrl: url,
                     notes: batchNote,
                     batchId,
                     batchIndex: index + 1,
                     batchTotal: uniqueUrls.length,
                     submissionOrigin: 'bulk_asset_links',
-                }),
-                submittedBy,
-            ))
+                })
 
-            const result = await postBulkSubmissions(type, assets)
+                return {
+                    data: queueData,
+                    assetPayload: mapSubmissionToAssetPayload(type, queueData, submittedBy),
+                }
+            })
+
+            const result = await postBulkSubmissions(type, items, submittedBy)
 
             const successes = []
             const failures = []
@@ -95,23 +97,16 @@ export const useSubmissionsStore = defineStore('submissions', () => {
 
             result.results.forEach((item, index) => {
                 if (item.created) {
-                    const createdAsset = normalizeCreatedSubmission(
-                        type,
-                        assets[index],
-                        submittedBy,
-                        {
-                            asset_id: item.asset_id,
-                            created: item.created,
-                            duplicate: item.duplicate,
-                        },
-                    )
+                    const createdAsset = item.submission
 
                     created.push(createdAsset)
                     successes.push({
                         url: uniqueUrls[index],
-                        submissionId: createdAsset.id,
+                        submissionId: createdAsset?.id,
                     })
-                    submissions.value.unshift(createdAsset)
+                    if (createdAsset) {
+                        submissions.value.unshift(createdAsset)
+                    }
                     return
                 }
 
@@ -165,27 +160,47 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     }
 
     async function postSubmission(type, data, submittedBy) {
-        const payload = mapSubmissionToAssetPayload(type, data, submittedBy)
-        const res = await apiFetch(getAssetEndpointPath(type), {
+        const assetPayload = mapSubmissionToAssetPayload(type, data, submittedBy)
+        const res = await apiFetch('/submissions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                type,
+                submitted_by: submittedBy,
+                title: getSubmissionDisplayName(type, assetPayload),
+                data: payloadForQueue(data),
+                asset_payload: assetPayload,
+                intake_method: data?.intake_method || 'manual',
+                submission_origin: data?.submission_origin || (data?.intake_method === 'asset_link' ? 'asset_link' : 'manual_entry'),
+            }),
         })
 
         if (!res.ok) throw new Error(await parseErrorMessage(res, `HTTP ${res.status}`))
 
-        return normalizeCreatedSubmission(type, payload, submittedBy, await res.json())
+        supported.value = true
+        return res.json()
     }
 
-    async function postBulkSubmissions(type, assets) {
-        const res = await apiFetch(getAssetEndpointPath(type, true), {
+    async function postBulkSubmissions(type, items, submittedBy) {
+        const res = await apiFetch('/submissions/bulk', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assets }),
+            body: JSON.stringify({
+                type,
+                submitted_by: submittedBy,
+                items: items.map((item) => ({
+                    title: getSubmissionDisplayName(type, item.assetPayload),
+                    data: payloadForQueue(item.data),
+                    asset_payload: item.assetPayload,
+                    intake_method: item.data?.intake_method || 'asset_link',
+                    submission_origin: item.data?.submission_origin || 'bulk_asset_links',
+                })),
+            }),
         })
 
         if (!res.ok) throw new Error(await parseErrorMessage(res, `HTTP ${res.status}`))
 
+        supported.value = true
         return res.json()
     }
 
@@ -195,18 +210,6 @@ export const useSubmissionsStore = defineStore('submissions', () => {
         }
 
         return `batch-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
-    }
-
-    function normalizeCreatedSubmission(type, payload, submittedBy, result) {
-        return {
-            id: result?.asset_id || `${type}-${Date.now()}`,
-            type,
-            status: result?.duplicate ? 'duplicate' : 'submitted',
-            submitted_by: submittedBy,
-            data: payload,
-            backend_result: result,
-            title: getSubmissionDisplayName(type, payload),
-        }
     }
 
     async function parseErrorMessage(res, fallback) {
@@ -222,6 +225,26 @@ export const useSubmissionsStore = defineStore('submissions', () => {
 
         const text = await res.text().catch(() => '')
         return text || fallback
+    }
+
+    function payloadForQueue(data) {
+        if (data?.intake_method === 'asset_link') {
+            return {
+                intake_method: 'asset_link',
+                submission_origin: data.submission_origin || 'asset_link',
+                asset_url: data.asset_url,
+                asset_provider: data.asset_provider,
+                asset_host: data.asset_host,
+                display_name: data.display_name,
+                submitter_notes: data.submitter_notes,
+                intake_prompt: data.intake_prompt,
+                batch_id: data.batch_id,
+                batch_index: data.batch_index,
+                batch_total: data.batch_total,
+            }
+        }
+
+        return { ...data, intake_method: data?.intake_method || 'manual' }
     }
 
     function supportsSubmissionQueueApi() {

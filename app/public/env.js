@@ -5,4 +5,5 @@ window.__PATRA_CONFIG__ = window.__PATRA_CONFIG__ || {
   SHOW_API_MODE: '',
   SUPPORTS_TICKETS: '',
   SUPPORTS_SUBMISSIONS_API: '',
+  ADMIN_USERNAMES: '',
 }

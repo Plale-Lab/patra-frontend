@@ -95,6 +95,7 @@ export const useTicketsStore = defineStore('tickets', () => {
             const updated = await res.json()
             const idx = tickets.value.findIndex(t => t.id === id)
             if (idx !== -1) tickets.value[idx] = updated
+            supported.value = true
             return updated
         } catch (e) {
             error.value = e.message

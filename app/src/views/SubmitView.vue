@@ -2,18 +2,18 @@
   <div>
     <div class="page-header">
       <h1>Submit to Knowledge Base</h1>
-      <p>Create a model card or datasheet directly in the Patra backend</p>
+      <p>Create a model card or datasheet submission for admin review</p>
     </div>
 
     <div class="success-banner" v-if="submissionResult">
       <IconCircleCheck :size="20" stroke-width="1.8" />
       <div v-if="submissionResult.kind === 'single'">
-        <strong>Submission completed.</strong> Your {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} has been sent to the Patra backend.
+        <strong>Submission queued.</strong> Your {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} is now waiting for admin review.
       </div>
       <div v-else>
-        <strong>Bulk submission completed.</strong>
+        <strong>Bulk submission queued.</strong>
         <span>
-          Submitted {{ submissionResult.successCount }} of {{ submissionResult.totalCount }} asset links to the Patra backend.
+          Queued {{ submissionResult.successCount }} of {{ submissionResult.totalCount }} asset links for admin review.
         </span>
         <span v-if="submissionResult.failureCount > 0" class="bulk-summary-warning">
           {{ submissionResult.failureCount }} link{{ submissionResult.failureCount === 1 ? '' : 's' }} failed validation or submission.
@@ -388,23 +388,23 @@ const assetIntakePrompt = ASSET_INTAKE_PROMPT
 
 const manualSteps = [
   { title: 'Fill the form', desc: 'Provide details about your model or dataset.' },
-  { title: 'Submit to backend', desc: 'The frontend sends the mapped payload to the Patra asset API.' },
-  { title: 'Backend validates', desc: 'The API validates the asset schema and stores the record.' },
-  { title: 'Asset available', desc: 'Once accepted, it becomes part of the Patra catalog.' },
+  { title: 'Queue the submission', desc: 'The frontend sends the mapped payload to the Patra submission queue.' },
+  { title: 'Admin review', desc: 'An admin reviews the pending item and decides whether to approve it.' },
+  { title: 'Asset published', desc: 'Approved submissions are written into the Patra catalog.' },
 ]
 
 const assetSteps = [
   { title: 'Paste the asset link', desc: 'Provide the existing model or dataset URL you want added to Patra.' },
-  { title: 'Generate backend payload', desc: 'The frontend converts the link into a minimal backend-compatible asset record.' },
-  { title: 'Store the asset', desc: 'The Patra backend validates and stores the generated record.' },
+  { title: 'Generate queue payload', desc: 'The frontend converts the link into a backend-compatible review item.' },
+  { title: 'Wait for approval', desc: 'The Patra backend stores the request in the review queue until an admin approves it.' },
 ]
 
 const steps = computed(() => (submitMode.value === 'manual' ? manualSteps : assetSteps))
 
 const submitButtonLabel = computed(() => {
-  if (submitMode.value === 'manual') return 'Submit to Backend'
-  if (submitMode.value === 'asset_link') return 'Create Backend Asset'
-  return 'Submit Asset Links'
+  if (submitMode.value === 'manual') return 'Queue for Review'
+  if (submitMode.value === 'asset_link') return 'Queue Asset Link'
+  return 'Queue Asset Links'
 })
 
 const invalidAssetLines = computed(() => {
@@ -496,8 +496,8 @@ async function submitManualEntry() {
     }
     openSubmissionDialog({
       variant: 'success',
-      title: 'Submission succeeded',
-      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} was stored in the Patra backend.`,
+      title: 'Submission queued',
+      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} is now waiting in the review queue.`,
     })
     return
   }
@@ -526,8 +526,8 @@ async function submitAssetLink() {
     }
     openSubmissionDialog({
       variant: 'success',
-      title: 'Submission succeeded',
-      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} link was stored in the Patra backend.`,
+      title: 'Submission queued',
+      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} link is now waiting in the review queue.`,
     })
     return
   }
@@ -581,7 +581,7 @@ async function submitBulkAssetLinks() {
     title: result.failures.length > 0 ? 'Bulk submission partially failed' : 'Bulk submission succeeded',
     message: result.failures.length > 0
       ? `Submitted ${result.successes.length} of ${uniqueUrls.length} asset links.`
-      : `Submitted all ${uniqueUrls.length} asset links successfully.`,
+      : `Queued all ${uniqueUrls.length} asset links successfully.`,
     details: result.failures.map((failure) => `${failure.url}: ${failure.error}`),
   })
 }

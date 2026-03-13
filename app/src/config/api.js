@@ -16,12 +16,17 @@ export const SHOW_API_MODE = resolveFeatureFlag(
 export const SUPPORTS_TICKETS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_TICKETS,
   import.meta.env.VITE_SUPPORTS_TICKETS,
-  false,
+  true,
 )
 export const SUPPORTS_SUBMISSIONS_API = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_SUBMISSIONS_API,
   import.meta.env.VITE_SUPPORTS_SUBMISSIONS_API,
-  false,
+  true,
+)
+export const ADMIN_USERNAMES = parseCsvList(
+  runtimeConfig.ADMIN_USERNAMES,
+  import.meta.env.VITE_ADMIN_USERNAMES,
+  'williamq96',
 )
 
 const LIVE_API_BASE_URL = normalizeBaseUrl(
@@ -102,4 +107,12 @@ function resolveFeatureFlag(runtimeValue, envValue, fallback) {
   }
 
   return String(value).toLowerCase() === 'true'
+}
+
+function parseCsvList(runtimeValue, envValue, fallback) {
+  const value = runtimeValue ?? envValue ?? fallback
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
 }
