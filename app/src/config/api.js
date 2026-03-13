@@ -1,18 +1,20 @@
 export const API_MODES = ['live', 'mock']
 export const API_MODE_STORAGE_KEY = 'patra_api_mode'
 
+const runtimeConfig = typeof window !== 'undefined' ? window.__PATRA_CONFIG__ || {} : {}
+
 const DEFAULT_LIVE_API_BASE_URL = 'http://localhost:5002'
 const DEFAULT_MOCK_API_BASE_URL = 'http://localhost:5003'
 
 export const DEFAULT_API_MODE =
-  import.meta.env.VITE_DEFAULT_API_MODE === 'mock' ? 'mock' : 'live'
+  resolveApiMode(runtimeConfig.DEFAULT_API_MODE || import.meta.env.VITE_DEFAULT_API_MODE)
 
 const LIVE_API_BASE_URL = normalizeBaseUrl(
-  import.meta.env.VITE_LIVE_API_BASE_URL || DEFAULT_LIVE_API_BASE_URL,
+  runtimeConfig.API_BASE_URL || import.meta.env.VITE_LIVE_API_BASE_URL || DEFAULT_LIVE_API_BASE_URL,
 )
 
 const MOCK_API_BASE_URL = normalizeBaseUrl(
-  import.meta.env.VITE_MOCK_API_BASE_URL || DEFAULT_MOCK_API_BASE_URL,
+  runtimeConfig.MOCK_API_BASE_URL || import.meta.env.VITE_MOCK_API_BASE_URL || DEFAULT_MOCK_API_BASE_URL,
 )
 
 export function isApiMode(value) {
@@ -59,4 +61,8 @@ export function resolveApiUrl(path, mode = getStoredApiMode()) {
 
 function normalizeBaseUrl(value) {
   return String(value || '').replace(/\/+$/, '')
+}
+
+function resolveApiMode(value) {
+  return value === 'mock' ? 'mock' : 'live'
 }

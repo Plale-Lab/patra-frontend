@@ -5,5 +5,15 @@ export function apiUrl(path) {
 }
 
 export function apiFetch(path, options) {
-  return fetch(apiUrl(path), options)
+  const headers = new Headers(options?.headers || {})
+  const token = localStorage.getItem('patra_token')
+
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+
+  return fetch(apiUrl(path), {
+    ...options,
+    headers,
+  })
 }
