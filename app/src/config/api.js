@@ -8,6 +8,11 @@ const DEFAULT_MOCK_API_BASE_URL = 'http://localhost:5003'
 
 export const DEFAULT_API_MODE =
   resolveApiMode(runtimeConfig.DEFAULT_API_MODE || import.meta.env.VITE_DEFAULT_API_MODE)
+export const SHOW_API_MODE = resolveFeatureFlag(
+  runtimeConfig.SHOW_API_MODE,
+  import.meta.env.VITE_SHOW_API_MODE,
+  import.meta.env.DEV,
+)
 
 const LIVE_API_BASE_URL = normalizeBaseUrl(
   runtimeConfig.API_BASE_URL || import.meta.env.VITE_LIVE_API_BASE_URL || DEFAULT_LIVE_API_BASE_URL,
@@ -22,11 +27,20 @@ export function isApiMode(value) {
 }
 
 export function getStoredApiMode() {
+  if (!SHOW_API_MODE) {
+    return DEFAULT_API_MODE
+  }
+
   const stored = localStorage.getItem(API_MODE_STORAGE_KEY)
   return isApiMode(stored) ? stored : DEFAULT_API_MODE
 }
 
 export function setStoredApiMode(mode) {
+  if (!SHOW_API_MODE) {
+    localStorage.removeItem(API_MODE_STORAGE_KEY)
+    return
+  }
+
   localStorage.setItem(API_MODE_STORAGE_KEY, isApiMode(mode) ? mode : DEFAULT_API_MODE)
 }
 
@@ -65,4 +79,13 @@ function normalizeBaseUrl(value) {
 
 function resolveApiMode(value) {
   return value === 'mock' ? 'mock' : 'live'
+}
+
+function resolveFeatureFlag(runtimeValue, envValue, fallback) {
+  const value = runtimeValue ?? envValue
+  if (value === '' || value == null) {
+    return Boolean(fallback)
+  }
+
+  return String(value).toLowerCase() === 'true'
 }

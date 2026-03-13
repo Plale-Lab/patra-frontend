@@ -90,7 +90,7 @@
           <div class="login-modal-body">
             <p class="login-desc">
               Authenticate via <a href="https://tapis.readthedocs.io" target="_blank">Tapis</a> to
-              access private models and admin features.
+              access private models and workspace features.
             </p>
 
             <div class="login-error" v-if="auth.error">

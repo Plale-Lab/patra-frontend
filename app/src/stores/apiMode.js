@@ -6,6 +6,7 @@ import {
   getApiModeMeta,
   getStoredApiMode,
   isApiMode,
+  SHOW_API_MODE,
   setStoredApiMode,
 } from '../config/api'
 
@@ -41,6 +42,7 @@ export const useApiModeStore = defineStore('apiMode', () => {
     description,
     helpText,
     isMockMode,
+    showSelector: SHOW_API_MODE,
     setMode,
   }
 })

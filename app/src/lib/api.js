@@ -12,6 +12,10 @@ export function apiFetch(path, options) {
     headers.set('Authorization', `Bearer ${token}`)
   }
 
+  if (token && !headers.has('X-Tapis-Token')) {
+    headers.set('X-Tapis-Token', token)
+  }
+
   return fetch(apiUrl(path), {
     ...options,
     headers,

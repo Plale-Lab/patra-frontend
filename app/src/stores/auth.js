@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { apiFetch } from '../lib/api'
 
 // Tapis base URL for JWT authentication
 const TAPIS_BASE_URL = 'https://tacc.tapis.io'
+const TAPIS_TOKEN_URL = `${TAPIS_BASE_URL}/v3/oauth2/tokens`
 
 export const useAuthStore = defineStore('auth', () => {
     const user = ref(JSON.parse(localStorage.getItem('patra_user') || 'null'))
@@ -26,26 +26,44 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('patra_token', token.value)
     }
 
-    /**
-     * Login via Tapis JWT (Tapipy pattern)
-     * Sends credentials to our mock backend which simulates the Tapis flow:
-     *   t = Tapis(base_url=TAPIS_BASE_URL, username=..., password=...)
-     *   t.get_tokens()
-     */
     async function loginTapis(username, password) {
         loading.value = true
         error.value = null
         try {
-            // Tapis authentication via configured backend
-            const res = await apiFetch('/auth/tapis', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password, base_url: TAPIS_BASE_URL }),
+            const body = new URLSearchParams({
+                grant_type: 'password',
+                username,
+                password,
             })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Tapis authentication failed')
-            user.value = data.user
-            token.value = data.token
+
+            const res = await fetch(TAPIS_TOKEN_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body,
+            })
+            const data = await res.json().catch(() => ({}))
+
+            if (!res.ok) {
+                throw new Error(data.message || data.error || 'Tapis authentication failed')
+            }
+
+            const issuedToken =
+                data?.result?.access_token?.access_token ||
+                data?.result?.access_token ||
+                data?.access_token ||
+                data?.token
+
+            if (!issuedToken) {
+                throw new Error('Tapis authentication succeeded but no access token was returned')
+            }
+
+            user.value = {
+                username,
+                name: username,
+                role: 'user',
+                auth_type: 'tapis',
+            }
+            token.value = issuedToken
             persist()
             return true
         } catch (e) {

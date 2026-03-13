@@ -8,7 +8,7 @@
       <span class="header-subtitle">Patra Knowledge Base {{ auth.isAdmin ? 'administration' : 'platform' }}</span>
     </div>
     <div class="header-right">
-      <div class="api-mode-panel">
+      <div v-if="apiMode.showSelector" class="api-mode-panel">
         <label class="api-mode-label" for="api-mode-select">API Mode</label>
         <div class="api-mode-controls">
           <select
