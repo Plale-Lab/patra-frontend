@@ -2,6 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiFetch } from '../lib/api'
 import { buildAssetIntakeData, normalizeAssetInput } from '../lib/assetIntake'
+import {
+    getAssetEndpointPath,
+    getSubmissionDisplayName,
+    mapSubmissionToAssetPayload,
+} from '../lib/submissionPayloads'
 
 export const useSubmissionsStore = defineStore('submissions', () => {
     const submissions = ref([])
@@ -51,40 +56,50 @@ export const useSubmissionsStore = defineStore('submissions', () => {
             )]
 
             const batchId = createBatchId()
+            const assets = uniqueUrls.map((url, index) => mapSubmissionToAssetPayload(
+                type,
+                buildAssetIntakeData({
+                    assetUrl: url,
+                    notes: batchNote,
+                    batchId,
+                    batchIndex: index + 1,
+                    batchTotal: uniqueUrls.length,
+                    submissionOrigin: 'bulk_asset_links',
+                }),
+                submittedBy,
+            ))
 
-            const results = await Promise.allSettled(
-                uniqueUrls.map((url, index) => postSubmission(
-                    type,
-                    buildAssetIntakeData({
-                        assetUrl: url,
-                        notes: batchNote,
-                        batchId,
-                        batchIndex: index + 1,
-                        batchTotal: uniqueUrls.length,
-                        submissionOrigin: 'bulk_asset_links',
-                    }),
-                    submittedBy,
-                )),
-            )
+            const result = await postBulkSubmissions(type, assets)
 
             const successes = []
             const failures = []
             const created = []
 
-            results.forEach((result, index) => {
-                if (result.status === 'fulfilled') {
-                    created.push(result.value)
+            result.results.forEach((item, index) => {
+                if (item.created) {
+                    const createdAsset = normalizeCreatedSubmission(
+                        type,
+                        assets[index],
+                        submittedBy,
+                        {
+                            asset_id: item.asset_id,
+                            created: item.created,
+                            duplicate: item.duplicate,
+                        },
+                    )
+
+                    created.push(createdAsset)
                     successes.push({
                         url: uniqueUrls[index],
-                        submissionId: result.value.id,
+                        submissionId: createdAsset.id,
                     })
-                    submissions.value.unshift(result.value)
+                    submissions.value.unshift(createdAsset)
                     return
                 }
 
                 failures.push({
                     url: uniqueUrls[index],
-                    error: result.reason?.message || 'Submission failed',
+                    error: item.error || 'Submission failed',
                 })
             })
 
@@ -95,6 +110,9 @@ export const useSubmissionsStore = defineStore('submissions', () => {
             }
 
             return { successes, failures, created }
+        } catch (e) {
+            error.value = e.message
+            return null
         } finally {
             loading.value = false
         }
@@ -119,13 +137,26 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     }
 
     async function postSubmission(type, data, submittedBy) {
-        const res = await apiFetch('/submissions', {
+        const payload = mapSubmissionToAssetPayload(type, data, submittedBy)
+        const res = await apiFetch(getAssetEndpointPath(type), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, data, submitted_by: submittedBy }),
+            body: JSON.stringify(payload),
         })
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        if (!res.ok) throw new Error(await parseErrorMessage(res, `HTTP ${res.status}`))
+
+        return normalizeCreatedSubmission(type, payload, submittedBy, await res.json())
+    }
+
+    async function postBulkSubmissions(type, assets) {
+        const res = await apiFetch(getAssetEndpointPath(type, true), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assets }),
+        })
+
+        if (!res.ok) throw new Error(await parseErrorMessage(res, `HTTP ${res.status}`))
 
         return res.json()
     }
@@ -136,6 +167,33 @@ export const useSubmissionsStore = defineStore('submissions', () => {
         }
 
         return `batch-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
+    }
+
+    function normalizeCreatedSubmission(type, payload, submittedBy, result) {
+        return {
+            id: result?.asset_id || `${type}-${Date.now()}`,
+            type,
+            status: result?.duplicate ? 'duplicate' : 'submitted',
+            submitted_by: submittedBy,
+            data: payload,
+            backend_result: result,
+            title: getSubmissionDisplayName(type, payload),
+        }
+    }
+
+    async function parseErrorMessage(res, fallback) {
+        const contentType = res.headers.get('content-type') || ''
+
+        if (contentType.includes('application/json')) {
+            const data = await res.json().catch(() => null)
+            if (typeof data?.detail === 'string') return data.detail
+            if (Array.isArray(data?.detail)) return data.detail.map((item) => item.msg || item.message || String(item)).join('; ')
+            if (typeof data?.message === 'string') return data.message
+            if (typeof data?.error === 'string') return data.error
+        }
+
+        const text = await res.text().catch(() => '')
+        return text || fallback
     }
 
     return {

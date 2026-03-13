@@ -2,18 +2,18 @@
   <div>
     <div class="page-header">
       <h1>Submit to Knowledge Base</h1>
-      <p>Submit a model card or datasheet for admin review</p>
+      <p>Create a model card or datasheet directly in the Patra backend</p>
     </div>
 
     <div class="success-banner" v-if="submissionResult">
       <IconCircleCheck :size="20" stroke-width="1.8" />
       <div v-if="submissionResult.kind === 'single'">
-        <strong>Submission received!</strong> Your {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} has been submitted for review. An admin will review it shortly.
+        <strong>Submission completed.</strong> Your {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} has been sent to the Patra backend.
       </div>
       <div v-else>
         <strong>Bulk submission completed.</strong>
         <span>
-          Submitted {{ submissionResult.successCount }} of {{ submissionResult.totalCount }} asset links for review.
+          Submitted {{ submissionResult.successCount }} of {{ submissionResult.totalCount }} asset links to the Patra backend.
         </span>
         <span v-if="submissionResult.failureCount > 0" class="bulk-summary-warning">
           {{ submissionResult.failureCount }} link{{ submissionResult.failureCount === 1 ? '' : 's' }} failed validation or submission.
@@ -58,8 +58,8 @@
               <input class="form-input" v-model="submittedBy" placeholder="e.g. Alice Chen" />
             </div>
 
-            <div class="form-error" v-if="validationError">
-              {{ validationError }}
+            <div class="form-error" v-if="formErrorMessage">
+              {{ formErrorMessage }}
             </div>
 
             <template v-if="submitMode === 'manual'">
@@ -322,6 +322,30 @@
         </div>
       </div>
     </template>
+
+    <Teleport to="body">
+      <div v-if="submissionDialog" class="modal-overlay" @click.self="closeSubmissionDialog">
+        <div class="submission-dialog">
+          <div class="submission-dialog-header">
+            <div class="submission-dialog-title" :class="`is-${submissionDialog.variant}`">
+              <IconCircleCheck v-if="submissionDialog.variant === 'success'" :size="18" stroke-width="1.8" />
+              <IconAlertTriangle v-else :size="18" stroke-width="1.8" />
+              <span>{{ submissionDialog.title }}</span>
+            </div>
+            <button class="btn-icon" @click="closeSubmissionDialog">×</button>
+          </div>
+          <div class="submission-dialog-body">
+            <p>{{ submissionDialog.message }}</p>
+            <ul v-if="submissionDialog.details?.length" class="submission-dialog-details">
+              <li v-for="detail in submissionDialog.details" :key="detail">{{ detail }}</li>
+            </ul>
+          </div>
+          <div class="submission-dialog-actions">
+            <button class="btn btn-primary" @click="closeSubmissionDialog">Close</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -349,6 +373,7 @@ const activeTab = ref('model_card')
 const submitMode = ref('manual')
 const submittedBy = ref(auth.isLoggedIn ? auth.displayName : '')
 const submissionResult = ref(null)
+const submissionDialog = ref(null)
 const validationError = ref('')
 
 const modelForm = reactive(createModelForm())
@@ -363,23 +388,22 @@ const assetIntakePrompt = ASSET_INTAKE_PROMPT
 
 const manualSteps = [
   { title: 'Fill the form', desc: 'Provide details about your model or dataset.' },
-  { title: 'Submit for review', desc: 'Your submission enters a review queue.' },
-  { title: 'Admin reviews', desc: 'An admin will approve or request changes.' },
-  { title: 'Published', desc: 'Once approved, it appears in the Knowledge Base.' },
+  { title: 'Submit to backend', desc: 'The frontend sends the mapped payload to the Patra asset API.' },
+  { title: 'Backend validates', desc: 'The API validates the asset schema and stores the record.' },
+  { title: 'Asset available', desc: 'Once accepted, it becomes part of the Patra catalog.' },
 ]
 
 const assetSteps = [
-  { title: 'Paste the asset link', desc: 'Provide the existing model or dataset URL you want added to ICICLE.' },
-  { title: 'Queue a draft submission', desc: 'The system creates a pending intake entry with limited automated metadata.' },
-  { title: 'ICICLE team completes details', desc: 'Reviewers use the link and your notes to finish the manual input.' },
-  { title: 'Admin approves the entry', desc: 'Once reviewed, it can be published into the ecosystem.' },
+  { title: 'Paste the asset link', desc: 'Provide the existing model or dataset URL you want added to Patra.' },
+  { title: 'Generate backend payload', desc: 'The frontend converts the link into a minimal backend-compatible asset record.' },
+  { title: 'Store the asset', desc: 'The Patra backend validates and stores the generated record.' },
 ]
 
 const steps = computed(() => (submitMode.value === 'manual' ? manualSteps : assetSteps))
 
 const submitButtonLabel = computed(() => {
-  if (submitMode.value === 'manual') return 'Submit for Review'
-  if (submitMode.value === 'asset_link') return 'Create Draft Submission'
+  if (submitMode.value === 'manual') return 'Submit to Backend'
+  if (submitMode.value === 'asset_link') return 'Create Backend Asset'
   return 'Submit Asset Links'
 })
 
@@ -390,6 +414,8 @@ const invalidAssetLines = computed(() => {
     .filter((item) => !item.parsed)
     .map(({ line, value }) => ({ line, value }))
 })
+
+const formErrorMessage = computed(() => validationError.value || store.error || '')
 
 const canSubmit = computed(() => {
   if (!submittedBy.value.trim()) return false
@@ -468,7 +494,15 @@ async function submitManualEntry() {
       totalCount: 1,
       failures: [],
     }
+    openSubmissionDialog({
+      variant: 'success',
+      title: 'Submission succeeded',
+      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} was stored in the Patra backend.`,
+    })
+    return
   }
+
+  openFailureDialog()
 }
 
 async function submitAssetLink() {
@@ -490,7 +524,15 @@ async function submitAssetLink() {
       totalCount: 1,
       failures: [],
     }
+    openSubmissionDialog({
+      variant: 'success',
+      title: 'Submission succeeded',
+      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} link was stored in the Patra backend.`,
+    })
+    return
   }
+
+  openFailureDialog()
 }
 
 async function submitBulkAssetLinks() {
@@ -509,6 +551,11 @@ async function submitBulkAssetLinks() {
     return
   }
 
+  if (uniqueUrls.length > 25) {
+    validationError.value = 'Bulk submission supports up to 25 asset links per request.'
+    return
+  }
+
   const result = await store.createBulkSubmissions(
     activeTab.value,
     uniqueUrls,
@@ -516,7 +563,10 @@ async function submitBulkAssetLinks() {
     currentBulkForm.value.notes,
   )
 
-  if (!result) return
+  if (!result) {
+    openFailureDialog()
+    return
+  }
 
   submissionResult.value = {
     kind: 'bulk',
@@ -525,6 +575,15 @@ async function submitBulkAssetLinks() {
     failureCount: result.failures.length,
     failures: result.failures,
   }
+
+  openSubmissionDialog({
+    variant: result.failures.length > 0 ? 'error' : 'success',
+    title: result.failures.length > 0 ? 'Bulk submission partially failed' : 'Bulk submission succeeded',
+    message: result.failures.length > 0
+      ? `Submitted ${result.successes.length} of ${uniqueUrls.length} asset links.`
+      : `Submitted all ${uniqueUrls.length} asset links successfully.`,
+    details: result.failures.map((failure) => `${failure.url}: ${failure.error}`),
+  })
 }
 
 function buildSafeAssetPayload(fields) {
@@ -549,6 +608,8 @@ function switchMode(mode) {
 function clearTransientState() {
   submissionResult.value = null
   validationError.value = ''
+  store.error = null
+  submissionDialog.value = null
 }
 
 function resetForm() {
@@ -556,6 +617,7 @@ function resetForm() {
   activeTab.value = 'model_card'
   submitMode.value = 'manual'
   submissionResult.value = null
+  submissionDialog.value = null
   validationError.value = ''
   Object.assign(modelForm, createModelForm())
   Object.assign(datasheetForm, createDatasheetForm())
@@ -563,6 +625,22 @@ function resetForm() {
   Object.assign(assetLinkForms.datasheet, createSingleAssetForm())
   Object.assign(bulkForms.model_card, createBulkAssetForm())
   Object.assign(bulkForms.datasheet, createBulkAssetForm())
+}
+
+function openFailureDialog() {
+  openSubmissionDialog({
+    variant: 'error',
+    title: 'Submission failed',
+    message: store.error || 'The backend rejected this submission.',
+  })
+}
+
+function openSubmissionDialog({ variant, title, message, details = [] }) {
+  submissionDialog.value = { variant, title, message, details }
+}
+
+function closeSubmissionDialog() {
+  submissionDialog.value = null
 }
 
 watch(() => auth.displayName, (nextName, previousName) => {
@@ -859,6 +937,58 @@ function parseBulkLines(value) {
 }
 
 .filter-chips { display: flex; gap: 6px; }
+
+.submission-dialog {
+  width: min(100%, 480px);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.18);
+  overflow: hidden;
+}
+
+.submission-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.submission-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.submission-dialog-title.is-success {
+  color: var(--color-success);
+}
+
+.submission-dialog-title.is-error {
+  color: var(--color-danger);
+}
+
+.submission-dialog-body {
+  padding: 18px 20px;
+  color: var(--color-text-secondary);
+}
+
+.submission-dialog-body p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.submission-dialog-details {
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+.submission-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 20px 20px;
+}
 
 @media (max-width: 1080px) {
   .submit-layout {
