@@ -53,21 +53,6 @@
           {{ auth.loading ? 'Please wait…' : (mode === 'login' ? 'Sign In' : 'Create Account') }}
         </button>
       </form>
-
-      <!-- Demo Credentials -->
-      <div class="demo-section">
-        <div class="demo-label">Demo Accounts</div>
-        <div class="demo-creds">
-          <button class="demo-btn" @click="fillDemo('admin@patra.io', 'admin123')">
-            <span class="demo-role admin">Admin</span>
-            <span>admin@patra.io</span>
-          </button>
-          <button class="demo-btn" @click="fillDemo('alice@lab.edu', 'alice123')">
-            <span class="demo-role user">User</span>
-            <span>alice@lab.edu</span>
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -95,13 +80,6 @@ const canSubmit = computed(() => {
 
 function switchMode(m) {
   mode.value = m
-  auth.error = null
-}
-
-function fillDemo(email, password) {
-  form.email = email
-  form.password = password
-  mode.value = 'login'
   auth.error = null
 }
 
@@ -209,26 +187,4 @@ async function handleSubmit() {
 }
 .btn-login:disabled { opacity: .55; cursor: not-allowed; }
 
-.demo-section {
-  margin-top: 24px; padding-top: 20px;
-  border-top: 1px solid #e8e6f0;
-}
-.demo-label {
-  font-size: .72rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .6px; color: #8e8a9e; margin-bottom: 10px; text-align: center;
-}
-.demo-creds { display: flex; flex-direction: column; gap: 6px; }
-.demo-btn {
-  display: flex; align-items: center; gap: 10px;
-  padding: 9px 14px; border: 1px solid #e8e6f0; border-radius: 8px;
-  background: #fafafe; cursor: pointer; font-size: .82rem; color: #4a4660;
-  transition: all .15s;
-}
-.demo-btn:hover { border-color: #6a5acd; background: #f5f3fa; }
-.demo-role {
-  padding: 2px 8px; border-radius: 6px;
-  font-size: .72rem; font-weight: 700;
-}
-.demo-role.admin { background: #6a5acd22; color: #6a5acd; }
-.demo-role.user { background: #d4edda; color: #28a745; }
 </style>

@@ -36,21 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
         loading.value = true
         error.value = null
         try {
-            // Hardcoded admin bypass — never hits Tapis
-            if (username === 'admin' && password === 'admin') {
-                user.value = {
-                    username: 'admin',
-                    name: 'System Admin',
-                    email: 'admin@patra.io',
-                    role: 'admin',
-                    auth_type: 'local',
-                }
-                token.value = 'mock-admin-jwt-' + Date.now()
-                persist()
-                return true
-            }
-
-            // Tapis authentication via mock backend
+            // Tapis authentication via configured backend
             const res = await apiFetch('/auth/tapis', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

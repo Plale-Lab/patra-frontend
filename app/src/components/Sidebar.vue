@@ -116,10 +116,6 @@
             <button class="btn-login" @click="handleLogin" :disabled="!loginForm.username || !loginForm.password || auth.loading">
               {{ auth.loading ? 'Authenticating…' : 'Get JWT Token' }}
             </button>
-
-            <div class="login-tip">
-              <strong>Admin:</strong> username <code>admin</code>, password <code>admin</code>
-            </div>
           </div>
         </div>
       </div>
@@ -284,13 +280,4 @@ function handleLogout() {
 .btn-login:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
 .btn-login:disabled { opacity: .5; cursor: not-allowed; }
 
-.login-tip {
-  margin-top: 14px; padding: 10px 14px;
-  background: var(--color-bg); border-radius: 8px;
-  font-size: .78rem; color: var(--color-text-muted); text-align: center;
-}
-.login-tip code {
-  background: var(--color-primary-bg); color: var(--color-primary);
-  padding: 1px 6px; border-radius: 4px; font-weight: 600;
-}
 </style>
