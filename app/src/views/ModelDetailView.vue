@@ -166,25 +166,45 @@
           <div class="card-body" style="padding: 0;">
             <table class="data-table">
               <thead>
-                <tr>
+                <tr v-if="deploymentMode === 'legacy'">
                   <th>Device</th>
                   <th>Type</th>
                   <th>Location</th>
                   <th>Status</th>
                   <th>Avg Inference</th>
                 </tr>
+                <tr v-else>
+                  <th>Experiment</th>
+                  <th>Device</th>
+                  <th>Status</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                </tr>
               </thead>
               <tbody>
-                <tr v-for="dep in store.deployments" :key="dep.device_id">
-                  <td style="font-weight: 500;">{{ dep.device_id }}</td>
-                  <td>{{ dep.device_type }}</td>
-                  <td>{{ dep.location }}</td>
-                  <td>
-                    <span class="badge" :class="dep.status === 'active' ? 'badge-public' : 'badge-info'">
-                      {{ dep.status }}
-                    </span>
-                  </td>
-                  <td>{{ dep.avg_inference_ms }}ms</td>
+                <tr v-for="dep in store.deployments" :key="dep.experiment_id ?? dep.device_id">
+                  <template v-if="deploymentMode === 'legacy'">
+                    <td style="font-weight: 500;">{{ dep.device_id }}</td>
+                    <td>{{ dep.device_type }}</td>
+                    <td>{{ dep.location }}</td>
+                    <td>
+                      <span class="badge" :class="dep.status === 'active' ? 'badge-public' : 'badge-info'">
+                        {{ dep.status }}
+                      </span>
+                    </td>
+                    <td>{{ dep.avg_inference_ms }}ms</td>
+                  </template>
+                  <template v-else>
+                    <td style="font-weight: 500;">#{{ dep.experiment_id }}</td>
+                    <td>{{ dep.device_id }}</td>
+                    <td>
+                      <span class="badge" :class="dep.status === 'active' ? 'badge-public' : 'badge-info'">
+                        {{ dep.status }}
+                      </span>
+                    </td>
+                    <td>{{ formatPercent(dep.precision) }}</td>
+                    <td>{{ formatPercent(dep.recall) }}</td>
+                  </template>
                 </tr>
               </tbody>
             </table>
@@ -238,6 +258,11 @@ const store = useExploreStore()
 const apiMode = useApiModeStore()
 
 const model = computed(() => store.currentModel)
+const deploymentMode = computed(() => {
+  if (!store.deployments.length) return 'legacy'
+  const first = store.deployments[0]
+  return first?.avg_inference_ms != null || first?.device_type || first?.location ? 'legacy' : 'experiments'
+})
 
 const sortedXai = computed(() => {
   if (!model.value?.xai_analysis) return {}
@@ -265,6 +290,11 @@ function formatMetricValue(val) {
   }
   if (Array.isArray(val)) return val.join(' × ')
   return String(val)
+}
+
+function formatPercent(val) {
+  if (typeof val !== 'number') return '—'
+  return `${(val * 100).toFixed(1)}%`
 }
 
 function loadModel() {
