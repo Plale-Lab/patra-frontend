@@ -5,7 +5,7 @@ WORKDIR /app
 COPY app/package.json app/package-lock.json ./
 
 ARG VITE_DEFAULT_API_MODE=live
-ARG VITE_LIVE_API_BASE_URL=http://localhost:5002
+ARG VITE_LIVE_API_BASE_URL=http://localhost:8000
 ARG VITE_MOCK_API_BASE_URL=http://localhost:5003
 
 ENV VITE_DEFAULT_API_MODE=${VITE_DEFAULT_API_MODE}

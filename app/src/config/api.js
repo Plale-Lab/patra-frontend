@@ -3,7 +3,7 @@ export const API_MODE_STORAGE_KEY = 'patra_api_mode'
 
 const runtimeConfig = typeof window !== 'undefined' ? window.__PATRA_CONFIG__ || {} : {}
 
-const DEFAULT_LIVE_API_BASE_URL = 'http://localhost:5002'
+const DEFAULT_LIVE_API_BASE_URL = 'http://localhost:8000'
 const DEFAULT_MOCK_API_BASE_URL = 'http://localhost:5003'
 
 export const DEFAULT_API_MODE =

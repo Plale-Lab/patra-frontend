@@ -1,5 +1,63 @@
 # Frontend Dev Log
 
+## Version 0.3.1
+
+## Summary
+
+Version `0.3.1` fixes the live PostgreSQL-backed detail-page regression and aligns the frontend's default live API target with the active backend port. It also includes an end-to-end validation pass for asset submission, support tickets, and admin review workflows against the local live stack.
+
+## Problem
+
+- Model card detail links no longer resolved in live mode because the frontend still expected legacy list payload keys such as `id`, while the active backend now returns `mc_id`.
+- Datasheet detail links had the same contract drift and were still built from `ds.id` even though the active backend returns `identifier`.
+- Detail views still assumed older nested response shapes, so even valid live responses risked rendering gaps after navigation.
+- Frontend defaults for live mode still pointed to `http://localhost:5002` even though the active FastAPI backend runs on `http://localhost:8000`.
+
+## Engineering Approach
+
+- Restore compatibility in the shared explore store rather than duplicating ad hoc mappings in individual views.
+- Preserve mock-mode behavior while normalizing live backend responses into the UI shape already used by cards and detail templates.
+- Keep the deployment table resilient to both the legacy mock response and the active backend experiment-oriented deployment payload.
+- Align local and container defaults with the active backend's supported port so fresh frontend environments can connect without local overrides.
+
+## Implementation
+
+- Added normalization helpers in `app/src/stores/explore.js` for:
+  - model-card list/detail payloads
+  - datasheet list/detail payloads
+  - nested creator, publisher, title, description, rights, related identifier, and geo-location data
+- Updated live model-card handling to normalize:
+  - `mc_id` -> `id`
+  - `categories` -> `category`
+  - nested `ai_model.framework`, `ai_model.model_type`, and `ai_model.test_accuracy` -> top-level card fields
+- Updated live datasheet handling to normalize:
+  - `identifier` -> `id`
+  - `titles` / `descriptions` / `creators` -> the existing card/detail view field shape
+  - flat `resource_type` plus `resource_type_general` -> the existing nested badge/detail shape
+- Updated `app/src/views/ModelDetailView.vue` so deployment rendering supports:
+  - legacy mock deployment rows
+  - live backend experiment rows with precision/recall
+- Updated frontend live defaults from `5002` to `8000` in:
+  - `app/src/config/api.js`
+  - `app/.env.example`
+  - `app/README.md`
+  - `Dockerfile`
+  - `deploy/frontend-env.sh`
+
+## Validation Performed
+
+- `npm --prefix app run build` -> passed
+- Live-mode click-through validation:
+  - `/explore-model-cards` -> first card -> `/explore-model-cards/1`
+  - `/explore-datasheets` -> first card -> `/explore-datasheets/1`
+  - both detail pages rendered without `not found`
+- Live workflow validation in the browser:
+  - asset-link submission queued successfully
+  - support ticket submission succeeded
+  - admin submission approval succeeded
+  - admin ticket resolution succeeded
+  - user-visible ticket response confirmed after admin update
+
 ## Version 0.3.0
 
 ## Summary
