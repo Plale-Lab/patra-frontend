@@ -29,7 +29,8 @@
                 <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
                   {{ model.is_private ? 'Private' : 'Public' }}
                 </span>
-                <span class="badge badge-info">{{ model.ai_model?.framework }}</span>
+                <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
+                <span v-if="model.ai_model?.framework" class="badge badge-info">{{ model.ai_model.framework }}</span>
                 <span class="badge badge-accent">v{{ model.version }}</span>
               </div>
               <h1 class="detail-name">{{ model.name }}</h1>
@@ -93,7 +94,12 @@
               </div>
               <div class="info-item">
                 <span class="info-label">Location</span>
-                <a :href="model.ai_model?.location" class="info-link" target="_blank">{{ model.ai_model?.location }}</a>
+                <a v-if="model.ai_model?.location" :href="model.ai_model.location" class="info-link" target="_blank">{{ model.ai_model.location }}</a>
+                <span v-else class="info-value">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Is Gated</span>
+                <span class="info-value">{{ model.is_gated ? 'Yes' : 'No' }}</span>
               </div>
             </div>
           </div>

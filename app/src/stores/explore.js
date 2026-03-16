@@ -31,6 +31,7 @@ function normalizeModel(model = {}) {
         model_type: model.model_type ?? aiModel?.model_type ?? '',
         test_accuracy: model.test_accuracy ?? aiModel?.test_accuracy ?? null,
         is_private: model.is_private ?? false,
+        is_gated: Boolean(model.is_gated ?? false),
         ai_model: aiModel
             ? {
                 ...aiModel,

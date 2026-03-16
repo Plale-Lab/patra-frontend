@@ -4,7 +4,8 @@
       <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
         {{ model.is_private ? 'Private' : 'Public' }}
       </span>
-      <span class="badge badge-info">{{ model.framework }}</span>
+      <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
+      <span v-if="model.framework" class="badge badge-info">{{ model.framework }}</span>
     </div>
     <h3 class="model-card-name">{{ model.name }}</h3>
     <p class="model-card-desc">{{ model.short_description }}</p>
@@ -32,7 +33,7 @@
       </div>
     </div>
     <div class="model-card-footer">
-      <span class="model-type-badge">{{ model.model_type }}</span>
+      <span v-if="model.model_type" class="model-type-badge">{{ model.model_type }}</span>
       <IconChevronRight :size="16" stroke-width="1.8" class="card-arrow" />
     </div>
   </RouterLink>
@@ -143,6 +144,7 @@ defineProps({
   border-radius: 4px;
 }
 .card-arrow {
+  margin-left: auto;
   color: var(--color-text-muted);
   transition: color var(--transition);
 }
