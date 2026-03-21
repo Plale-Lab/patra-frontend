@@ -22,6 +22,10 @@
       </RouterLink>
 
       <div class="sidebar-section-label">CONTRIBUTE</div>
+      <RouterLink to="/agent-tools" class="sidebar-link" :class="{ active: $route.path === '/agent-tools' }">
+        <IconSparkles :size="20" stroke-width="1.8" />
+        <span>Agent Tools</span>
+      </RouterLink>
       <RouterLink to="/submit" class="sidebar-link" :class="{ active: $route.path === '/submit' }">
         <IconUpload :size="20" stroke-width="1.8" />
         <span>Submit</span>
@@ -131,7 +135,7 @@ import { useApiModeStore } from '../stores/apiMode'
 import {
   IconLayoutDashboard, IconCube, IconFileText, IconSettings, IconSearch,
   IconUpload, IconMessageCircle, IconClipboardCheck,
-  IconListDetails, IconLogout, IconLogin, IconKey,
+  IconListDetails, IconLogout, IconLogin, IconKey, IconSparkles,
   IconUser, IconLock, IconX, IconAlertTriangle,
 } from '@tabler/icons-vue'
 

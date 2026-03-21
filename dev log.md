@@ -1,5 +1,91 @@
 # Frontend Dev Log
 
+## Agent Tools Milestone 0.3.0 - 2026-03-21
+
+## Summary
+
+This milestone adds a PATRA-facing Agent Tools surface for schema substitution workflows. The frontend now lets a user move from paper-derived schema extraction to public dataset-schema search, then into bounded missing-column generation, download, and PATRA admin-review submission without leaving the application.
+
+## Problem
+
+- The UI previously had no first-class surface for the new PATRA agent workflow.
+- Missing-column feasibility stopped at analysis and gave users no way to materialize only the derivable fields.
+- There was no UI path to:
+  - request LLM-assisted planning
+  - generate a synthesized dataset artifact
+  - download generated outputs
+  - submit that artifact into PATRA's admin review queue
+- The workflow needed to communicate clear boundaries so users would not mistake derivation planning for unconstrained data generation.
+
+## Philosophy
+
+- Keep the user experience explicit about boundaries:
+  - search is ranking
+  - feasibility is validation
+  - generation is limited to derivable fields
+  - review admission is separate from generation
+- Allow an LLM-assisted planning option so the workflow remains aligned with the abstract and future agentic PATRA direction.
+- Make the UI explain that the LLM may help propose a transformation plan, but code executes the plan and validation decides whether the artifact is acceptable.
+
+## Implementation
+
+- Added `app/src/views/AgentToolsView.vue` with two tabs:
+  - `Paper -> Schema Search`
+  - `Missing-Column Feasibility`
+- Added `app/src/lib/agentTools.js` for frontend access to the new backend endpoints.
+- Added router and sidebar entry points for the new view.
+- Extended the feasibility tab with synthesis controls:
+  - derivable-field checkboxes
+  - optional LLM-planning toggle
+  - submitter name and review-note inputs
+  - `Generate synthesized dataset` action
+- Added synthesized-artifact UI states for:
+  - planner mode
+  - generated row count
+  - preview rows
+  - validation issues
+  - CSV download
+  - schema download
+  - `Submit to PATRA review`
+- Updated workflow copy so the page explicitly states that only `derivable with provenance` fields can be generated.
+
+## How-To Workflow
+
+1. Open `/agent-tools`.
+2. In `Paper -> Schema Search`, provide exactly one source:
+   - document URL
+   - server-side file path
+   - pasted schema text
+3. Run schema search and inspect the ranked shortlist.
+4. Click `Analyze` on a candidate to open `Missing-Column Feasibility`.
+5. If derivable fields are available:
+   - select which derivable fields to generate
+   - optionally enable LLM-assisted planning
+   - enter a submitter name if the artifact may be sent for review
+6. Generate the synthesized dataset.
+7. Review preview rows and validation messages.
+8. Download the generated CSV or generated schema if needed.
+9. Submit the artifact to PATRA review when it should be considered for shared-pool admission.
+
+## Validation Performed
+
+- `npm --prefix app run build` -> passed
+- End-to-end browser validation completed against the live backend:
+  - wheat DOCX -> schema search
+  - candidate feasibility analysis
+  - derivable-only generation flow
+  - artifact download
+  - PATRA admin-review submission
+
+## Action Points
+
+- Add a dedicated review-status indicator so users can tell whether a generated artifact is:
+  - local only
+  - pending PATRA review
+  - accepted into the shared catalog
+- Add a richer artifact-summary card for provenance, source dataset lineage, and generated-field coverage.
+- Consider pre-populating the review form with the signed-in PATRA identity when available.
+
 ## Version 0.3.1
 
 ## Summary

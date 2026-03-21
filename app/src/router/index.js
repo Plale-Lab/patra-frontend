@@ -10,6 +10,7 @@ import ExploreView from '../views/ExploreView.vue'
 import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
 import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
+import AgentToolsView from '../views/AgentToolsView.vue'
 import SubmitView from '../views/SubmitView.vue'
 import TicketSubmitView from '../views/TicketSubmitView.vue'
 import SubmissionsReviewView from '../views/SubmissionsReviewView.vue'
@@ -23,6 +24,7 @@ const routes = [
     { path: '/explore-model-cards/:id', name: 'ModelDetail', component: ModelDetailView },
     { path: '/explore-datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
     { path: '/explore-datasheets/:id', name: 'DatasheetDetail', component: DatasheetDetailView },
+    { path: '/agent-tools', name: 'AgentTools', component: AgentToolsView },
     { path: '/explore', redirect: { name: 'ExploreModelCards' } },
     { path: '/explore/:id', redirect: (to) => ({ name: 'ModelDetail', params: { id: to.params.id } }) },
     { path: '/submit', name: 'Submit', component: SubmitView },
