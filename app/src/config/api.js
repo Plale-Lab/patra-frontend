@@ -23,6 +23,16 @@ export const SUPPORTS_SUBMISSIONS_API = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_SUBMISSIONS_API,
   true,
 )
+export const SUPPORTS_AGENT_TOOLS = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_AGENT_TOOLS,
+  import.meta.env.VITE_SUPPORTS_AGENT_TOOLS,
+  import.meta.env.DEV,
+)
+export const SUPPORTS_EDIT_EXISTING_ASSETS = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_EDIT_EXISTING_ASSETS,
+  import.meta.env.VITE_SUPPORTS_EDIT_EXISTING_ASSETS,
+  import.meta.env.DEV,
+)
 export const ADMIN_USERNAMES = parseCsvList(
   runtimeConfig.ADMIN_USERNAMES,
   import.meta.env.VITE_ADMIN_USERNAMES,
@@ -73,6 +83,8 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
       helpText: 'Start the local mock server with `cd frontend/mock-server && npm start`.',
       supportsTickets: true,
       supportsSubmissionQueue: true,
+      supportsAgentTools: true,
+      supportsEditExistingAssets: true,
     }
   }
 
@@ -84,6 +96,8 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
     helpText: 'Ensure the Patra REST server is running on the live API URL.',
     supportsTickets: SUPPORTS_TICKETS,
     supportsSubmissionQueue: SUPPORTS_SUBMISSIONS_API,
+    supportsAgentTools: SUPPORTS_AGENT_TOOLS,
+    supportsEditExistingAssets: SUPPORTS_EDIT_EXISTING_ASSETS,
   }
 }
 

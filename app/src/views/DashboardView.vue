@@ -174,7 +174,10 @@
             <span>Recent Platform Activity</span>
           </div>
           <div class="card-body" style="padding: 0;">
-            <div class="activity-list">
+            <div class="empty-block" v-if="recentEvents.length === 0" style="padding: 24px;">
+              No platform activity is currently available from the live deployment.
+            </div>
+            <div class="activity-list" v-else>
               <div class="activity-item" v-for="event in recentEvents" :key="event.id">
                 <div class="activity-dot" :class="'dot-' + event.action"></div>
                 <div class="activity-content">
@@ -392,7 +395,10 @@
             <span>Platform Activity</span>
           </div>
           <div class="card-body" style="padding: 0;">
-            <div class="activity-list">
+            <div class="empty-block" v-if="recentEvents.length === 0" style="padding: 24px;">
+              No platform activity is currently available from the live deployment.
+            </div>
+            <div class="activity-list" v-else>
               <div class="activity-item" v-for="event in recentEvents" :key="event.id">
                 <div class="activity-dot" :class="'dot-' + event.action"></div>
                 <div class="activity-content">

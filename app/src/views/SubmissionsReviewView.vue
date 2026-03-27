@@ -47,6 +47,7 @@
               <span class="badge" :class="subStatusClass(sub.status)">{{ sub.status }}</span>
               <span class="badge badge-manual" v-if="!isAssetIntake(sub)">Manual Entry</span>
               <span class="badge badge-asset-link" v-if="isAssetIntake(sub)">Asset Link</span>
+              <span class="badge badge-info" v-if="isEditSubmission(sub)">Edit Existing</span>
               <span class="badge badge-bulk" v-if="isBulkAssetIntake(sub)">Bulk</span>
               <span class="sub-id">{{ sub.id }}</span>
             </div>
@@ -58,6 +59,7 @@
               <span v-if="isAssetIntake(sub)"><IconLink :size="13" stroke-width="1.8" /> {{ sub.data.asset_provider || 'other' }}</span>
               <span v-if="isAssetIntake(sub)"><IconWorld :size="13" stroke-width="1.8" /> {{ sub.data.asset_host || 'unknown host' }}</span>
               <span v-if="isBulkAssetIntake(sub)"><IconStack2 :size="13" stroke-width="1.8" /> {{ sub.data.batch_index }}/{{ sub.data.batch_total }}</span>
+              <span v-if="isEditSubmission(sub)"><IconStack2 :size="13" stroke-width="1.8" /> v{{ sub.data.current_asset_version }} → v{{ sub.data.next_asset_version }}</span>
               <span v-if="!isAssetIntake(sub) && sub.data.category"><IconTag :size="13" stroke-width="1.8" /> {{ sub.data.category }}</span>
               <span v-if="!isAssetIntake(sub) && sub.data.framework"><IconCode :size="13" stroke-width="1.8" /> {{ sub.data.framework }}</span>
             </div>
@@ -209,7 +211,14 @@ function isBulkAssetIntake(submission) {
   return isAssetIntake(submission) && submission?.data?.submission_origin === 'bulk_asset_links'
 }
 
+function isEditSubmission(submission) {
+  return submission?.data?.intake_method === 'edit_existing_asset'
+}
+
 function getSubmissionTitle(submission) {
+  if (isEditSubmission(submission)) {
+    return submission.data.edit_target_name || submission.data.name || 'Edited asset'
+  }
   if (isAssetIntake(submission)) {
     return submission.data.display_name || submission.data.asset_url || 'Untitled asset intake'
   }
@@ -218,6 +227,9 @@ function getSubmissionTitle(submission) {
 }
 
 function getSubmissionDescription(submission) {
+  if (isEditSubmission(submission)) {
+    return submission.data.edit_notes || 'Edited version awaiting admin review.'
+  }
   if (isAssetIntake(submission)) {
     return submission.data.submitter_notes || ASSET_INTAKE_PROMPT
   }

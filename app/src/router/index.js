@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useApiModeStore } from '../stores/apiMode'
 
 import DashboardView from '../views/DashboardView.vue'
 import ModelsView from '../views/ModelsView.vue'
@@ -10,6 +11,11 @@ import ExploreView from '../views/ExploreView.vue'
 import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
 import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
+<<<<<<< Updated upstream
+=======
+import AgentToolsView from '../views/AgentToolsView.vue'
+import EditAssetsView from '../views/EditAssetsView.vue'
+>>>>>>> Stashed changes
 import SubmitView from '../views/SubmitView.vue'
 import TicketSubmitView from '../views/TicketSubmitView.vue'
 import SubmissionsReviewView from '../views/SubmissionsReviewView.vue'
@@ -23,6 +29,11 @@ const routes = [
     { path: '/explore-model-cards/:id', name: 'ModelDetail', component: ModelDetailView },
     { path: '/explore-datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
     { path: '/explore-datasheets/:id', name: 'DatasheetDetail', component: DatasheetDetailView },
+<<<<<<< Updated upstream
+=======
+    { path: '/agent-tools', name: 'AgentTools', component: AgentToolsView, meta: { feature: 'agentTools' } },
+    { path: '/edit-assets', name: 'EditAssets', component: EditAssetsView, meta: { feature: 'editExistingAssets' } },
+>>>>>>> Stashed changes
     { path: '/explore', redirect: { name: 'ExploreModelCards' } },
     { path: '/explore/:id', redirect: (to) => ({ name: 'ModelDetail', params: { id: to.params.id } }) },
     { path: '/submit', name: 'Submit', component: SubmitView },
@@ -47,7 +58,10 @@ const router = createRouter({
 // Admin routes redirect to dashboard if not admin
 router.beforeEach((to) => {
     const auth = useAuthStore()
+    const apiMode = useApiModeStore()
     if (to.meta.admin && !auth.isAdmin) return { name: 'Dashboard' }
+    if (to.meta.feature === 'agentTools' && !apiMode.supportsAgentTools) return { name: 'Dashboard' }
+    if (to.meta.feature === 'editExistingAssets' && !apiMode.supportsEditExistingAssets) return { name: 'Dashboard' }
     return true
 })
 
