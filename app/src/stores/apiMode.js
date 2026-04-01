@@ -29,7 +29,7 @@ export const useApiModeStore = defineStore('apiMode', () => {
   const supportsTickets = computed(() => Boolean(meta.value.supportsTickets))
   const supportsSubmissionQueue = computed(() => Boolean(meta.value.supportsSubmissionQueue))
   const supportsAgentTools = computed(() => Boolean(meta.value.supportsAgentTools))
-  const supportsEditExistingAssets = computed(() => Boolean(meta.value.supportsEditExistingAssets))
+  const supportsEditRecords = computed(() => Boolean(meta.value.supportsEditRecords))
 
   function setMode(nextMode) {
     if (!isApiMode(nextMode)) return
@@ -49,7 +49,7 @@ export const useApiModeStore = defineStore('apiMode', () => {
     supportsTickets,
     supportsSubmissionQueue,
     supportsAgentTools,
-    supportsEditExistingAssets,
+    supportsEditRecords,
     showSelector: SHOW_API_MODE,
     setMode,
   }

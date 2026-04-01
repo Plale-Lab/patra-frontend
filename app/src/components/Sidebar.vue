@@ -22,20 +22,17 @@
       </RouterLink>
 
       <div class="sidebar-section-label">CONTRIBUTE</div>
-<<<<<<< Updated upstream
-=======
       <RouterLink v-if="apiMode.supportsAgentTools" to="/agent-tools" class="sidebar-link" :class="{ active: $route.path === '/agent-tools' }">
         <IconSparkles :size="20" stroke-width="1.8" />
         <span>Agent Toolkit</span>
       </RouterLink>
-      <RouterLink v-if="apiMode.supportsEditExistingAssets" to="/edit-assets" class="sidebar-link" :class="{ active: $route.path === '/edit-assets' }">
+      <RouterLink v-if="apiMode.supportsEditRecords" to="/edit-records" class="sidebar-link" :class="{ active: $route.path === '/edit-records' }">
         <IconEdit :size="20" stroke-width="1.8" />
-        <span>Edit Assets</span>
+        <span>Edit Records</span>
       </RouterLink>
->>>>>>> Stashed changes
       <RouterLink to="/submit" class="sidebar-link" :class="{ active: $route.path === '/submit' }">
         <IconUpload :size="20" stroke-width="1.8" />
-        <span>Submit</span>
+        <span>Submit Records</span>
       </RouterLink>
       <RouterLink v-if="apiMode.supportsTickets" to="/tickets" class="sidebar-link" :class="{ active: $route.path === '/tickets' }">
         <IconMessageCircle :size="20" stroke-width="1.8" />
@@ -142,11 +139,7 @@ import { useApiModeStore } from '../stores/apiMode'
 import {
   IconLayoutDashboard, IconCube, IconFileText, IconSettings, IconSearch,
   IconUpload, IconMessageCircle, IconClipboardCheck,
-<<<<<<< Updated upstream
-  IconListDetails, IconLogout, IconLogin, IconKey,
-=======
   IconListDetails, IconLogout, IconLogin, IconKey, IconSparkles, IconEdit,
->>>>>>> Stashed changes
   IconUser, IconLock, IconX, IconAlertTriangle,
 } from '@tabler/icons-vue'
 

@@ -28,9 +28,9 @@ export const SUPPORTS_AGENT_TOOLS = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_AGENT_TOOLS,
   import.meta.env.DEV,
 )
-export const SUPPORTS_EDIT_EXISTING_ASSETS = resolveFeatureFlag(
-  runtimeConfig.SUPPORTS_EDIT_EXISTING_ASSETS,
-  import.meta.env.VITE_SUPPORTS_EDIT_EXISTING_ASSETS,
+export const SUPPORTS_EDIT_RECORDS = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_EDIT_RECORDS,
+  import.meta.env.VITE_SUPPORTS_EDIT_RECORDS,
   import.meta.env.DEV,
 )
 export const ADMIN_USERNAMES = parseCsvList(
@@ -84,7 +84,7 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
       supportsTickets: true,
       supportsSubmissionQueue: true,
       supportsAgentTools: true,
-      supportsEditExistingAssets: true,
+      supportsEditRecords: true,
     }
   }
 
@@ -97,7 +97,7 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
     supportsTickets: SUPPORTS_TICKETS,
     supportsSubmissionQueue: SUPPORTS_SUBMISSIONS_API,
     supportsAgentTools: SUPPORTS_AGENT_TOOLS,
-    supportsEditExistingAssets: SUPPORTS_EDIT_EXISTING_ASSETS,
+    supportsEditRecords: SUPPORTS_EDIT_RECORDS,
   }
 }
 
