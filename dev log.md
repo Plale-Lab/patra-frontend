@@ -1,5 +1,63 @@
 # Frontend Dev Log
 
+## Version 0.6.0 - 2026-04-06
+
+## Summary
+
+Version `0.6.0` records the current shared-frontend direction around PATRA’s new assistant, ingestion, editing, and access-control model. This milestone emphasizes organization and product coherence: feature-oriented structure, clearer terminology, calmer visual-system work, and a stricter group-based access policy aligned with the active dev surface.
+
+## Problem
+
+- The frontend surface area now spans:
+  - assistant workflows
+  - automated ingestion / record scraping
+  - direct record editing
+  - moderation and admin operations
+- Without a stronger shared structure, these capabilities become harder to maintain and harder to reason about across stable and dev surfaces.
+- Access behavior had temporarily drifted during rapid iteration, especially around admin visibility and cached role state.
+- Product language and UI style needed a more deliberate, system-level direction.
+
+## Philosophy
+
+- Keep the shared frontend aligned with the evolving PATRA product model, even when some features still ship in `patra-dev` first.
+- Organize by feature, not just by route or historical page ownership.
+- Let access control be explicit and tiered:
+  - public browse
+  - Tapis-authenticated contribution
+  - admin moderation
+- Prefer visual harmonization through shared tokens and shell refinements rather than disruptive redesigns.
+
+## Implementation
+
+- Captured the current feature-oriented frontend direction around:
+  - `Ask Patra`
+  - automated ingestion / record scraping
+  - record editing
+  - agent-toolkit style workflows
+- Documented and aligned terminology toward records / resources rather than older asset-only phrasing.
+- Brought the shared frontend log in line with the current PATRA direction for:
+  - assistant-first surfaces
+  - ingestion review staging
+  - direct record save flows
+- Reflected the current access-control contract:
+  - public visitor -> explore only
+  - Tapis user -> explore + contribute
+  - admin -> explore + contribute + admin
+- Recorded the current admin-identity rule:
+  - must be a Tapis-authenticated user
+  - username must be in the admin allowlist
+
+## Validation Performed
+
+- Reviewed the current shared frontend structure against the active `patra-dev` implementation and documented the intended parity direction.
+- Confirmed that the shared frontend log now reflects the current PATRA product model rather than only the older explore/submit baseline.
+
+## Action Points
+
+- Promote approved `patra-dev` UI changes into the shared frontend in deliberate batches.
+- Keep shared terminology and access-model documentation synchronized across frontend repos.
+- Continue using feature-folder docs so new assistant and ingestion work remains navigable.
+
 ## Version 0.3.1
 
 ## Summary
