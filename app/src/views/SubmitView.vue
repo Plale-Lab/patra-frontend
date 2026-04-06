@@ -1,23 +1,15 @@
 <template>
   <div>
     <div class="page-header">
-      <h1>Submit to Knowledge Base</h1>
-      <p>Create a model card or datasheet submission for admin review</p>
+      <h1>New Submission</h1>
+      <p>Add a model card or datasheet to Patra</p>
     </div>
 
-    <div class="success-banner" v-if="submissionResult">
+    <div class="success-banner" v-if="createdRecord">
       <IconCircleCheck :size="20" stroke-width="1.8" />
-      <div v-if="submissionResult.kind === 'single'">
-        <strong>Submission queued.</strong> Your {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} is now waiting for admin review.
-      </div>
-      <div v-else>
-        <strong>Bulk submission queued.</strong>
-        <span>
-          Queued {{ submissionResult.successCount }} of {{ submissionResult.totalCount }} asset links for admin review.
-        </span>
-        <span v-if="submissionResult.failureCount > 0" class="bulk-summary-warning">
-          {{ submissionResult.failureCount }} link{{ submissionResult.failureCount === 1 ? '' : 's' }} failed validation or submission.
-        </span>
+      <div>
+        <strong>{{ activeTab === 'model_card' ? 'Model card' : 'Datasheet' }} created.</strong> It has been added to Patra.
+        <RouterLink :to="createdRecordLink" class="record-link">View {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} #{{ createdRecord.asset_id ?? createdRecord.id }}</RouterLink>
       </div>
       <button class="btn btn-outline btn-sm" @click="resetForm">Submit Another</button>
     </div>
@@ -35,251 +27,182 @@
       <div class="submit-layout">
         <div class="card submit-form">
           <div class="card-header">
-            <div class="submit-header-content">
-              <span class="flex items-center gap-8">
-                <component :is="activeTab === 'model_card' ? IconCube : IconTable" :size="18" stroke-width="1.8" />
-                {{ activeTab === 'model_card' ? 'Model Card Submission' : 'Datasheet Submission' }}
-              </span>
-              <div class="submission-modes">
-                <button class="mode-pill" :class="{ active: submitMode === 'manual' }" @click="switchMode('manual')">Manual Entry</button>
-                <button class="mode-pill" :class="{ active: submitMode === 'asset_link' }" @click="switchMode('asset_link')">From Asset Link</button>
-                <button class="mode-pill" :class="{ active: submitMode === 'bulk_asset_links' }" @click="switchMode('bulk_asset_links')">Bulk Asset Links</button>
-              </div>
-            </div>
+            <span class="flex items-center gap-8">
+              <component :is="activeTab === 'model_card' ? IconCube : IconTable" :size="18" stroke-width="1.8" />
+              {{ activeTab === 'model_card' ? 'New Model Card' : 'New Datasheet' }}
+            </span>
           </div>
           <div class="card-body">
-            <div class="intake-prompt" v-if="submitMode !== 'manual'">
-              <div class="intake-prompt-title">ICICLE Intake</div>
-              <p>{{ assetIntakePrompt }}</p>
-            </div>
-
-            <div class="form-group" v-if="submitMode !== 'manual'">
-              <label class="form-label">Your Name <span class="required">*</span></label>
-              <input class="form-input" v-model="submittedBy" placeholder="e.g. Alice Chen" />
-            </div>
-
             <div class="form-error" v-if="formErrorMessage">
               {{ formErrorMessage }}
             </div>
 
-            <template v-if="submitMode === 'manual'">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Your Name <span class="required">*</span></label>
+                <input class="form-input" v-model="submittedBy" placeholder="e.g. Alice Chen" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Name <span class="required">*</span></label>
+                <input
+                  class="form-input"
+                  v-model="currentForm.name"
+                  :placeholder="activeTab === 'model_card' ? 'e.g. ResNet-50 Classifier' : 'e.g. UCI Adult Dataset'"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Version <span class="required">*</span></label>
+                <input class="form-input" v-model="currentForm.version" placeholder="e.g. 1.0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">License</label>
+                <input class="form-input" v-model="currentForm.license" placeholder="e.g. BSD-3 Clause, CC BY 4.0" />
+              </div>
+            </div>
+
+            <template v-if="activeTab === 'model_card'">
+              <div class="form-group">
+                <label class="form-label">Short Description <span class="required">*</span></label>
+                <textarea
+                  class="form-input form-textarea"
+                  v-model="modelForm.shortDescription"
+                  rows="2"
+                  placeholder="Brief summary of the model"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Full Description</label>
+                <textarea
+                  class="form-input form-textarea"
+                  v-model="modelForm.fullDescription"
+                  rows="4"
+                  placeholder="Longer description of the model card"
+                ></textarea>
+              </div>
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">Your Name <span class="required">*</span></label>
-                  <input class="form-input" v-model="submittedBy" placeholder="e.g. Alice Chen" />
+                  <label class="form-label">Category</label>
+                  <select class="form-input" v-model="modelForm.category">
+                    <option value="">Select category</option>
+                    <option value="classification">Classification</option>
+                    <option value="regression">Regression</option>
+                    <option value="natural language processing">Natural Language Processing</option>
+                    <option value="computer vision">Computer Vision</option>
+                    <option value="graph learning">Graph Learning</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Name <span class="required">*</span></label>
+                  <label class="form-label">Input Type</label>
+                  <select class="form-input" v-model="modelForm.inputType">
+                    <option value="">Select input type</option>
+                    <option>Tabular</option>
+                    <option>Text</option>
+                    <option>Images</option>
+                    <option>Audio</option>
+                    <option>Video</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Framework</label>
+                  <select class="form-input" v-model="modelForm.framework">
+                    <option value="">Select framework</option>
+                    <option>tensorflow</option>
+                    <option>pytorch</option>
+                    <option>scikit-learn</option>
+                    <option>keras</option>
+                    <option>other</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Test Accuracy</label>
                   <input
                     class="form-input"
-                    v-model="currentForm.name"
-                    :placeholder="activeTab === 'model_card' ? 'e.g. ResNet-50 Classifier' : 'e.g. UCI Adult Dataset'"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                    v-model.number="modelForm.testAccuracy"
+                    placeholder="0.00 – 1.00"
                   />
                 </div>
               </div>
-
               <div class="form-row">
                 <div class="form-group">
-                  <label class="form-label">Version <span class="required">*</span></label>
-                  <input class="form-input" v-model="currentForm.version" placeholder="e.g. 1.0" />
+                  <label class="form-label">Input Data URL</label>
+                  <input class="form-input" v-model="modelForm.inputData" placeholder="https://..." />
                 </div>
                 <div class="form-group">
-                  <label class="form-label">License</label>
-                  <input class="form-input" v-model="currentForm.license" placeholder="e.g. BSD-3 Clause, CC BY 4.0" />
+                  <label class="form-label">Output Data URL</label>
+                  <input class="form-input" v-model="modelForm.outputData" placeholder="https://..." />
                 </div>
               </div>
-
-              <template v-if="activeTab === 'model_card'">
-                <div class="form-group">
-                  <label class="form-label">Short Description <span class="required">*</span></label>
-                  <textarea
-                    class="form-input form-textarea"
-                    v-model="modelForm.shortDescription"
-                    rows="2"
-                    placeholder="Brief summary of the model"
-                  ></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Full Description</label>
-                  <textarea
-                    class="form-input form-textarea"
-                    v-model="modelForm.fullDescription"
-                    rows="4"
-                    placeholder="Longer description of the model card"
-                  ></textarea>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Category</label>
-                    <select class="form-input" v-model="modelForm.category">
-                      <option value="">Select category</option>
-                      <option value="classification">Classification</option>
-                      <option value="regression">Regression</option>
-                      <option value="natural language processing">Natural Language Processing</option>
-                      <option value="computer vision">Computer Vision</option>
-                      <option value="graph learning">Graph Learning</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Input Type</label>
-                    <select class="form-input" v-model="modelForm.inputType">
-                      <option value="">Select input type</option>
-                      <option>Tabular</option>
-                      <option>Text</option>
-                      <option>Images</option>
-                      <option>Audio</option>
-                      <option>Video</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Framework</label>
-                    <select class="form-input" v-model="modelForm.framework">
-                      <option value="">Select framework</option>
-                      <option>tensorflow</option>
-                      <option>pytorch</option>
-                      <option>scikit-learn</option>
-                      <option>keras</option>
-                      <option>other</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Test Accuracy</label>
-                    <input
-                      class="form-input"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="1"
-                      v-model.number="modelForm.testAccuracy"
-                      placeholder="0.00 – 1.00"
-                    />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Input Data URL</label>
-                    <input class="form-input" v-model="modelForm.inputData" placeholder="https://..." />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Output Data URL</label>
-                    <input class="form-input" v-model="modelForm.outputData" placeholder="https://..." />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Keywords</label>
-                  <input class="form-input" v-model="modelForm.keywords" placeholder="Comma-separated keywords" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Visibility</label>
-                  <div class="filter-chips">
-                    <button type="button" class="chip" :class="{ active: !modelForm.isPrivate }" @click="modelForm.isPrivate = false">Public</button>
-                    <button type="button" class="chip" :class="{ active: modelForm.isPrivate }" @click="modelForm.isPrivate = true">Private</button>
-                  </div>
-                </div>
-              </template>
-
-              <template v-else>
-                <div class="form-group">
-                  <label class="form-label">Description <span class="required">*</span></label>
-                  <textarea
-                    class="form-input form-textarea"
-                    v-model="datasheetForm.description"
-                    rows="3"
-                    placeholder="Describe the dataset"
-                  ></textarea>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Source</label>
-                    <input class="form-input" v-model="datasheetForm.source" placeholder="e.g. UCI Repository, Kaggle" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Datapoints</label>
-                    <input class="form-input" type="number" v-model.number="datasheetForm.datapoints" placeholder="e.g. 50000" />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Publisher</label>
-                    <input class="form-input" v-model="datasheetForm.publisher" placeholder="e.g. Indiana University" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Publication Year</label>
-                    <input class="form-input" v-model="datasheetForm.publicationYear" placeholder="e.g. 2026" />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Creators</label>
-                  <input class="form-input" v-model="datasheetForm.creators" placeholder="Comma-separated creator names" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Features</label>
-                  <input class="form-input" v-model="datasheetForm.features" placeholder="Comma-separated feature names" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Download URL</label>
-                  <input class="form-input" v-model="datasheetForm.downloadUrl" placeholder="https://..." />
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Visibility</label>
-                  <div class="filter-chips">
-                    <button type="button" class="chip" :class="{ active: !datasheetForm.isPrivate }" @click="datasheetForm.isPrivate = false">Public</button>
-                    <button type="button" class="chip" :class="{ active: datasheetForm.isPrivate }" @click="datasheetForm.isPrivate = true">Private</button>
-                  </div>
-                </div>
-              </template>
-            </template>
-
-            <template v-else-if="submitMode === 'asset_link'">
               <div class="form-group">
-                <label class="form-label">Asset URL <span class="required">*</span></label>
-                <input class="form-input" v-model="currentAssetLinkForm.assetUrl" placeholder="https://huggingface.co/..." />
+                <label class="form-label">Keywords</label>
+                <input class="form-input" v-model="modelForm.keywords" placeholder="Comma-separated keywords" />
               </div>
               <div class="form-group">
-                <label class="form-label">Optional Display Name</label>
-                <input class="form-input" v-model="currentAssetLinkForm.displayName" placeholder="Optional title shown to reviewers" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Optional Notes</label>
-                <textarea
-                  class="form-input form-textarea"
-                  v-model="currentAssetLinkForm.notes"
-                  rows="3"
-                  placeholder="Add any context for the ICICLE team"
-                ></textarea>
+                <label class="form-label">Visibility</label>
+                <div class="filter-chips">
+                  <button type="button" class="chip" :class="{ active: !modelForm.isPrivate }" @click="modelForm.isPrivate = false">Public</button>
+                  <button type="button" class="chip" :class="{ active: modelForm.isPrivate }" @click="modelForm.isPrivate = true">Private</button>
+                </div>
               </div>
             </template>
 
             <template v-else>
               <div class="form-group">
-                <label class="form-label">Asset Links <span class="required">*</span></label>
-                <textarea
-                  class="form-input bulk-links-input"
-                  v-model="currentBulkForm.urls"
-                  rows="8"
-                  placeholder="Paste one asset link per line"
-                ></textarea>
-                <div class="form-helper">One URL per line. Duplicate links will be removed before submission.</div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Optional Batch Notes</label>
+                <label class="form-label">Description <span class="required">*</span></label>
                 <textarea
                   class="form-input form-textarea"
-                  v-model="currentBulkForm.notes"
+                  v-model="datasheetForm.description"
                   rows="3"
-                  placeholder="Shared notes for all submitted asset links"
+                  placeholder="Describe the dataset"
                 ></textarea>
               </div>
-              <div class="invalid-list" v-if="invalidAssetLines.length > 0">
-                <div class="invalid-list-title">Invalid asset links</div>
-                <ul>
-                  <li v-for="item in invalidAssetLines" :key="item.line">
-                    Line {{ item.line }}: {{ item.value }}
-                  </li>
-                </ul>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Source</label>
+                  <input class="form-input" v-model="datasheetForm.source" placeholder="e.g. UCI Repository, Kaggle" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Datapoints</label>
+                  <input class="form-input" type="number" v-model.number="datasheetForm.datapoints" placeholder="e.g. 50000" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Publisher</label>
+                  <input class="form-input" v-model="datasheetForm.publisher" placeholder="e.g. Indiana University" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Publication Year</label>
+                  <input class="form-input" v-model="datasheetForm.publicationYear" placeholder="e.g. 2026" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Creators</label>
+                <input class="form-input" v-model="datasheetForm.creators" placeholder="Comma-separated creator names" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Features</label>
+                <input class="form-input" v-model="datasheetForm.features" placeholder="Comma-separated feature names" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Download URL</label>
+                <input class="form-input" v-model="datasheetForm.downloadUrl" placeholder="https://..." />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Visibility</label>
+                <div class="filter-chips">
+                  <button type="button" class="chip" :class="{ active: !datasheetForm.isPrivate }" @click="datasheetForm.isPrivate = false">Public</button>
+                  <button type="button" class="chip" :class="{ active: datasheetForm.isPrivate }" @click="datasheetForm.isPrivate = true">Private</button>
+                </div>
               </div>
             </template>
           </div>
@@ -291,7 +214,7 @@
               <span class="flex items-center gap-8"><IconInfoCircle :size="18" stroke-width="1.8" /> How it works</span>
             </div>
             <div class="card-body">
-              <div class="info-step" v-for="(step, i) in steps" :key="`${submitMode}-${i}`">
+              <div class="info-step" v-for="(step, i) in steps" :key="i">
                 <div class="step-number">{{ i + 1 }}</div>
                 <div>
                   <div class="step-title">{{ step.title }}</div>
@@ -301,47 +224,30 @@
             </div>
           </div>
 
-          <div class="card" v-if="submissionResult && submissionResult.failureCount > 0">
-            <div class="card-header">
-              <span class="flex items-center gap-8"><IconAlertTriangle :size="18" stroke-width="1.8" /> Failed Links</span>
-            </div>
-            <div class="card-body">
-              <ul class="failed-links-list">
-                <li v-for="failure in submissionResult.failures" :key="failure.url">
-                  <strong>{{ failure.url }}</strong>
-                  <span>{{ failure.error }}</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <button class="btn btn-primary btn-submit" :disabled="!canSubmit || store.loading" @click="handleSubmit">
+          <button class="btn btn-primary btn-submit" :disabled="!canSubmit || exploreStore.loading" @click="handleSubmit">
             <IconSend :size="16" stroke-width="1.8" />
-            {{ store.loading ? 'Submitting…' : submitButtonLabel }}
+            {{ exploreStore.loading ? 'Creating…' : (activeTab === 'model_card' ? 'Create Model Card' : 'Create Datasheet') }}
           </button>
         </div>
       </div>
     </template>
 
     <Teleport to="body">
-      <div v-if="submissionDialog" class="modal-overlay" @click.self="closeSubmissionDialog">
+      <div v-if="resultDialog" class="modal-overlay" @click.self="closeResultDialog">
         <div class="submission-dialog">
           <div class="submission-dialog-header">
-            <div class="submission-dialog-title" :class="`is-${submissionDialog.variant}`">
-              <IconCircleCheck v-if="submissionDialog.variant === 'success'" :size="18" stroke-width="1.8" />
+            <div class="submission-dialog-title" :class="`is-${resultDialog.variant}`">
+              <IconCircleCheck v-if="resultDialog.variant === 'success'" :size="18" stroke-width="1.8" />
               <IconAlertTriangle v-else :size="18" stroke-width="1.8" />
-              <span>{{ submissionDialog.title }}</span>
+              <span>{{ resultDialog.title }}</span>
             </div>
-            <button class="btn-icon" @click="closeSubmissionDialog">×</button>
+            <button class="btn-icon" @click="closeResultDialog">×</button>
           </div>
           <div class="submission-dialog-body">
-            <p>{{ submissionDialog.message }}</p>
-            <ul v-if="submissionDialog.details?.length" class="submission-dialog-details">
-              <li v-for="detail in submissionDialog.details" :key="detail">{{ detail }}</li>
-            </ul>
+            <p>{{ resultDialog.message }}</p>
           </div>
           <div class="submission-dialog-actions">
-            <button class="btn btn-primary" @click="closeSubmissionDialog">Close</button>
+            <button class="btn btn-primary" @click="closeResultDialog">Close</button>
           </div>
         </div>
       </div>
@@ -351,13 +257,10 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-import { useSubmissionsStore } from '../stores/submissions'
+import { RouterLink } from 'vue-router'
+import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
-import {
-  ASSET_INTAKE_PROMPT,
-  buildAssetIntakeData,
-  parseAssetInput,
-} from '../lib/assetIntake'
+import { mapFormToPayload } from '../lib/submissionPayloads'
 import {
   IconCube,
   IconTable,
@@ -367,91 +270,47 @@ import {
   IconAlertTriangle,
 } from '@tabler/icons-vue'
 
-const store = useSubmissionsStore()
+const exploreStore = useExploreStore()
 const auth = useAuthStore()
 const activeTab = ref('model_card')
-const submitMode = ref('manual')
 const submittedBy = ref(auth.isLoggedIn ? auth.displayName : '')
-const submissionResult = ref(null)
-const submissionDialog = ref(null)
+const createdRecord = ref(null)
+const resultDialog = ref(null)
 const validationError = ref('')
 
 const modelForm = reactive(createModelForm())
 const datasheetForm = reactive(createDatasheetForm())
-const assetLinkForms = reactive(createAssetLinkForms())
-const bulkForms = reactive(createBulkForms())
 
 const currentForm = computed(() => (activeTab.value === 'model_card' ? modelForm : datasheetForm))
-const currentAssetLinkForm = computed(() => assetLinkForms[activeTab.value])
-const currentBulkForm = computed(() => bulkForms[activeTab.value])
-const assetIntakePrompt = ASSET_INTAKE_PROMPT
 
-const manualSteps = [
+const steps = [
   { title: 'Fill the form', desc: 'Provide details about your model or dataset.' },
-  { title: 'Queue the submission', desc: 'The frontend sends the mapped payload to the Patra submission queue.' },
-  { title: 'Admin review', desc: 'An admin reviews the pending item and decides whether to approve it.' },
-  { title: 'Asset published', desc: 'Approved submissions are written into the Patra catalog.' },
+  { title: 'Submit', desc: 'The form data is sent to the Patra API.' },
+  { title: 'Published', desc: 'Your model card or datasheet is immediately available in Patra.' },
 ]
 
-const assetSteps = [
-  { title: 'Paste the asset link', desc: 'Provide the existing model or dataset URL you want added to Patra.' },
-  { title: 'Generate queue payload', desc: 'The frontend converts the link into a backend-compatible review item.' },
-  { title: 'Wait for approval', desc: 'The Patra backend stores the request in the review queue until an admin approves it.' },
-]
-
-const steps = computed(() => (submitMode.value === 'manual' ? manualSteps : assetSteps))
-
-const submitButtonLabel = computed(() => {
-  if (submitMode.value === 'manual') return 'Queue for Review'
-  if (submitMode.value === 'asset_link') return 'Queue Asset Link'
-  return 'Queue Asset Links'
+const createdRecordLink = computed(() => {
+  if (!createdRecord.value) return '/'
+  const id = createdRecord.value.asset_id ?? createdRecord.value.id
+  return activeTab.value === 'model_card'
+    ? `/explore-model-cards/${id}`
+    : `/explore-datasheets/${id}`
 })
 
-const invalidAssetLines = computed(() => {
-  if (submitMode.value !== 'bulk_asset_links') return []
-
-  return parseBulkLines(currentBulkForm.value.urls)
-    .filter((item) => !item.parsed)
-    .map(({ line, value }) => ({ line, value }))
-})
-
-const formErrorMessage = computed(() => validationError.value || store.error || '')
+const formErrorMessage = computed(() => validationError.value || exploreStore.error || '')
 
 const canSubmit = computed(() => {
   if (!submittedBy.value.trim()) return false
-
-  if (submitMode.value === 'manual') {
-    if (!currentForm.value.name || !currentForm.value.version) return false
-    if (activeTab.value === 'model_card' && !modelForm.shortDescription) return false
-    if (activeTab.value === 'datasheet' && !datasheetForm.description) return false
-    return true
-  }
-
-  if (submitMode.value === 'asset_link') {
-    return !!currentAssetLinkForm.value.assetUrl.trim()
-  }
-
-  return !!currentBulkForm.value.urls.trim()
+  if (!currentForm.value.name || !currentForm.value.version) return false
+  if (activeTab.value === 'model_card' && !modelForm.shortDescription) return false
+  if (activeTab.value === 'datasheet' && !datasheetForm.description) return false
+  return true
 })
 
 async function handleSubmit() {
   validationError.value = ''
 
-  if (submitMode.value === 'manual') {
-    await submitManualEntry()
-    return
-  }
-
-  if (submitMode.value === 'asset_link') {
-    await submitAssetLink()
-    return
-  }
-
-  await submitBulkAssetLinks()
-}
-
-async function submitManualEntry() {
-  const payload =
+  const data =
     activeTab.value === 'model_card'
       ? {
           name: modelForm.name,
@@ -484,114 +343,33 @@ async function submitManualEntry() {
           is_private: datasheetForm.isPrivate,
         }
 
-  const result = await store.createSubmission(activeTab.value, payload, submittedBy.value)
+  const payload = mapFormToPayload(activeTab.value, data, submittedBy.value)
 
-  if (result) {
-    submissionResult.value = {
-      kind: 'single',
-      successCount: 1,
-      failureCount: 0,
-      totalCount: 1,
-      failures: [],
-    }
-    openSubmissionDialog({
-      variant: 'success',
-      title: 'Submission queued',
-      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} is now waiting in the review queue.`,
-    })
-    return
-  }
-
-  openFailureDialog()
-}
-
-async function submitAssetLink() {
-  const payload = buildSafeAssetPayload({
-    assetUrl: currentAssetLinkForm.value.assetUrl,
-    displayName: currentAssetLinkForm.value.displayName,
-    notes: currentAssetLinkForm.value.notes,
-  })
-
-  if (!payload) return
-
-  const result = await store.createSubmission(activeTab.value, payload, submittedBy.value)
-
-  if (result) {
-    submissionResult.value = {
-      kind: 'single',
-      successCount: 1,
-      failureCount: 0,
-      totalCount: 1,
-      failures: [],
-    }
-    openSubmissionDialog({
-      variant: 'success',
-      title: 'Submission queued',
-      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} link is now waiting in the review queue.`,
-    })
-    return
-  }
-
-  openFailureDialog()
-}
-
-async function submitBulkAssetLinks() {
-  const parsedLines = parseBulkLines(currentBulkForm.value.urls)
-  const invalidLines = parsedLines.filter((item) => !item.parsed)
-
-  if (invalidLines.length > 0) {
-    validationError.value = 'Fix the invalid asset links before submitting the batch.'
-    return
-  }
-
-  const uniqueUrls = [...new Set(parsedLines.map((item) => item.parsed.normalized))]
-
-  if (uniqueUrls.length === 0) {
-    validationError.value = 'Add at least one asset link to submit.'
-    return
-  }
-
-  if (uniqueUrls.length > 25) {
-    validationError.value = 'Bulk submission supports up to 25 asset links per request.'
-    return
-  }
-
-  const result = await store.createBulkSubmissions(
-    activeTab.value,
-    uniqueUrls,
-    submittedBy.value,
-    currentBulkForm.value.notes,
-  )
-
-  if (!result) {
-    openFailureDialog()
-    return
-  }
-
-  submissionResult.value = {
-    kind: 'bulk',
-    totalCount: uniqueUrls.length,
-    successCount: result.successes.length,
-    failureCount: result.failures.length,
-    failures: result.failures,
-  }
-
-  openSubmissionDialog({
-    variant: result.failures.length > 0 ? 'error' : 'success',
-    title: result.failures.length > 0 ? 'Bulk submission partially failed' : 'Bulk submission succeeded',
-    message: result.failures.length > 0
-      ? `Submitted ${result.successes.length} of ${uniqueUrls.length} asset links.`
-      : `Queued all ${uniqueUrls.length} asset links successfully.`,
-    details: result.failures.map((failure) => `${failure.url}: ${failure.error}`),
-  })
-}
-
-function buildSafeAssetPayload(fields) {
   try {
-    return buildAssetIntakeData(fields)
-  } catch (error) {
-    validationError.value = error.message
-    return null
+    const result = activeTab.value === 'model_card'
+      ? await exploreStore.createModelCard(payload)
+      : await exploreStore.createDatasheet(payload)
+
+    createdRecord.value = result
+    resultDialog.value = {
+      variant: 'success',
+      title: `${activeTab.value === 'model_card' ? 'Model card' : 'Datasheet'} created`,
+      message: `Your ${activeTab.value === 'model_card' ? 'model card' : 'datasheet'} has been added to Patra.`,
+    }
+  } catch (e) {
+    if (e.status === 409) {
+      resultDialog.value = {
+        variant: 'error',
+        title: 'Duplicate detected',
+        message: e.message || 'A record with this name already exists in Patra.',
+      }
+    } else {
+      resultDialog.value = {
+        variant: 'error',
+        title: 'Creation failed',
+        message: e.message || 'The backend rejected this submission.',
+      }
+    }
   }
 }
 
@@ -600,47 +378,25 @@ function switchType(type) {
   clearTransientState()
 }
 
-function switchMode(mode) {
-  submitMode.value = mode
-  clearTransientState()
-}
-
 function clearTransientState() {
-  submissionResult.value = null
+  createdRecord.value = null
   validationError.value = ''
-  store.error = null
-  submissionDialog.value = null
+  exploreStore.error = null
+  resultDialog.value = null
 }
 
 function resetForm() {
   submittedBy.value = auth.isLoggedIn ? auth.displayName : ''
   activeTab.value = 'model_card'
-  submitMode.value = 'manual'
-  submissionResult.value = null
-  submissionDialog.value = null
+  createdRecord.value = null
+  resultDialog.value = null
   validationError.value = ''
   Object.assign(modelForm, createModelForm())
   Object.assign(datasheetForm, createDatasheetForm())
-  Object.assign(assetLinkForms.model_card, createSingleAssetForm())
-  Object.assign(assetLinkForms.datasheet, createSingleAssetForm())
-  Object.assign(bulkForms.model_card, createBulkAssetForm())
-  Object.assign(bulkForms.datasheet, createBulkAssetForm())
 }
 
-function openFailureDialog() {
-  openSubmissionDialog({
-    variant: 'error',
-    title: 'Submission failed',
-    message: store.error || 'The backend rejected this submission.',
-  })
-}
-
-function openSubmissionDialog({ variant, title, message, details = [] }) {
-  submissionDialog.value = { variant, title, message, details }
-}
-
-function closeSubmissionDialog() {
-  submissionDialog.value = null
+function closeResultDialog() {
+  resultDialog.value = null
 }
 
 watch(() => auth.displayName, (nextName, previousName) => {
@@ -684,54 +440,11 @@ function createDatasheetForm() {
   }
 }
 
-function createSingleAssetForm() {
-  return {
-    assetUrl: '',
-    displayName: '',
-    notes: '',
-  }
-}
-
-function createBulkAssetForm() {
-  return {
-    urls: '',
-    notes: '',
-  }
-}
-
-function createAssetLinkForms() {
-  return {
-    model_card: createSingleAssetForm(),
-    datasheet: createSingleAssetForm(),
-  }
-}
-
-function createBulkForms() {
-  return {
-    model_card: createBulkAssetForm(),
-    datasheet: createBulkAssetForm(),
-  }
-}
-
 function splitList(value) {
   return String(value || '')
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean)
-}
-
-function parseBulkLines(value) {
-  return String(value || '')
-    .split(/\r?\n/)
-    .map((item, index) => ({
-      line: index + 1,
-      value: item.trim(),
-    }))
-    .filter((item) => item.value)
-    .map((item) => ({
-      ...item,
-      parsed: parseAssetInput(item.value),
-    }))
 }
 </script>
 
@@ -754,61 +467,6 @@ function parseBulkLines(value) {
   gap: 16px;
 }
 
-.submit-header-content {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-}
-
-.submission-modes {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.mode-pill {
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: .82rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.mode-pill.active {
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.intake-prompt {
-  margin-bottom: 18px;
-  padding: 14px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg);
-}
-
-.intake-prompt-title {
-  font-size: .76rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  margin-bottom: 6px;
-}
-
-.intake-prompt p {
-  margin: 0;
-  line-height: 1.6;
-  color: var(--color-text-secondary);
-}
-
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -820,17 +478,6 @@ function parseBulkLines(value) {
   min-height: 60px;
 }
 
-.bulk-links-input {
-  min-height: 180px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.form-helper {
-  margin-top: 8px;
-  font-size: .78rem;
-  color: var(--color-text-muted);
-}
-
 .form-error {
   margin-bottom: 16px;
   padding: 10px 12px;
@@ -838,26 +485,6 @@ function parseBulkLines(value) {
   background: var(--color-danger-bg);
   color: var(--color-danger);
   font-size: .84rem;
-}
-
-.invalid-list {
-  margin-top: 8px;
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
-}
-
-.invalid-list-title {
-  font-size: .78rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-}
-
-.invalid-list ul {
-  margin: 0;
-  padding-left: 18px;
 }
 
 .required { color: var(--color-danger); }
@@ -913,27 +540,12 @@ function parseBulkLines(value) {
 
 .success-banner strong { display: block; margin-bottom: 2px; }
 
-.bulk-summary-warning {
-  display: block;
+.record-link {
+  display: inline-block;
   margin-top: 4px;
-}
-
-.failed-links-list {
-  margin: 0;
-  padding-left: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.failed-links-list li {
-  color: var(--color-text-secondary);
-}
-
-.failed-links-list span {
-  display: block;
-  font-size: .8rem;
-  color: var(--color-text-muted);
+  color: var(--color-success);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .filter-chips { display: flex; gap: 6px; }
@@ -979,11 +591,6 @@ function parseBulkLines(value) {
   line-height: 1.6;
 }
 
-.submission-dialog-details {
-  margin: 12px 0 0;
-  padding-left: 18px;
-}
-
 .submission-dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -998,11 +605,6 @@ function parseBulkLines(value) {
   .submit-info {
     width: 100%;
     position: static;
-  }
-
-  .submit-header-content {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 

@@ -3,8 +3,6 @@
   "private": true,
   "scripts": {
     "dev": "npm --prefix app run dev",
-    "dev:live": "npm --prefix app run dev:live",
-    "dev:mock": "npm --prefix app run dev:mock",
     "build": "npm --prefix app run build",
     "preview": "npm --prefix app run preview",
     "mock": "npm --prefix mock-server run dev"

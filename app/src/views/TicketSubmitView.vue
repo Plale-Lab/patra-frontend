@@ -2,19 +2,10 @@
   <div>
     <div class="page-header">
       <h1>Support Tickets</h1>
-      <p>Submit a service request or report an issue</p>
+      <p>Report an issue or request access</p>
     </div>
 
-    <div class="card" v-if="!apiMode.supportsTickets">
-      <div class="card-body">
-        <div class="ticket-empty">
-          <IconMoodSmile :size="32" stroke-width="1.2" />
-          <span>Ticketing is not available in this deployment.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="ticket-layout" v-else>
+    <div class="ticket-layout">
       <!-- Submit Form -->
       <div class="card ticket-form">
         <div class="card-header">
@@ -141,7 +132,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useTicketsStore } from '../stores/tickets'
-import { useApiModeStore } from '../stores/apiMode'
 import { useAuthStore } from '../stores/auth'
 import {
   IconMessagePlus, IconCircleCheck, IconSend, IconList,
@@ -149,7 +139,6 @@ import {
 } from '@tabler/icons-vue'
 
 const store = useTicketsStore()
-const apiMode = useApiModeStore()
 const auth = useAuthStore()
 const submitted = ref(false)
 const lastTicketId = ref('')
@@ -207,12 +196,10 @@ function resetForm() {
 }
 
 function loadTickets() {
-  if (!apiMode.supportsTickets) return
   store.fetchTickets()
 }
 
 onMounted(loadTickets)
-watch(() => apiMode.mode, loadTickets)
 watch(() => auth.displayName, (nextName, previousName) => {
   if (!form.submittedBy.trim() || form.submittedBy === previousName) {
     form.submittedBy = auth.isLoggedIn ? nextName : ''

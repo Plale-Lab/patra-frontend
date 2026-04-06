@@ -400,78 +400,7 @@ const deployments = [
     { device_id: 'cloud-aws-01', device_type: 'AWS EC2 g4dn', location: 'us-east-1', timestamp: '2026-03-01T08:00:00', status: 'completed', avg_inference_ms: 8 },
 ];
 
-// ─── Mock Submissions (pending review) ───────────────────────────────
-let submissionIdCounter = 6;
-const submissions = [
-    {
-        id: 'sub-001', type: 'model_card', status: 'pending',
-        submitted_by: 'Alice Chen', submitted_at: '2026-03-05T09:00:00',
-        reviewed_by: null, reviewed_at: null, admin_notes: '',
-        data: {
-            name: 'GPT-2 Text Generator', version: '1.0', author: 'Alice Chen',
-            short_description: 'Fine-tuned GPT-2 for creative writing generation',
-            category: 'NLP', input_type: 'Text', framework: 'pytorch',
-            keywords: 'gpt-2, text generation, nlp, transformers',
-            is_private: false, test_accuracy: 0.0, license: 'MIT',
-        },
-    },
-    {
-        id: 'sub-002', type: 'datasheet', status: 'pending',
-        submitted_by: 'Bob Martinez', submitted_at: '2026-03-04T15:30:00',
-        reviewed_by: null, reviewed_at: null, admin_notes: '',
-        data: {
-            name: 'Fashion MNIST Extended', version: '2.0',
-            description: 'Extended Fashion MNIST with 100K images across 20 categories.',
-            source: 'Custom Collection', datapoints: 100000,
-            license: 'CC BY 4.0', features: ['Grayscale Images (28x28)', 'Labels (20 categories)'],
-        },
-    },
-    {
-        id: 'sub-003', type: 'model_card', status: 'approved',
-        submitted_by: 'Carol Davis', submitted_at: '2026-03-03T11:00:00',
-        reviewed_by: 'System Admin', reviewed_at: '2026-03-03T14:00:00', admin_notes: 'Looks good.',
-        data: {
-            name: 'Logistic Regressor', version: '0.5', author: 'Carol Davis',
-            short_description: 'Simple logistic regression baseline for income prediction',
-            category: 'Classification', input_type: 'Tabular', framework: 'scikit-learn',
-            keywords: 'baseline, logistic regression, classification',
-            is_private: false, test_accuracy: 0.72, license: 'BSD-3 Clause',
-        },
-    },
-    {
-        id: 'sub-004', type: 'model_card', status: 'pending',
-        submitted_by: 'Dana Kapoor', submitted_at: '2026-03-05T16:20:00',
-        reviewed_by: null, reviewed_at: null, admin_notes: '',
-        data: {
-            intake_method: 'asset_link',
-            asset_url: 'https://huggingface.co/google/gemma-2-2b-it',
-            asset_host: 'huggingface.co',
-            asset_provider: 'huggingface',
-            display_name: 'Gemma 2 2B IT',
-            submitter_notes: 'Please create an ICICLE model card from the existing Hugging Face model page.',
-            intake_prompt: 'Create ICICLE model card or datasheet for the existing model or dataset you want to include in the ICICLE ecosystem.',
-        },
-    },
-    {
-        id: 'sub-005', type: 'datasheet', status: 'pending',
-        submitted_by: 'Evan Brooks', submitted_at: '2026-03-05T17:10:00',
-        reviewed_by: null, reviewed_at: null, admin_notes: '',
-        data: {
-            intake_method: 'asset_link',
-            asset_url: 'https://huggingface.co/datasets/stanfordnlp/imdb',
-            asset_host: 'huggingface.co',
-            asset_provider: 'huggingface',
-            submitter_notes: 'Batch import for the review queue.',
-            intake_prompt: 'Create ICICLE model card or datasheet for the existing model or dataset you want to include in the ICICLE ecosystem.',
-            batch_id: 'batch-20260305-171000',
-            batch_index: 1,
-            batch_total: 2,
-            submission_origin: 'bulk_asset_links',
-        },
-    },
-];
-
-// ─── Mock Tickets ────────────────────────────────────────────────────
+// ─── Mock Tickets ────────────────────────────────────────────────
 let ticketIdCounter = 5;
 const tickets = [
     {
@@ -565,48 +494,36 @@ app.get('/datasheet/:id', (req, res) => {
     res.json(ds);
 });
 
-// ─── Submission Routes ───────────────────────────────────────────────
-
-// List all submissions (admin)
-app.get('/submissions', (req, res) => {
-    const status = req.query.status;
-    let list = submissions;
-    if (status) list = list.filter(s => s.status === status);
-    res.json(list);
+// Update model card
+app.put('/modelcard/:id', (req, res) => {
+    const mc = modelCards.find(m => m.id === req.params.id);
+    if (!mc) return res.status(404).json({ error: 'Model card could not be found!' });
+    Object.assign(mc, req.body);
+    res.json(mc);
 });
 
-// Get single submission
-app.get('/submissions/:id', (req, res) => {
-    const sub = submissions.find(s => s.id === req.params.id);
-    if (!sub) return res.status(404).json({ error: 'Submission not found' });
-    res.json(sub);
+// Update datasheet
+app.put('/datasheet/:id', (req, res) => {
+    const ds = datasheets.find(d => d.id === req.params.id);
+    if (!ds) return res.status(404).json({ error: 'Datasheet not found' });
+    Object.assign(ds, req.body);
+    res.json(ds);
 });
 
-// Create submission (user)
-app.post('/submissions', (req, res) => {
-    const body = req.body;
-    const newSub = {
-        id: `sub-${String(submissionIdCounter++).padStart(3, '0')}`,
-        type: body.type || 'model_card',
-        status: 'pending',
-        submitted_by: body.submitted_by || 'Anonymous',
-        submitted_at: new Date().toISOString(),
-        reviewed_by: null, reviewed_at: null, admin_notes: '',
-        data: body.data || {},
-    };
-    submissions.unshift(newSub);
-    res.status(201).json(newSub);
+// ─── Direct Creation Routes ─────────────────────────────────────────
+
+let mockIdCounter = 100;
+
+// Create model card (direct)
+app.post('/v1/assets/model-cards', (req, res) => {
+    const id = mockIdCounter++;
+    res.status(201).json({ asset_type: 'model_card', asset_id: id, id, organization: 'mock', created: true });
 });
 
-// Update submission status (admin approve/reject)
-app.put('/submissions/:id', (req, res) => {
-    const sub = submissions.find(s => s.id === req.params.id);
-    if (!sub) return res.status(404).json({ error: 'Submission not found' });
-    if (req.body.status) sub.status = req.body.status;
-    if (req.body.admin_notes !== undefined) sub.admin_notes = req.body.admin_notes;
-    sub.reviewed_by = req.body.reviewed_by || 'System Admin';
-    sub.reviewed_at = new Date().toISOString();
-    res.json(sub);
+// Create datasheet (direct)
+app.post('/v1/assets/datasheets', (req, res) => {
+    const id = mockIdCounter++;
+    res.status(201).json({ asset_type: 'datasheet', asset_id: id, id, organization: 'mock', created: true });
 });
 
 // ─── Ticket Routes ───────────────────────────────────────────────────
@@ -737,11 +654,179 @@ app.delete('/users/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// ─── Experiment Routes (domain-parameterised) ───────────────────────
+
+// List users with experiments
+app.get('/experiments/:domain/users', (req, res) => {
+    const data = domainExperimentUsers[req.params.domain];
+    if (!data) return res.status(404).json({ error: 'Unknown domain' });
+    res.json(data);
+});
+
+// User experiment summary
+app.get('/experiments/:domain/users/:userId/summary', (req, res) => {
+    const summaries = domainExperimentSummaries[req.params.domain];
+    if (!summaries) return res.status(404).json({ error: 'Unknown domain' });
+    const data = summaries[req.params.userId] || [];
+    res.json(data);
+});
+
+// User experiment list (for dropdown)
+app.get('/experiments/:domain/users/:userId/list', (req, res) => {
+    const summaries = domainExperimentSummaries[req.params.domain];
+    if (!summaries) return res.status(404).json({ error: 'Unknown domain' });
+    const data = summaries[req.params.userId] || [];
+    res.json(data.map(({ experiment_id, start_at, device_id, model_id }) => ({ experiment_id, start_at, device_id, model_id })));
+});
+
+// Experiment detail
+app.get('/experiments/:domain/:experimentId', (req, res) => {
+    const details = domainExperimentDetails[req.params.domain];
+    if (!details) return res.status(404).json({ error: 'Unknown domain' });
+    const detail = details[req.params.experimentId];
+    if (!detail) return res.status(404).json({ error: 'Experiment not found' });
+    res.json(detail);
+});
+
+// Experiment images (paginated)
+app.get('/experiments/:domain/:experimentId/images', (req, res) => {
+    const allImages = domainExperimentImages[req.params.domain];
+    if (!allImages) return res.status(404).json({ error: 'Unknown domain' });
+    const images = allImages[req.params.experimentId] || [];
+    const skip = parseInt(req.query.skip) || 0;
+    const limit = parseInt(req.query.limit) || 100;
+    res.json(images.slice(skip, skip + limit));
+});
+
+// Experiment power consumption
+app.get('/experiments/:domain/:experimentId/power', (req, res) => {
+    const allPower = domainExperimentPower[req.params.domain];
+    if (!allPower) return res.status(404).json({ error: 'Unknown domain' });
+    const power = allPower[req.params.experimentId];
+    res.json(power || null);
+});
+
+// ─── Mock Experiments — keyed by domain ──────────────────────────────
+
+// Animal Ecology (formerly Camera Traps)
+const animalEcologyUsers = [
+    { user_id: 'jstubbs', username: 'jstubbs' },
+    { user_id: 'wqiu', username: 'wqiu' },
+    { user_id: 'nkarthikeyan', username: 'nkarthikeyan' },
+];
+
+const animalEcologySummaries = {
+    'jstubbs': [
+        { experiment_id: 'googlenet-iu-animal-classification', user_id: 'jstubbs', model_id: 'googlenet-iu-animal', device_id: 'jetson_nano_01', start_at: '2026-03-20T08:10:23Z', total_images: 5, saved_images: 3, precision: 0.8, recall: 1.0, f1_score: 0.88889 },
+        { experiment_id: 'megadetector-rpi-wildlife', user_id: 'jstubbs', model_id: 'megadetector-v5a', device_id: 'rpi4_cam_01', start_at: '2026-03-22T14:32:00Z', total_images: 3, saved_images: 2, precision: 0.66667, recall: 0.66667, f1_score: 0.66667 },
+    ],
+    'wqiu': [
+        { experiment_id: 'yolov9-wildlife-survey', user_id: 'wqiu', model_id: 'yolov9-wildlife', device_id: 'coral_tpu_01', start_at: '2026-03-18T06:05:12Z', total_images: 4, saved_images: 3, precision: 0.75, recall: 1.0, f1_score: 0.85714 },
+    ],
+    'nkarthikeyan': [
+        { experiment_id: 'efficientdet-coral-campus', user_id: 'nkarthikeyan', model_id: 'efficientdet-lite', device_id: 'coral_tpu_01', start_at: '2026-03-25T10:15:30Z', total_images: 2, saved_images: 2, precision: 1.0, recall: 1.0, f1_score: 1.0 },
+    ],
+};
+
+const animalEcologyDetails = {
+    'googlenet-iu-animal-classification': { experiment_id: 'googlenet-iu-animal-classification', model_id: 'googlenet-iu-animal', device_id: 'jetson_nano_01', start_at: '2026-03-20T08:10:23Z', total_images: 5, total_predictions: 5, total_ground_truth_objects: 4, true_positives: 4, false_positives: 1, false_negatives: 0, precision: 0.8, recall: 1.0, f1_score: 0.88889, map_50: 0.823, map_50_95: 0.712, mean_iou: 0.678 },
+    'megadetector-rpi-wildlife': { experiment_id: 'megadetector-rpi-wildlife', model_id: 'megadetector-v5a', device_id: 'rpi4_cam_01', start_at: '2026-03-22T14:32:00Z', total_images: 3, total_predictions: 3, total_ground_truth_objects: 3, true_positives: 2, false_positives: 1, false_negatives: 1, precision: 0.66667, recall: 0.66667, f1_score: 0.66667, map_50: 0.856, map_50_95: 0.745, mean_iou: 0.712 },
+    'yolov9-wildlife-survey': { experiment_id: 'yolov9-wildlife-survey', model_id: 'yolov9-wildlife', device_id: 'coral_tpu_01', start_at: '2026-03-18T06:05:12Z', total_images: 4, total_predictions: 4, total_ground_truth_objects: 3, true_positives: 3, false_positives: 1, false_negatives: 0, precision: 0.75, recall: 1.0, f1_score: 0.85714, map_50: 0.765, map_50_95: 0.651, mean_iou: 0.623 },
+    'efficientdet-coral-campus': { experiment_id: 'efficientdet-coral-campus', model_id: 'efficientdet-lite', device_id: 'coral_tpu_01', start_at: '2026-03-25T10:15:30Z', total_images: 2, total_predictions: 2, total_ground_truth_objects: 2, true_positives: 2, false_positives: 0, false_negatives: 0, precision: 1.0, recall: 1.0, f1_score: 1.0, map_50: 0.891, map_50_95: 0.789, mean_iou: 0.756 },
+};
+
+const animalEcologyImages = {
+    'googlenet-iu-animal-classification': [
+        { image_name: 'IMG_20260320_081023.jpg', ground_truth: 'deer', label: 'deer', probability: 0.943, image_decision: 'Save', flattened_scores: '[{"label":"deer","probability":0.943}]', image_receiving_timestamp: '2026-03-20T08:10:23Z', image_scoring_timestamp: '2026-03-20T08:10:24Z' },
+        { image_name: 'IMG_20260320_083512.jpg', ground_truth: 'empty', label: 'empty', probability: 0.871, image_decision: 'Discard', flattened_scores: '[{"label":"empty","probability":0.871}]', image_receiving_timestamp: '2026-03-20T08:35:12Z', image_scoring_timestamp: '2026-03-20T08:35:13Z' },
+        { image_name: 'IMG_20260320_091204.jpg', ground_truth: 'coyote', label: 'coyote', probability: 0.967, image_decision: 'Save', flattened_scores: '[{"label":"coyote","probability":0.967}]', image_receiving_timestamp: '2026-03-20T09:12:04Z', image_scoring_timestamp: '2026-03-20T09:12:05Z' },
+        { image_name: 'IMG_20260320_102345.jpg', ground_truth: 'person', label: 'person', probability: 0.812, image_decision: 'Save', flattened_scores: '[{"label":"person","probability":0.812}]', image_receiving_timestamp: '2026-03-20T10:23:45Z', image_scoring_timestamp: '2026-03-20T10:23:46Z' },
+        { image_name: 'IMG_20260320_114502.jpg', ground_truth: 'empty', label: 'empty', probability: 0.934, image_decision: 'Discard', flattened_scores: '[{"label":"empty","probability":0.934}]', image_receiving_timestamp: '2026-03-20T11:45:02Z', image_scoring_timestamp: '2026-03-20T11:45:03Z' },
+    ],
+    'megadetector-rpi-wildlife': [
+        { image_name: 'CAM02_20260322_143200.jpg', ground_truth: 'raccoon', label: 'animal', probability: 0.989, image_decision: 'Save', flattened_scores: '[{"label":"animal","probability":0.989}]', image_receiving_timestamp: '2026-03-22T14:32:00Z', image_scoring_timestamp: '2026-03-22T14:32:01Z' },
+        { image_name: 'CAM02_20260322_151045.jpg', ground_truth: 'deer', label: 'animal', probability: 0.876, image_decision: 'Save', flattened_scores: '[{"label":"animal","probability":0.876}]', image_receiving_timestamp: '2026-03-22T15:10:45Z', image_scoring_timestamp: '2026-03-22T15:10:46Z' },
+    ],
+    'yolov9-wildlife-survey': [
+        { image_name: 'WILD_20260318_060512.jpg', ground_truth: 'bear', label: 'animal', probability: 0.921, image_decision: 'Save', flattened_scores: '[{"label":"animal","probability":0.921}]', image_receiving_timestamp: '2026-03-18T06:05:12Z', image_scoring_timestamp: '2026-03-18T06:05:13Z' },
+        { image_name: 'WILD_20260318_072301.jpg', ground_truth: 'empty', label: 'empty', probability: 0.756, image_decision: 'Discard', flattened_scores: '[{"label":"empty","probability":0.756}]', image_receiving_timestamp: '2026-03-18T07:23:01Z', image_scoring_timestamp: '2026-03-18T07:23:02Z' },
+    ],
+    'efficientdet-coral-campus': [
+        { image_name: 'CORAL_20260325_101530.jpg', ground_truth: 'squirrel', label: 'animal', probability: 0.978, image_decision: 'Save', flattened_scores: '[{"label":"animal","probability":0.978}]', image_receiving_timestamp: '2026-03-25T10:15:30Z', image_scoring_timestamp: '2026-03-25T10:15:31Z' },
+    ],
+};
+
+const animalEcologyPower = {
+    'googlenet-iu-animal-classification': { experiment_id: 'googlenet-iu-animal-classification', image_generating_plugin_cpu_power_consumption: 12.34, image_generating_plugin_gpu_power_consumption: 8.56, power_monitor_plugin_cpu_power_consumption: 2.1, power_monitor_plugin_gpu_power_consumption: 0.0, image_scoring_plugin_cpu_power_consumption: 18.78, image_scoring_plugin_gpu_power_consumption: 45.23, total_cpu_power_consumption: 33.22, total_gpu_power_consumption: 53.79 },
+    'megadetector-rpi-wildlife': { experiment_id: 'megadetector-rpi-wildlife', image_generating_plugin_cpu_power_consumption: 8.91, image_generating_plugin_gpu_power_consumption: 0.0, power_monitor_plugin_cpu_power_consumption: 1.56, power_monitor_plugin_gpu_power_consumption: 0.0, image_scoring_plugin_cpu_power_consumption: 14.23, image_scoring_plugin_gpu_power_consumption: 0.0, total_cpu_power_consumption: 24.7, total_gpu_power_consumption: 0.0 },
+    'yolov9-wildlife-survey': { experiment_id: 'yolov9-wildlife-survey', image_generating_plugin_cpu_power_consumption: 15.67, image_generating_plugin_gpu_power_consumption: 22.34, power_monitor_plugin_cpu_power_consumption: 3.45, power_monitor_plugin_gpu_power_consumption: 1.23, image_scoring_plugin_cpu_power_consumption: 25.89, image_scoring_plugin_gpu_power_consumption: 67.45, total_cpu_power_consumption: 45.01, total_gpu_power_consumption: 91.02 },
+};
+
+// Digital Agriculture
+const digitalAgUsers = [
+    { user_id: 'cgarcia', username: 'cgarcia' },
+    { user_id: 'rcardone', username: 'rcardone' },
+];
+
+const digitalAgSummaries = {
+    'cgarcia': [
+        { experiment_id: 'drone-corn-field-survey', user_id: 'cgarcia', model_id: 'yolov9-crop', device_id: 'dji_mavic_01', start_at: '2026-04-01T09:01:00Z', total_images: 4, saved_images: 3, precision: 0.75, recall: 0.75, f1_score: 0.75 },
+    ],
+    'rcardone': [
+        { experiment_id: 'satellite-soybean-yield', user_id: 'rcardone', model_id: 'resnet50-yield', device_id: 'sentinel2_tile', start_at: '2026-03-28T12:00:00Z', total_images: 4, saved_images: 4, precision: 0.75, recall: 1.0, f1_score: 0.85714 },
+    ],
+};
+
+const digitalAgDetails = {
+    'drone-corn-field-survey': { experiment_id: 'drone-corn-field-survey', model_id: 'yolov9-crop', device_id: 'dji_mavic_01', start_at: '2026-04-01T09:01:00Z', total_images: 4, total_predictions: 4, total_ground_truth_objects: 4, true_positives: 3, false_positives: 1, false_negatives: 1, precision: 0.75, recall: 0.75, f1_score: 0.75, map_50: 0.814, map_50_95: 0.701, mean_iou: 0.692 },
+    'satellite-soybean-yield': { experiment_id: 'satellite-soybean-yield', model_id: 'resnet50-yield', device_id: 'sentinel2_tile', start_at: '2026-03-28T12:00:00Z', total_images: 4, total_predictions: 4, total_ground_truth_objects: 3, true_positives: 3, false_positives: 1, false_negatives: 0, precision: 0.75, recall: 1.0, f1_score: 0.85714, map_50: 0.832, map_50_95: 0.724, mean_iou: 0.715 },
+};
+
+const digitalAgImages = {
+    'drone-corn-field-survey': [
+        { image_name: 'DRONE_20260401_090100.jpg', ground_truth: 'healthy', label: 'healthy', probability: 0.951, image_decision: 'Save', flattened_scores: '[{"label":"healthy","probability":0.951}]', image_receiving_timestamp: '2026-04-01T09:01:00Z', image_scoring_timestamp: '2026-04-01T09:01:02Z' },
+        { image_name: 'DRONE_20260401_091530.jpg', ground_truth: 'stressed', label: 'stressed', probability: 0.883, image_decision: 'Save', flattened_scores: '[{"label":"stressed","probability":0.883}]', image_receiving_timestamp: '2026-04-01T09:15:30Z', image_scoring_timestamp: '2026-04-01T09:15:32Z' },
+        { image_name: 'DRONE_20260401_093200.jpg', ground_truth: 'diseased', label: 'diseased', probability: 0.912, image_decision: 'Save', flattened_scores: '[{"label":"diseased","probability":0.912}]', image_receiving_timestamp: '2026-04-01T09:32:00Z', image_scoring_timestamp: '2026-04-01T09:32:02Z' },
+        { image_name: 'DRONE_20260401_100500.jpg', ground_truth: 'healthy', label: 'healthy', probability: 0.745, image_decision: 'Discard', flattened_scores: '[{"label":"healthy","probability":0.745}]', image_receiving_timestamp: '2026-04-01T10:05:00Z', image_scoring_timestamp: '2026-04-01T10:05:02Z' },
+    ],
+    'satellite-soybean-yield': [
+        { image_name: 'SAT_20260328_120000.tif', ground_truth: 'high_yield', label: 'high_yield', probability: 0.934, image_decision: 'Save', flattened_scores: '[{"label":"high_yield","probability":0.934}]', image_receiving_timestamp: '2026-03-28T12:00:00Z', image_scoring_timestamp: '2026-03-28T12:00:05Z' },
+        { image_name: 'SAT_20260328_123000.tif', ground_truth: 'medium_yield', label: 'medium_yield', probability: 0.867, image_decision: 'Save', flattened_scores: '[{"label":"medium_yield","probability":0.867}]', image_receiving_timestamp: '2026-03-28T12:30:00Z', image_scoring_timestamp: '2026-03-28T12:30:05Z' },
+    ],
+};
+
+const digitalAgPower = {
+    'drone-corn-field-survey': { experiment_id: 'drone-corn-field-survey', image_generating_plugin_cpu_power_consumption: 10.23, image_generating_plugin_gpu_power_consumption: 15.67, power_monitor_plugin_cpu_power_consumption: 1.89, power_monitor_plugin_gpu_power_consumption: 0.56, image_scoring_plugin_cpu_power_consumption: 20.45, image_scoring_plugin_gpu_power_consumption: 52.34, total_cpu_power_consumption: 32.57, total_gpu_power_consumption: 68.57 },
+    'satellite-soybean-yield': { experiment_id: 'satellite-soybean-yield', image_generating_plugin_cpu_power_consumption: 5.67, image_generating_plugin_gpu_power_consumption: 0.0, power_monitor_plugin_cpu_power_consumption: 1.23, power_monitor_plugin_gpu_power_consumption: 0.0, image_scoring_plugin_cpu_power_consumption: 12.34, image_scoring_plugin_gpu_power_consumption: 0.0, total_cpu_power_consumption: 19.24, total_gpu_power_consumption: 0.0 },
+};
+
+// Domain lookup maps
+const domainExperimentUsers = {
+    'animal-ecology': animalEcologyUsers,
+    'digital-ag': digitalAgUsers,
+};
+const domainExperimentSummaries = {
+    'animal-ecology': animalEcologySummaries,
+    'digital-ag': digitalAgSummaries,
+};
+const domainExperimentDetails = {
+    'animal-ecology': animalEcologyDetails,
+    'digital-ag': digitalAgDetails,
+};
+const domainExperimentImages = {
+    'animal-ecology': animalEcologyImages,
+    'digital-ag': digitalAgImages,
+};
+const domainExperimentPower = {
+    'animal-ecology': animalEcologyPower,
+    'digital-ag': digitalAgPower,
+};
+
 // ─── Start ───────────────────────────────────────────────────────────
 app.listen(PORT, () => {
     console.log(`\n  🧪  Patra Mock Server running at http://localhost:${PORT}`);
     console.log(`  📚  ${modelCards.length} model cards | ${datasheets.length} datasheets`);
-    console.log(`  📝  ${submissions.length} submissions | ${tickets.length} tickets`);
+    console.log(`  📝  ${tickets.length} tickets`);
     console.log(`  👤  ${users.length} users | ${groups.length} groups\n`);
 });
 

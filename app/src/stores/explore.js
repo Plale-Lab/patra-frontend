@@ -351,6 +351,102 @@ export const useExploreStore = defineStore('explore', () => {
         }
     }
 
+    async function createModelCard(payload) {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await apiFetch('/v1/assets/model-cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            if (res.status === 409) {
+                const data = await res.json().catch(() => ({}))
+                throw Object.assign(new Error(data.detail || 'Duplicate model card'), { status: 409 })
+            }
+            if (!res.ok) throw new Error(await parseErrorText(res, `HTTP ${res.status}`))
+            return await res.json()
+        } catch (e) {
+            error.value = e.message
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function createDatasheet(payload) {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await apiFetch('/v1/assets/datasheets', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            if (res.status === 409) {
+                const data = await res.json().catch(() => ({}))
+                throw Object.assign(new Error(data.detail || 'Duplicate datasheet'), { status: 409 })
+            }
+            if (!res.ok) throw new Error(await parseErrorText(res, `HTTP ${res.status}`))
+            return await res.json()
+        } catch (e) {
+            error.value = e.message
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function updateModelCard(id, payload) {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await apiFetch(`/modelcard/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            if (!res.ok) throw new Error(await parseErrorText(res, `HTTP ${res.status}`))
+            currentModel.value = normalizeModel(await res.json())
+            return currentModel.value
+        } catch (e) {
+            error.value = e.message
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function updateDatasheet(id, payload) {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await apiFetch(`/datasheet/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            if (!res.ok) throw new Error(await parseErrorText(res, `HTTP ${res.status}`))
+            currentDatasheet.value = normalizeDatasheet(await res.json())
+            return currentDatasheet.value
+        } catch (e) {
+            error.value = e.message
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function parseErrorText(res, fallback) {
+        const ct = res.headers.get('content-type') || ''
+        if (ct.includes('application/json')) {
+            const data = await res.json().catch(() => null)
+            if (typeof data?.detail === 'string') return data.detail
+            if (Array.isArray(data?.detail)) return data.detail.map(i => i.msg || String(i)).join('; ')
+        }
+        return await res.text().catch(() => '') || fallback
+    }
+
     function resetFilters() {
         searchQuery.value = ''
         selectedCategories.value = []
@@ -363,6 +459,7 @@ export const useExploreStore = defineStore('explore', () => {
         models, currentModel, datasheets, currentDatasheet, deployments, loading, error,
         searchQuery, selectedCategories, selectedFrameworks, selectedAuthor, visibilityFilter,
         allCategories, allFrameworks, allAuthors, filteredModels,
-        fetchModels, fetchModelById, fetchDeployments, fetchDatasheets, fetchDatasheetById, resetFilters,
+        fetchModels, fetchModelById, fetchDeployments, fetchDatasheets, fetchDatasheetById,
+        createModelCard, createDatasheet, updateModelCard, updateDatasheet, resetFilters,
     }
 })

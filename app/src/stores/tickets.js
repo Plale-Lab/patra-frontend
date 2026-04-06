@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiFetch } from '../lib/api'
-import { getApiModeMeta, getStoredApiMode } from '../config/api'
 
 export const useTicketsStore = defineStore('tickets', () => {
     const tickets = ref([])
@@ -14,14 +13,6 @@ export const useTicketsStore = defineStore('tickets', () => {
     async function fetchTickets(status) {
         loading.value = true
         error.value = null
-        supported.value = supportsTicketApi()
-
-        if (!supported.value) {
-            tickets.value = []
-            loading.value = false
-            return []
-        }
-
         try {
             const res = await apiFetch(status ? `/tickets?status=${status}` : '/tickets')
             if (res.status === 404) {
@@ -44,12 +35,6 @@ export const useTicketsStore = defineStore('tickets', () => {
     async function createTicket(data) {
         loading.value = true
         error.value = null
-        supported.value = supportsTicketApi()
-        if (!supported.value) {
-            error.value = 'Ticketing is not available in this deployment.'
-            loading.value = false
-            return null
-        }
         try {
             const res = await apiFetch('/tickets', {
                 method: 'POST',
@@ -75,11 +60,6 @@ export const useTicketsStore = defineStore('tickets', () => {
     }
 
     async function updateTicket(id, updates) {
-        supported.value = supportsTicketApi()
-        if (!supported.value) {
-            error.value = 'Ticketing is not available in this deployment.'
-            return null
-        }
         try {
             const res = await apiFetch(`/tickets/${id}`, {
                 method: 'PUT',
@@ -101,10 +81,6 @@ export const useTicketsStore = defineStore('tickets', () => {
             error.value = e.message
             return null
         }
-    }
-
-    function supportsTicketApi() {
-        return Boolean(getApiModeMeta(getStoredApiMode()).supportsTickets)
     }
 
     return { tickets, loading, error, supported, openCount, fetchTickets, createTicket, updateTicket }

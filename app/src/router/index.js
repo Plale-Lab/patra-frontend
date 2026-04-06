@@ -11,9 +11,10 @@ import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
 import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
 import SubmitView from '../views/SubmitView.vue'
+import ExperimentsView from '../views/ExperimentsView.vue'
 import TicketSubmitView from '../views/TicketSubmitView.vue'
-import SubmissionsReviewView from '../views/SubmissionsReviewView.vue'
 import TicketManagementView from '../views/TicketManagementView.vue'
+import McpExplorerView from '../views/McpExplorerView.vue'
 // import UserManagementView from '../views/UserManagementView.vue'  // Commented out — future feature
 
 const routes = [
@@ -25,12 +26,15 @@ const routes = [
     { path: '/explore-datasheets/:id', name: 'DatasheetDetail', component: DatasheetDetailView },
     { path: '/explore', redirect: { name: 'ExploreModelCards' } },
     { path: '/explore/:id', redirect: (to) => ({ name: 'ModelDetail', params: { id: to.params.id } }) },
+    { path: '/animal-ecology', name: 'AnimalEcology', component: ExperimentsView, props: { domain: 'animal-ecology' } },
+    { path: '/digital-agriculture', name: 'DigitalAgriculture', component: ExperimentsView, props: { domain: 'digital-ag' } },
     { path: '/submit', name: 'Submit', component: SubmitView },
     { path: '/tickets', name: 'Tickets', component: TicketSubmitView },
+    { path: '/mcp-explorer', name: 'McpExplorer', component: McpExplorerView },
 
     // Admin routes (require login as admin)
     { path: '/models', name: 'Models', component: ModelsView, meta: { admin: true } },
-    { path: '/submissions', name: 'SubmissionsReview', component: SubmissionsReviewView, meta: { admin: true } },
+    { path: '/submissions', redirect: { name: 'Dashboard' } },
     { path: '/ticket-management', name: 'TicketManagement', component: TicketManagementView, meta: { admin: true } },
     // { path: '/users', name: 'UserManagement', component: UserManagementView, meta: { admin: true } },  // Future
     // { path: '/groups', name: 'Groups', component: GroupsView, meta: { admin: true } },                  // Future

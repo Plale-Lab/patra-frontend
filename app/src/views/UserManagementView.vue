@@ -209,16 +209,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { apiFetch } from '../lib/api'
-import { useApiModeStore } from '../stores/apiMode'
 import {
   IconUserPlus, IconUsers, IconShieldCheck, IconUsersGroup,
   IconTrash, IconX, IconDeviceFloppy,
 } from '@tabler/icons-vue'
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
 
 const usersList = ref([])
 const groupNames = ref([])
@@ -291,7 +289,6 @@ function loadUsersAndGroups() {
 }
 
 onMounted(loadUsersAndGroups)
-watch(() => apiMode.mode, loadUsersAndGroups)
 </script>
 
 <style scoped>

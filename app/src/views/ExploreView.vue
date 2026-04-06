@@ -2,13 +2,13 @@
   <div>
     <div class="page-header">
       <h1>Browse Model Cards</h1>
-      <p>Browse and query the Patra Knowledge Base model cards</p>
+      <p>Search and filter model cards</p>
     </div>
 
     <!-- Connection banner -->
     <div class="connection-banner error" v-if="store.error">
       <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Cannot connect to {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>. {{ apiMode.helpText }}</span>
+      <span>Cannot connect to the API server.</span>
     </div>
 
     <div class="explore-layout">
@@ -45,22 +45,19 @@
 </template>
 
 <script setup>
-import { onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 import { useExploreStore } from '../stores/explore'
-import { useApiModeStore } from '../stores/apiMode'
 import FilterSidebar from '../components/FilterSidebar.vue'
 import ModelCard from '../components/ModelCard.vue'
 import { IconAlertCircle, IconLoader2, IconDatabaseOff } from '@tabler/icons-vue'
 
 const store = useExploreStore()
-const apiMode = useApiModeStore()
 
 function loadModels() {
   store.fetchModels()
 }
 
 onMounted(loadModels)
-watch(() => apiMode.mode, loadModels)
 </script>
 
 <style scoped>
