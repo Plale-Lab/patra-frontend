@@ -1,8 +1,6 @@
-function normalizeInput(value) {
-  return String(value ?? '').trim() || null
-}
+import { normalizeAssetInput, parseAssetInput } from './assetIntake'
 
-export function getEndpointPath(type, bulk = false) {
+export function getAssetEndpointPath(type, bulk = false) {
   if (type === 'model_card') {
     return bulk ? '/v1/assets/model-cards/bulk' : '/v1/assets/model-cards'
   }
@@ -14,7 +12,7 @@ export function getEndpointPath(type, bulk = false) {
   throw new Error(`Unsupported submission type: ${type}`)
 }
 
-export function mapFormToPayload(type, data, submittedBy) {
+export function mapSubmissionToAssetPayload(type, data, submittedBy) {
   if (type === 'model_card') {
     return mapModelCardPayload(data, submittedBy)
   }
@@ -26,7 +24,7 @@ export function mapFormToPayload(type, data, submittedBy) {
   throw new Error(`Unsupported submission type: ${type}`)
 }
 
-export function getDisplayName(type, payload) {
+export function getSubmissionDisplayName(type, payload) {
   if (type === 'model_card') {
     return payload.name || 'Untitled model card'
   }
@@ -64,24 +62,24 @@ function mapModelCardPayload(data, submittedBy) {
 
   return compactObject({
     name,
-    version: normalizeInput(data.version),
+    version: normalizeAssetInput(data.version),
     short_description: shortDescription,
     full_description: fullDescription,
-    keywords: normalizeInput(data.keywords),
+    keywords: normalizeAssetInput(data.keywords),
     author,
-    input_data: normalizeInput(data.input_data),
-    input_type: normalizeInput(data.input_type),
-    output_data: normalizeInput(data.output_data),
-    category: normalizeInput(data.category),
+    input_data: normalizeAssetInput(data.input_data),
+    input_type: normalizeAssetInput(data.input_type),
+    output_data: normalizeAssetInput(data.output_data),
+    category: normalizeAssetInput(data.category),
     is_private: Boolean(data.is_private),
     ai_model: compactObject({
       name,
-      version: normalizeInput(data.version),
+      version: normalizeAssetInput(data.version),
       owner: author,
       description: fullDescription || shortDescription,
-      license: normalizeInput(data.license),
-      framework: normalizeInput(data.framework),
-      model_type: normalizeInput(data.category),
+      license: normalizeAssetInput(data.license),
+      framework: normalizeAssetInput(data.framework),
+      model_type: normalizeAssetInput(data.category),
       test_accuracy: toNullableNumber(data.test_accuracy),
     }),
   })
@@ -109,30 +107,28 @@ function mapDatasheetPayload(data, submittedBy) {
   }
 
   const relatedIdentifiers = []
-  const downloadUrl = normalizeInput(data.download_url)
+  const downloadUrl = normalizeAssetInput(data.download_url)
   if (downloadUrl) {
     relatedIdentifiers.push({
       related_identifier: downloadUrl,
-      related_identifier_type: downloadUrl.startsWith('10.') ? 'DOI' : 'URL',
+      related_identifier_type: inferIdentifierType(downloadUrl),
       relation_type: 'IsReferencedBy',
     })
   }
 
   return compactObject({
-    version: normalizeInput(data.version),
+    version: normalizeAssetInput(data.version),
     publication_year: toNullableInteger(data.publication_year),
-    resource_type: normalizeInput(data.source) || 'Dataset',
+    resource_type: normalizeAssetInput(data.source) || 'Dataset',
     resource_type_general: 'Dataset',
     format: inferFileFormat(downloadUrl),
     is_private: Boolean(data.is_private),
-    publisher: data.publisher ? { name: normalizeInput(data.publisher) } : undefined,
+    publisher: data.publisher ? { name: normalizeAssetInput(data.publisher) } : undefined,
     creators: toNamedList(data.creator, 'creator_name'),
-    titles: [{ title: normalizeInput(data.name) }],
+    titles: [{ title: normalizeAssetInput(data.name) }],
     subjects: toNamedList(data.features, 'subject'),
     descriptions: [{
-      description: downloadUrl
-        ? `${normalizeInput(data.description)}\n\nSource: ${downloadUrl}`
-        : normalizeInput(data.description),
+      description: buildDatasheetDescription(normalizeAssetInput(data.description), downloadUrl),
       description_type: 'Abstract',
     }],
     related_identifiers: relatedIdentifiers,
@@ -191,12 +187,12 @@ function toNamedList(value, key) {
 
 function splitValues(value) {
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeInput(item)).filter(Boolean)
+    return value.map((item) => normalizeAssetInput(item)).filter(Boolean)
   }
 
   return String(value || '')
     .split(',')
-    .map((item) => normalizeInput(item))
+    .map((item) => normalizeAssetInput(item))
     .filter(Boolean)
 }
 

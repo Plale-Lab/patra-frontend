@@ -1,25 +1,9 @@
 <template>
   <div>
     <!-- Back link -->
-    <div class="top-bar">
-      <RouterLink to="/explore-datasheets" class="back-link">
-        <IconArrowLeft :size="16" stroke-width="2" /> Back to Datasheets
-      </RouterLink>
-      <div v-if="auth.isLoggedIn && ds && !store.loading" style="display: flex; gap: 8px;">
-        <template v-if="editing">
-          <button class="btn btn-primary" @click="saveEdit" :disabled="store.loading">Save</button>
-          <button class="btn btn-secondary" @click="cancelEdit">Cancel</button>
-        </template>
-        <button v-else class="btn btn-secondary" @click="startEdit" style="background: #6c5ce7; color: white; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: 600;">
-          <IconPencil :size="14" stroke-width="2" /> Edit Datasheet
-        </button>
-      </div>
-    </div>
-
-    <!-- Save success banner -->
-    <div v-if="saveSuccess" style="background: #00b894; color: white; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-weight: 600;">
-      Changes saved successfully.
-    </div>
+    <RouterLink to="/explore-datasheets" class="back-link">
+      <IconArrowLeft :size="16" stroke-width="2" /> Back to Datasheets
+    </RouterLink>
 
     <!-- Loading -->
     <div class="loading-state" v-if="store.loading">
@@ -42,53 +26,19 @@
           <div class="detail-top">
             <div>
               <div class="flex items-center gap-8" style="margin-bottom: 6px;">
-                <template v-if="editing">
-                  <label class="toggle-label">
-                    <input type="checkbox" v-model="editForm.is_private" />
-                    {{ editForm.is_private ? 'Private' : 'Public' }}
-                  </label>
-                </template>
-                <template v-else>
-                  <span class="badge" :class="ds.is_private ? 'badge-private' : 'badge-public'">
-                    {{ ds.is_private ? 'Private' : 'Public' }}
-                  </span>
-                </template>
+                <span class="badge" :class="ds.is_private ? 'badge-private' : 'badge-public'">
+                  {{ ds.is_private ? 'Private' : 'Public' }}
+                </span>
                 <span class="badge badge-accent">{{ ds.resource_type?.resourceTypeGeneral || 'Dataset' }}</span>
-                <span class="badge badge-info" v-if="ds.version && !editing">v{{ ds.version }}</span>
+                <span class="badge badge-info" v-if="ds.version">v{{ ds.version }}</span>
               </div>
-              <template v-if="editing">
-                <input v-model="editForm.title" class="edit-input edit-input-title" placeholder="Title" />
-                <textarea v-model="editForm.description" class="edit-input" rows="3" placeholder="Description"></textarea>
-              </template>
-              <template v-else>
-                <h1 class="detail-name">{{ displayTitle }}</h1>
-                <p class="detail-desc">{{ displayDescription }}</p>
-              </template>
-              <div class="detail-meta" v-if="!editing">
+              <h1 class="detail-name">{{ displayTitle }}</h1>
+              <p class="detail-desc">{{ displayDescription }}</p>
+              <div class="detail-meta">
                 <span v-if="displayCreator"><IconUser :size="14" stroke-width="1.8" /> {{ displayCreator }}</span>
                 <span v-if="displayPublisher"><IconBuilding :size="14" stroke-width="1.8" /> {{ displayPublisher }}</span>
                 <span v-if="ds.publication_year"><IconCalendar :size="14" stroke-width="1.8" /> {{ ds.publication_year }}</span>
               </div>
-            </div>
-          </div>
-          <div v-if="editError" class="edit-error">{{ editError }}</div>
-        </div>
-      </div>
-
-      <!-- Edit Form Fields -->
-      <div class="card edit-form-card" v-if="editing">
-        <div class="card-header">
-          <span class="flex items-center gap-8"><IconPencil :size="18" stroke-width="1.8" /> Edit Datasheet</span>
-        </div>
-        <div class="card-body">
-          <div class="edit-grid">
-            <div class="edit-field">
-              <label class="info-label">Version</label>
-              <input v-model="editForm.version" class="edit-input" placeholder="Version" />
-            </div>
-            <div class="edit-field">
-              <label class="info-label">Publication Year</label>
-              <input v-model.number="editForm.publication_year" class="edit-input" type="number" placeholder="e.g. 2026" />
             </div>
           </div>
         </div>
@@ -132,7 +82,7 @@
         <!-- Resource Info -->
         <div class="card">
           <div class="card-header">
-            <span class="flex items-center gap-8"><IconInfoCircle :size="18" stroke-width="1.8" /> Dataset Overview</span>
+            <span class="flex items-center gap-8"><IconInfoCircle :size="18" stroke-width="1.8" /> Resource Info</span>
           </div>
           <div class="card-body">
             <div class="info-grid">
@@ -194,7 +144,7 @@
         <!-- Related Identifiers -->
         <div class="card" v-if="ds.related_identifier && ds.related_identifier.length">
           <div class="card-header">
-            <span class="flex items-center gap-8"><IconLink :size="18" stroke-width="1.8" /> Related Resources</span>
+            <span class="flex items-center gap-8"><IconLink :size="18" stroke-width="1.8" /> Related Identifiers</span>
           </div>
           <div class="card-body" style="padding: 0;">
             <table class="data-table">
@@ -226,7 +176,7 @@
         <!-- Geo Locations -->
         <div class="card" v-if="ds.geo_location && ds.geo_location.length">
           <div class="card-header">
-            <span class="flex items-center gap-8"><IconMapPin :size="18" stroke-width="1.8" /> Geographic Coverage</span>
+            <span class="flex items-center gap-8"><IconMapPin :size="18" stroke-width="1.8" /> Geo Locations</span>
           </div>
           <div class="card-body">
             <div v-for="(g, i) in ds.geo_location" :key="i" class="geo-item">
@@ -243,63 +193,22 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, reactive, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
-import { useAuthStore } from '../stores/auth'
+import { useApiModeStore } from '../stores/apiMode'
 import {
   IconArrowLeft, IconLoader2, IconAlertCircle,
   IconUser, IconBuilding, IconCalendar, IconUsers,
   IconInfoCircle, IconLicense, IconCalendarEvent,
-  IconLink, IconFileText, IconMapPin, IconPencil,
+  IconLink, IconFileText, IconMapPin,
 } from '@tabler/icons-vue'
 
 const route = useRoute()
 const store = useExploreStore()
-const auth = useAuthStore()
+const apiMode = useApiModeStore()
 
 const ds = computed(() => store.currentDatasheet)
-const editing = ref(false)
-const editError = ref('')
-const saveSuccess = ref(false)
-const editForm = reactive({
-  title: '',
-  description: '',
-  version: '',
-  publication_year: null,
-  is_private: false,
-})
-
-function startEdit() {
-  if (!ds.value) return
-  editForm.title = displayTitle.value || ''
-  editForm.description = displayDescription.value || ''
-  editForm.version = ds.value.version || ''
-  editForm.publication_year = ds.value.publication_year || null
-  editForm.is_private = ds.value.is_private || false
-  editError.value = ''
-  editing.value = true
-}
-
-function cancelEdit() {
-  editing.value = false
-  editError.value = ''
-}
-
-async function saveEdit() {
-  editError.value = ''
-  saveSuccess.value = false
-  try {
-    const payload = { ...editForm }
-    if (!payload.publication_year) delete payload.publication_year
-    await store.updateDatasheet(route.params.id, payload)
-    editing.value = false
-    saveSuccess.value = true
-    setTimeout(() => { saveSuccess.value = false }, 3000)
-  } catch (e) {
-    editError.value = e.message || 'Failed to save changes'
-  }
-}
 
 const displayTitle = computed(() => {
   if (!ds.value) return ''
@@ -337,6 +246,7 @@ function loadDatasheet() {
 
 onMounted(loadDatasheet)
 watch(() => route.params.id, loadDatasheet)
+watch(() => apiMode.mode, loadDatasheet)
 </script>
 
 <style scoped>
@@ -344,16 +254,9 @@ watch(() => route.params.id, loadDatasheet)
   display: inline-flex; align-items: center; gap: 6px;
   font-size: .88rem; font-weight: 500;
   color: var(--color-primary); text-decoration: none;
-  transition: opacity var(--transition);
+  margin-bottom: 18px; transition: opacity var(--transition);
 }
 .back-link:hover { opacity: .7; }
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-.edit-actions { display: flex; gap: 8px; }
 .detail-header { margin-bottom: 20px; }
 .detail-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; }
 .detail-name { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
@@ -379,33 +282,6 @@ watch(() => route.params.id, loadDatasheet)
   color: var(--color-text-muted); gap: 10px;
 }
 .empty-state h3 { font-size: 1.1rem; color: var(--color-text-secondary); }
-.edit-input {
-  width: 100%;
-  padding: 6px 10px;
-  font-size: .88rem;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: inherit;
-}
-.edit-input:focus { outline: none; border-color: var(--color-primary); }
-.edit-input-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
-.edit-form-card { margin-bottom: 20px; }
-.edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.edit-field { display: flex; flex-direction: column; gap: 4px; }
-.edit-error {
-  margin-top: 10px;
-  padding: 8px 12px;
-  font-size: .85rem;
-  color: var(--color-danger, #c0392b);
-  background: rgba(192, 57, 43, .08);
-  border-radius: 6px;
-}
-.toggle-label {
-  display: flex; align-items: center; gap: 6px;
-  font-size: .82rem; font-weight: 500; cursor: pointer;
-}
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
 </style>

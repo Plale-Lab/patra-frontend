@@ -17,8 +17,8 @@ import ExperimentsView from '../features/experiment-domains/ExperimentsView.vue'
 import EditRecordsView from '../features/edit-records/EditRecordsView.vue'
 import McpExplorerView from '../features/mcp-explorer/McpExplorerView.vue'
 import SubmitView from '../views/SubmitView.vue'
-import ExperimentsView from '../views/ExperimentsView.vue'
 import TicketSubmitView from '../views/TicketSubmitView.vue'
+import SubmissionsReviewView from '../views/SubmissionsReviewView.vue'
 import TicketManagementView from '../views/TicketManagementView.vue'
 
 const routes = [

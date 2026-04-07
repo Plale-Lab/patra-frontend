@@ -1,21 +1,17 @@
 <template>
   <div>
-    <div class="page-header" v-if="isGuest">
-      <h1>Patra Knowledge Base</h1>
+    <div class="page-header">
+      <h1>{{ isGuest ? 'Patra Knowledge Base' : `Welcome back, ${auth.displayName}` }}</h1>
       <p>
         {{ isGuest
           ? 'Discover public model cards, browse datasheets, and understand how to contribute to the ICICLE ecosystem.'
           : 'Your workspace snapshot for submissions, authored records, and support activity.' }}
       </p>
     </div>
-    <div class="page-header" v-else>
-      <h1>Welcome back, {{ auth.displayName }}</h1>
-      <p>Your workspace snapshot for authored models and support activity.</p>
-    </div>
 
     <div class="connection-banner error" v-if="dashboardError">
       <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Some dashboard data could not be loaded from the API server.</span>
+      <span>Some dashboard data could not be loaded from {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>.</span>
     </div>
 
     <template v-if="isGuest">
@@ -47,7 +43,7 @@
           </div>
           <div>
             <div class="stat-value">{{ totalModels }}</div>
-            <div class="stat-label">Model Cards</div>
+            <div class="stat-label">Catalog Models</div>
           </div>
         </div>
         <div class="stat-card">
@@ -70,10 +66,10 @@
         </div>
       </div>
 
-      <div class="action-bar">
-        <RouterLink to="/explore-model-cards" class="card action-card">
-          <div class="quick-link-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-            <IconSearch :size="20" stroke-width="1.8" />
+      <div class="dashboard-grid guest-grid">
+        <div class="card">
+          <div class="card-header">
+            <span>What You Can Do</span>
           </div>
           <div class="card-body">
             <div class="action-list">
@@ -108,31 +104,8 @@
               </div>
             </div>
           </div>
-          <IconChevronRight :size="18" class="quick-link-arrow" />
-        </RouterLink>
-        <RouterLink to="/submit" class="card action-card">
-          <div class="quick-link-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-            <IconUpload :size="20" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="quick-link-title">Upload to Patra</div>
-            <div class="quick-link-desc">Create model cards and datasheets for Patra.</div>
-          </div>
-          <IconChevronRight :size="18" class="quick-link-arrow" />
-        </RouterLink>
-        <RouterLink to="/tickets" class="card action-card">
-          <div class="quick-link-icon" style="background: var(--color-info-bg); color: var(--color-info);">
-            <IconMessageCircle :size="20" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="quick-link-title">Support Tickets</div>
-            <div class="quick-link-desc">Open a ticket for bugs, access, or workflow questions.</div>
-          </div>
-          <IconChevronRight :size="18" class="quick-link-arrow" />
-        </RouterLink>
-      </div>
+        </div>
 
-      <div class="guest-grid">
         <div class="card">
           <div class="card-header">
             <span>Featured Public Models</span>
@@ -173,7 +146,7 @@
           </div>
           <div>
             <div class="stat-value">{{ myModelCount }}</div>
-            <div class="stat-label">My Model Cards</div>
+            <div class="stat-label">My Catalog Models</div>
           </div>
         </div>
         <div class="stat-card" v-if="apiMode.supportsSubmissionQueue">
@@ -191,7 +164,7 @@
           </div>
           <div>
             <div class="stat-value">{{ privateModelCount }}</div>
-            <div class="stat-label">Private Model Cards</div>
+            <div class="stat-label">Private Catalog Models</div>
           </div>
         </div>
       </div>
@@ -199,7 +172,7 @@
       <div class="member-grid">
         <div class="card workspace-card">
           <div class="card-header">
-            <span>Session Info</span>
+            <span>Workspace Focus</span>
             <span class="badge badge-info">{{ auth.isAdmin ? 'Admin Session' : (auth.isTapisUser ? 'Tapis Session' : 'Signed In') }}</span>
           </div>
           <div class="card-body">
@@ -207,7 +180,7 @@
               <div>
                 <div class="workspace-title">Your personalized dashboard is live.</div>
                 <div class="workspace-text">
-                  This view tracks what you authored and the current state of your workspace activity.
+                  This view tracks what you submitted, what you authored, and the current state of your workspace activity.
                 </div>
               </div>
               <div class="workspace-chips">
@@ -232,8 +205,8 @@
                   <IconSearch :size="20" stroke-width="1.8" />
                 </div>
                 <div>
-                  <div class="quick-link-title">Browse Patra</div>
-                  <div class="quick-link-desc">Review public and private model cards.</div>
+                  <div class="quick-link-title">Return to the catalog</div>
+                  <div class="quick-link-desc">Review current public and private model coverage.</div>
                 </div>
                 <IconChevronRight :size="18" class="quick-link-arrow" />
               </RouterLink>
@@ -248,7 +221,7 @@
           </div>
           <div class="card-body">
             <div class="empty-block" v-if="myModels.length === 0">
-              No model cards are currently associated with your profile.
+              No catalog models are currently associated with your profile.
             </div>
             <div v-else class="stack-list">
               <RouterLink
@@ -310,8 +283,10 @@ import { RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useAuthStore } from '../stores/auth'
+import { useApiModeStore } from '../stores/apiMode'
 import {
   IconAlertCircle,
+  IconClipboardCheck,
   IconCube,
   IconEye,
   IconLock,
@@ -324,6 +299,7 @@ import {
 const exploreStore = useExploreStore()
 const submissionsStore = useSubmissionsStore()
 const auth = useAuthStore()
+const apiMode = useApiModeStore()
 
 const isGuest = computed(() => !auth.isLoggedIn)
 
@@ -388,7 +364,7 @@ function matchesCurrentUser(value) {
 }
 
 async function loadDashboard() {
-  await Promise.allSettled([
+  const tasks = [
     exploreStore.fetchModels(),
     exploreStore.fetchDatasheets(),
   ]
@@ -429,6 +405,7 @@ function getSubmissionTitle(submission) {
 }
 
 onMounted(loadDashboard)
+watch(() => apiMode.mode, loadDashboard)
 watch(() => auth.isLoggedIn, loadDashboard)
 </script>
 
@@ -484,15 +461,7 @@ watch(() => auth.isLoggedIn, loadDashboard)
 }
 
 .guest-grid {
-  display: grid;
-  gap: 20px;
-}
-
-.getting-started-text {
-  margin: 0;
-  font-size: .9rem;
-  line-height: 1.7;
-  color: var(--color-text-secondary);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .member-grid {
@@ -526,6 +495,13 @@ watch(() => auth.isLoggedIn, loadDashboard)
   color: var(--color-text-secondary);
   line-height: 1.6;
   max-width: 66ch;
+}
+
+.workspace-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .workspace-actions,
@@ -687,9 +663,26 @@ watch(() => auth.isLoggedIn, loadDashboard)
   .workspace-hero {
     flex-direction: column;
   }
+
+  .workspace-chips {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 768px) {
+  .hero-copy {
+    padding: 22px;
+  }
+
+  .hero-copy h2 {
+    font-size: 1.6rem;
+    max-width: none;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
   .stack-item,
   .quick-link {
     align-items: flex-start;

@@ -2,13 +2,13 @@
   <div>
     <div class="page-header">
       <h1>Browse Datasheets</h1>
-      <p>Search and filter datasheets</p>
+      <p>Browse and search the Patra Knowledge Base datasheets</p>
     </div>
 
     <!-- Connection banner -->
     <div class="connection-banner error" v-if="store.error">
       <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Cannot connect to the API server.</span>
+      <span>Cannot connect to {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>. {{ apiMode.helpText }}</span>
     </div>
 
     <div class="explore-layout">
@@ -47,13 +47,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useExploreStore } from '../stores/explore'
+import { useApiModeStore } from '../stores/apiMode'
 import DatasheetCard from '../components/DatasheetCard.vue'
 import DatasheetFilterSidebar from '../components/DatasheetFilterSidebar.vue'
 import { IconAlertCircle, IconLoader2, IconDatabaseOff } from '@tabler/icons-vue'
 
 const store = useExploreStore()
+const apiMode = useApiModeStore()
 const filters = ref({ search: '', resourceType: '', publisher: '', visibility: 'all' })
 
 function loadDatasheets() {
@@ -61,6 +63,7 @@ function loadDatasheets() {
 }
 
 onMounted(loadDatasheets)
+watch(() => apiMode.mode, loadDatasheets)
 
 function getTitle(ds) {
   if (Array.isArray(ds.title) && ds.title.length) {

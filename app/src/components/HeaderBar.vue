@@ -5,7 +5,7 @@
         <span class="greeting-text">Good {{ timeOfDay }},</span>
         <span class="greeting-name">{{ auth.displayName }}</span>
       </div>
-      <span class="header-subtitle">Patra Knowledge Base</span>
+      <span class="header-subtitle">Patra Knowledge Base {{ auth.isAdmin ? 'administration' : 'platform' }}</span>
     </div>
     <div class="header-right">
       <div v-if="apiMode.showSelector" class="api-mode-panel">
@@ -35,8 +35,10 @@
 import { computed } from 'vue'
 import { IconSearch } from '@tabler/icons-vue'
 import { useAuthStore } from '../stores/auth'
+import { useApiModeStore } from '../stores/apiMode'
 
 const auth = useAuthStore()
+const apiMode = useApiModeStore()
 
 const timeOfDay = computed(() => {
   const h = new Date().getHours()
@@ -123,6 +125,11 @@ const timeOfDay = computed(() => {
   .header-right {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .api-mode-panel {
+    min-width: 0;
+    width: 100%;
   }
 }
 </style>

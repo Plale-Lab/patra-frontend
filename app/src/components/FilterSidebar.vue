@@ -56,7 +56,7 @@
     <div class="filter-section">
       <label class="filter-label">Author</label>
       <select class="form-input" v-model="store.selectedAuthor">
-        <option value="">Filter by author</option>
+        <option value="">All Authors</option>
         <option v-for="a in store.allAuthors" :key="a" :value="a">{{ a }}</option>
       </select>
     </div>

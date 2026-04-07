@@ -1,3 +1,6 @@
+export const API_MODES = ['live', 'mock']
+export const API_MODE_STORAGE_KEY = 'patra_api_mode'
+
 const runtimeConfig = typeof window !== 'undefined' ? window.__PATRA_CONFIG__ || {} : {}
 
 const DEFAULT_LIVE_API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:8002' : 'http://localhost:8000'
@@ -157,7 +160,7 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
 
 export function resolveApiUrl(path, mode = getStoredApiMode()) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${API_BASE_URL}${normalizedPath}`
+  return `${getApiBaseUrl(mode)}${normalizedPath}`
 }
 
 export function resolveMcpUrl(path = '') {
@@ -168,6 +171,19 @@ export function resolveMcpUrl(path = '') {
 
 function normalizeBaseUrl(value) {
   return String(value || '').replace(/\/+$/, '')
+}
+
+function resolveApiMode(value) {
+  return value === 'mock' ? 'mock' : 'live'
+}
+
+function resolveFeatureFlag(runtimeValue, envValue, fallback) {
+  const value = runtimeValue ?? envValue
+  if (value === '' || value == null) {
+    return Boolean(fallback)
+  }
+
+  return String(value).toLowerCase() === 'true'
 }
 
 function parseCsvList(runtimeValue, envValue, fallback) {

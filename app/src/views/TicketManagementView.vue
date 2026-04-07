@@ -5,6 +5,16 @@
       <p>Manage and respond to user service requests</p>
     </div>
 
+    <div class="card" v-if="!apiMode.supportsTickets">
+      <div class="card-body">
+        <div class="empty-state" style="min-height: 160px;">
+          <IconMoodSmile :size="32" stroke-width="1.2" />
+          <span>Ticket management is not available in this deployment.</span>
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
     <!-- Summary Cards -->
     <div class="stats-grid" style="margin-bottom: 24px;">
       <div class="stat-card">
@@ -134,18 +144,21 @@
         </div>
       </div>
     </Teleport>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useTicketsStore } from '../stores/tickets'
+import { useApiModeStore } from '../stores/apiMode'
 import {
   IconAlertCircle, IconLoader, IconCircleCheck, IconX,
   IconMoodSmile, IconDeviceFloppy,
 } from '@tabler/icons-vue'
 
 const store = useTicketsStore()
+const apiMode = useApiModeStore()
 const filter = ref('all')
 const activeTicket = ref(null)
 const editStatus = ref('open')
@@ -190,10 +203,12 @@ async function saveTicket() {
 }
 
 function loadTickets() {
+  if (!apiMode.supportsTickets) return
   store.fetchTickets()
 }
 
 onMounted(loadTickets)
+watch(() => apiMode.mode, loadTickets)
 </script>
 
 <style scoped>
