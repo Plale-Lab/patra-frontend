@@ -5,38 +5,7 @@ export const useGroupsStore = defineStore('groups', () => {
     let nextGroupId = 4
     let nextMemberId = 20
 
-    const groups = ref([
-        {
-            id: 1,
-            name: 'ML Researchers',
-            description: 'Core machine learning research team',
-            members: [
-                { id: 1, name: 'Sachith Withana', email: 'swithana@iu.edu', role: 'Admin' },
-                { id: 2, name: 'Alice Chen', email: 'achen@iu.edu', role: 'Member' },
-                { id: 3, name: 'Bob Martinez', email: 'bmartz@iu.edu', role: 'Member' },
-            ],
-        },
-        {
-            id: 2,
-            name: 'Data Engineers',
-            description: 'Data pipeline and infrastructure team',
-            members: [
-                { id: 4, name: 'Carol Davis', email: 'cdavis@iu.edu', role: 'Admin' },
-                { id: 5, name: 'David Kim', email: 'dkim@iu.edu', role: 'Member' },
-            ],
-        },
-        {
-            id: 3,
-            name: 'External Reviewers',
-            description: 'External collaborators with read-only access',
-            members: [
-                { id: 6, name: 'Eva Rossi', email: 'erossi@external.org', role: 'Reviewer' },
-                { id: 7, name: 'Frank Zhou', email: 'fzhou@partner.edu', role: 'Reviewer' },
-                { id: 8, name: 'Grace Lee', email: 'glee@partner.edu', role: 'Reviewer' },
-                { id: 9, name: 'Hiro Tanaka', email: 'htanaka@external.org', role: 'Reviewer' },
-            ],
-        },
-    ])
+    const groups = ref([])
 
     const totalMembers = computed(() => {
         const seen = new Set()

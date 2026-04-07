@@ -35,10 +35,32 @@ export function getDisplayName(type, payload) {
 }
 
 function mapModelCardPayload(data, submittedBy) {
-  const name = normalizeInput(data.name)
-  const shortDescription = normalizeInput(data.short_description)
-  const fullDescription = normalizeInput(data.full_description)
-  const author = normalizeInput(data.author || submittedBy)
+  if (data?.intake_method === 'asset_link') {
+    const derivedName = deriveNameFromAssetUrl(data.asset_url, 'Imported model card')
+    const name = normalizeAssetInput(data.display_name) || derivedName
+    const summary = normalizeAssetInput(data.submitter_notes) || `Imported from ${data.asset_provider || 'external source'}`
+
+    return {
+      name,
+      version: 'asset-link',
+      short_description: summary,
+      full_description: buildModelCardDescription(summary, data.asset_url),
+      author: submittedBy || 'Unknown submitter',
+      documentation: data.asset_url,
+      category: data.asset_provider || 'external',
+      ai_model: {
+        name,
+        version: 'asset-link',
+        owner: submittedBy || null,
+        description: summary,
+      },
+    }
+  }
+
+  const name = normalizeAssetInput(data.name)
+  const shortDescription = normalizeAssetInput(data.short_description)
+  const fullDescription = normalizeAssetInput(data.full_description)
+  const author = normalizeAssetInput(data.author || submittedBy)
 
   return compactObject({
     name,
@@ -66,6 +88,26 @@ function mapModelCardPayload(data, submittedBy) {
 }
 
 function mapDatasheetPayload(data, submittedBy) {
+  if (data?.intake_method === 'asset_link') {
+    const title = normalizeAssetInput(data.display_name) || deriveNameFromAssetUrl(data.asset_url, 'Imported datasheet')
+    const description = normalizeAssetInput(data.submitter_notes) || `Imported from ${data.asset_provider || 'external source'}`
+
+    return compactObject({
+      version: 'asset-link',
+      resource_type: 'Dataset',
+      resource_type_general: 'Dataset',
+      titles: [{ title }],
+      creators: submittedBy ? [{ creator_name: submittedBy }] : [],
+      subjects: data.asset_provider ? [{ subject: data.asset_provider }] : [],
+      descriptions: [{ description: buildDatasheetDescription(description, data.asset_url), description_type: 'Other' }],
+      related_identifiers: [{
+        related_identifier: data.asset_url,
+        related_identifier_type: inferIdentifierType(data.asset_url),
+        relation_type: 'IsReferencedBy',
+      }],
+    })
+  }
+
   const relatedIdentifiers = []
   const downloadUrl = normalizeInput(data.download_url)
   if (downloadUrl) {
@@ -95,6 +137,40 @@ function mapDatasheetPayload(data, submittedBy) {
     }],
     related_identifiers: relatedIdentifiers,
   })
+}
+
+function deriveNameFromAssetUrl(value, fallback) {
+  const parsed = parseAssetInput(value)
+  if (!parsed) return fallback
+
+  if (parsed.provider === 'doi') {
+    return `DOI ${parsed.normalized}`
+  }
+
+  try {
+    const url = new URL(parsed.normalized)
+    const lastSegment = url.pathname
+      .split('/')
+      .map((segment) => segment.trim())
+      .filter(Boolean)
+      .pop()
+
+    return decodeURIComponent(lastSegment || url.hostname || fallback)
+  } catch {
+    return fallback
+  }
+}
+
+function buildModelCardDescription(summary, assetUrl) {
+  return assetUrl ? `${summary}\n\nSource record: ${assetUrl}` : summary
+}
+
+function buildDatasheetDescription(summary, assetUrl) {
+  return assetUrl ? `${summary}\n\nSource record: ${assetUrl}` : summary
+}
+
+function inferIdentifierType(value) {
+  return String(value || '').startsWith('10.') ? 'DOI' : 'URL'
 }
 
 function inferFileFormat(value) {

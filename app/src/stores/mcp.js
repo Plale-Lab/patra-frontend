@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { createMcpClient } from '@/lib/mcp'
-import { MCP_BASE_URL } from '@/config/api'
+import { createMcpClient } from '../lib/mcp'
+import { MCP_BASE_URL } from '../config/api'
 
 export const useMcpStore = defineStore('mcp', () => {
   const connected = ref(false)
@@ -20,10 +20,10 @@ export const useMcpStore = defineStore('mcp', () => {
       await client.connect()
       await client.initialize()
       connected.value = true
-      const res = await client.listTools()
-      tools.value = res.tools || []
-    } catch (e) {
-      error.value = e.message
+      const result = await client.listTools()
+      tools.value = result.tools || []
+    } catch (err) {
+      error.value = err.message
       connected.value = false
     } finally {
       loading.value = false
@@ -47,9 +47,9 @@ export const useMcpStore = defineStore('mcp', () => {
       const result = await client.callTool(name, args)
       lastResult.value = result
       return result
-    } catch (e) {
-      error.value = e.message
-      throw e
+    } catch (err) {
+      error.value = err.message
+      throw err
     } finally {
       loading.value = false
     }
@@ -62,9 +62,9 @@ export const useMcpStore = defineStore('mcp', () => {
       const result = await client.readResource(uri)
       lastResult.value = result
       return result
-    } catch (e) {
-      error.value = e.message
-      throw e
+    } catch (err) {
+      error.value = err.message
+      throw err
     } finally {
       loading.value = false
     }

@@ -1,5 +1,106 @@
 # Frontend Dev Log
 
+## Version 0.6.1 - 2026-04-07
+
+## Summary
+
+Version `0.6.1` brings the shared `patra-frontend` surface back into alignment with `patra-dev` as the current product baseline while preserving the newer `MCP Explorer` and domain experiment work from the latest frontend branch.
+
+## Problem
+
+- The shared frontend had drifted in two directions at once:
+  - the upstream SQL-migration branch introduced `MCP Explorer` and experiment pages
+  - `patra-dev` carried the newer product shell, access model, and visual system
+- The sidebar structure for `MCP Explorer`, `Animal Ecology`, and `Digital Agriculture` did not match the latest intended organization.
+- Runtime defaults still allowed deployment config to hide those features even though they were supposed to stay visible and show warnings when dependencies were missing.
+
+## Implementation
+
+- Rebased the shared frontend direction on the newer `patra-dev` shell and visual system.
+- Preserved and aligned the experimental surfaces:
+  - `MCP Explorer`
+  - `Animal Ecology`
+  - `Digital Agriculture`
+- Moved `MCP Explorer` into `Explore`.
+- Added a dedicated `Experiments` section for the two domain pages.
+- Removed route-level `tapis` gating from those three pages so they can remain visible and show graceful warning states.
+- Updated feature/runtime defaults and env injection so:
+  - `SUPPORTS_MCP_EXPLORER` defaults to `true`
+  - `SUPPORTS_DOMAIN_EXPERIMENTS` defaults to `true`
+  - `MCP_BASE_URL` continues to be runtime-configurable
+
+## Validation Performed
+
+- `npm --prefix app run build` -> passed
+- Verified local preview for:
+  - `/`
+  - `/mcp-explorer`
+  - `/animal-ecology`
+  - `/digital-agriculture`
+
+## Action Points
+
+- Promote this aligned frontend build to the deployed `patra` surface so the online sidebar matches the intended information architecture.
+- Configure `MCP_BASE_URL` explicitly when the MCP service is not running on the default local endpoint.
+
+## Version 0.6.0 - 2026-04-06
+
+## Summary
+
+Version `0.6.0` records the current shared-frontend direction around PATRA’s new assistant, ingestion, editing, and access-control model. This milestone emphasizes organization and product coherence: feature-oriented structure, clearer terminology, calmer visual-system work, and a stricter group-based access policy aligned with the active dev surface.
+
+## Problem
+
+- The frontend surface area now spans:
+  - assistant workflows
+  - automated ingestion / record scraping
+  - direct record editing
+  - moderation and admin operations
+- Without a stronger shared structure, these capabilities become harder to maintain and harder to reason about across stable and dev surfaces.
+- Access behavior had temporarily drifted during rapid iteration, especially around admin visibility and cached role state.
+- Product language and UI style needed a more deliberate, system-level direction.
+
+## Philosophy
+
+- Keep the shared frontend aligned with the evolving PATRA product model, even when some features still ship in `patra-dev` first.
+- Organize by feature, not just by route or historical page ownership.
+- Let access control be explicit and tiered:
+  - public browse
+  - Tapis-authenticated contribution
+  - admin moderation
+- Prefer visual harmonization through shared tokens and shell refinements rather than disruptive redesigns.
+
+## Implementation
+
+- Captured the current feature-oriented frontend direction around:
+  - `Ask Patra`
+  - automated ingestion / record scraping
+  - record editing
+  - agent-toolkit style workflows
+- Documented and aligned terminology toward records / resources rather than older asset-only phrasing.
+- Brought the shared frontend log in line with the current PATRA direction for:
+  - assistant-first surfaces
+  - ingestion review staging
+  - direct record save flows
+- Reflected the current access-control contract:
+  - public visitor -> explore only
+  - Tapis user -> explore + contribute
+  - admin -> explore + contribute + admin
+- Recorded the current admin-identity rule:
+  - must be a Tapis-authenticated user
+  - username must be in the admin allowlist
+
+## Validation Performed
+
+- Reviewed the current shared frontend structure against the active `patra-dev` implementation and documented the intended parity direction.
+- Confirmed that the shared frontend log now reflects the current PATRA product model rather than only the older explore/submit baseline.
+
+## Action Points
+
+- Promote approved `patra-dev` UI changes into the shared frontend in deliberate batches.
+- Keep shared terminology and access-model documentation synchronized across frontend repos.
+- Continue using feature-folder docs so new assistant and ingestion work remains navigable.
+
 ## Version 0.3.1
 
 ## Summary
