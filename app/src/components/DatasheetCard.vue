@@ -72,7 +72,7 @@ const displayPublisher = computed(() => {
 
 <style scoped>
 .ds-card {
-  background: var(--color-surface);
+  background: linear-gradient(180deg, rgba(255,255,255,.9) 0%, var(--color-surface) 100%);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 20px;
@@ -85,17 +85,17 @@ const displayPublisher = computed(() => {
 }
 .ds-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-light);
+  border-color: rgba(47, 78, 162, .2);
   transform: translateY(-2px);
 }
-.ds-card-header { display: flex; gap: 6px; }
+.ds-card-header { display: flex; gap: 6px; flex-wrap: wrap; }
 .ds-card-name {
   font-size: 1.05rem; font-weight: 700;
   color: var(--color-text); line-height: 1.3;
 }
 .ds-card-desc {
-  font-size: .82rem; color: var(--color-text-secondary);
-  line-height: 1.45;
+  font-size: .84rem; color: var(--color-text-secondary);
+  line-height: 1.55;
   display: -webkit-box; -webkit-line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden;
 }
@@ -108,7 +108,7 @@ const displayPublisher = computed(() => {
 .ds-type-badge {
   font-size: .72rem; font-weight: 600; text-transform: uppercase;
   letter-spacing: .5px; color: var(--color-text-muted);
-  background: var(--color-bg); padding: 3px 8px; border-radius: 4px;
+  background: var(--color-bg-elevated); padding: 3px 8px; border-radius: 999px;
 }
 .card-arrow { color: var(--color-text-muted); transition: color var(--transition); }
 .ds-card:hover .card-arrow { color: var(--color-primary); }

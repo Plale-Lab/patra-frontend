@@ -36,7 +36,7 @@ function mapModelCardPayload(data, submittedBy) {
   if (data?.intake_method === 'asset_link') {
     const derivedName = deriveNameFromAssetUrl(data.asset_url, 'Imported model card')
     const name = normalizeAssetInput(data.display_name) || derivedName
-    const summary = normalizeAssetInput(data.submitter_notes) || `Imported from ${data.asset_provider || 'external asset'}`
+    const summary = normalizeAssetInput(data.submitter_notes) || `Imported from ${data.asset_provider || 'external source'}`
 
     return {
       name,
@@ -88,7 +88,7 @@ function mapModelCardPayload(data, submittedBy) {
 function mapDatasheetPayload(data, submittedBy) {
   if (data?.intake_method === 'asset_link') {
     const title = normalizeAssetInput(data.display_name) || deriveNameFromAssetUrl(data.asset_url, 'Imported datasheet')
-    const description = normalizeAssetInput(data.submitter_notes) || `Imported from ${data.asset_provider || 'external asset'}`
+    const description = normalizeAssetInput(data.submitter_notes) || `Imported from ${data.asset_provider || 'external source'}`
 
     return compactObject({
       version: 'asset-link',
@@ -158,11 +158,11 @@ function deriveNameFromAssetUrl(value, fallback) {
 }
 
 function buildModelCardDescription(summary, assetUrl) {
-  return assetUrl ? `${summary}\n\nSource asset: ${assetUrl}` : summary
+  return assetUrl ? `${summary}\n\nSource record: ${assetUrl}` : summary
 }
 
 function buildDatasheetDescription(summary, assetUrl) {
-  return assetUrl ? `${summary}\n\nSource asset: ${assetUrl}` : summary
+  return assetUrl ? `${summary}\n\nSource record: ${assetUrl}` : summary
 }
 
 function inferIdentifierType(value) {

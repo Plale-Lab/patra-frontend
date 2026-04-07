@@ -461,7 +461,7 @@ import {
   runPaperSchemaSearch,
   runPaperSchemaSearchUpload,
   submitGeneratedArtifactForReview,
-} from '../lib/agentTools'
+} from './api'
 
 const activeTab = ref('search')
 const errorMessage = ref('')

@@ -2,18 +2,23 @@
   <div>
     <div class="page-header">
       <h1>Submit to Knowledge Base</h1>
-      <p>Create a model card or datasheet submission for admin review</p>
+      <p>{{ pageSubtitle }}</p>
     </div>
 
     <div class="success-banner" v-if="submissionResult">
       <IconCircleCheck :size="20" stroke-width="1.8" />
-      <div v-if="submissionResult.kind === 'single'">
+      <div v-if="submissionResult.kind === 'single' && submissionResult.directRecord">
+        <strong>Record saved.</strong>
+        {{ submissionResult.duplicate ? 'This matched an existing catalog record.' : 'Your record was created in the catalog.' }}
+        <span v-if="submissionResult.recordId != null"> Record id: {{ submissionResult.recordId }}.</span>
+      </div>
+      <div v-else-if="submissionResult.kind === 'single'">
         <strong>Submission queued.</strong> Your {{ activeTab === 'model_card' ? 'model card' : 'datasheet' }} is now waiting for admin review.
       </div>
       <div v-else>
         <strong>Bulk submission queued.</strong>
         <span>
-          Queued {{ submissionResult.successCount }} of {{ submissionResult.totalCount }} asset links for admin review.
+          Queued {{ submissionResult.successCount }} of {{ submissionResult.totalCount }} record links for admin review.
         </span>
         <span v-if="submissionResult.failureCount > 0" class="bulk-summary-warning">
           {{ submissionResult.failureCount }} link{{ submissionResult.failureCount === 1 ? '' : 's' }} failed validation or submission.
@@ -42,8 +47,8 @@
               </span>
               <div class="submission-modes">
                 <button class="mode-pill" :class="{ active: submitMode === 'manual' }" @click="switchMode('manual')">Manual Entry</button>
-                <button class="mode-pill" :class="{ active: submitMode === 'asset_link' }" @click="switchMode('asset_link')">From Asset Link</button>
-                <button class="mode-pill" :class="{ active: submitMode === 'bulk_asset_links' }" @click="switchMode('bulk_asset_links')">Bulk Asset Links</button>
+                <button class="mode-pill" :class="{ active: submitMode === 'asset_link' }" @click="switchMode('asset_link')">From Record Link</button>
+                <button class="mode-pill" :class="{ active: submitMode === 'bulk_asset_links' }" @click="switchMode('bulk_asset_links')">Bulk Record Links</button>
               </div>
             </div>
           </div>
@@ -235,7 +240,7 @@
 
             <template v-else-if="submitMode === 'asset_link'">
               <div class="form-group">
-                <label class="form-label">Asset URL <span class="required">*</span></label>
+                <label class="form-label">Record URL <span class="required">*</span></label>
                 <input class="form-input" v-model="currentAssetLinkForm.assetUrl" placeholder="https://huggingface.co/..." />
               </div>
               <div class="form-group">
@@ -255,12 +260,12 @@
 
             <template v-else>
               <div class="form-group">
-                <label class="form-label">Asset Links <span class="required">*</span></label>
+                <label class="form-label">Record links <span class="required">*</span></label>
                 <textarea
                   class="form-input bulk-links-input"
                   v-model="currentBulkForm.urls"
                   rows="8"
-                  placeholder="Paste one asset link per line"
+                  placeholder="Paste one record link per line"
                 ></textarea>
                 <div class="form-helper">One URL per line. Duplicate links will be removed before submission.</div>
               </div>
@@ -270,11 +275,11 @@
                   class="form-input form-textarea"
                   v-model="currentBulkForm.notes"
                   rows="3"
-                  placeholder="Shared notes for all submitted asset links"
+                  placeholder="Shared notes for all submitted record links"
                 ></textarea>
               </div>
               <div class="invalid-list" v-if="invalidAssetLines.length > 0">
-                <div class="invalid-list-title">Invalid asset links</div>
+                <div class="invalid-list-title">Invalid record links</div>
                 <ul>
                   <li v-for="item in invalidAssetLines" :key="item.line">
                     Line {{ item.line }}: {{ item.value }}
@@ -352,7 +357,9 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useSubmissionsStore } from '../stores/submissions'
+import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
+import { USE_V1_ASSET_CREATE } from '../config/api'
 import {
   ASSET_INTAKE_PROMPT,
   buildAssetIntakeData,
@@ -368,7 +375,14 @@ import {
 } from '@tabler/icons-vue'
 
 const store = useSubmissionsStore()
+const exploreStore = useExploreStore()
 const auth = useAuthStore()
+
+const pageSubtitle = computed(() =>
+  USE_V1_ASSET_CREATE
+    ? 'Create a model card or datasheet directly in the catalog (manual entry), or use record links for the review queue.'
+    : 'Create a model card or datasheet submission for admin review',
+)
 const activeTab = ref('model_card')
 const submitMode = ref('manual')
 const submittedBy = ref(auth.isLoggedIn ? auth.displayName : '')
@@ -386,25 +400,38 @@ const currentAssetLinkForm = computed(() => assetLinkForms[activeTab.value])
 const currentBulkForm = computed(() => bulkForms[activeTab.value])
 const assetIntakePrompt = ASSET_INTAKE_PROMPT
 
-const manualSteps = [
+const manualStepsV1 = [
+  { title: 'Fill the form', desc: 'Provide details about your model or dataset.' },
+  { title: 'Create record', desc: 'The app POSTs to /v1/assets/model-cards or /v1/assets/datasheets with your Tapis credentials.' },
+  { title: 'Catalog', desc: 'On success, the record is available in the Patra catalog (see Browse).' },
+]
+
+const manualStepsQueue = [
   { title: 'Fill the form', desc: 'Provide details about your model or dataset.' },
   { title: 'Queue the submission', desc: 'The frontend sends the mapped payload to the Patra submission queue.' },
   { title: 'Admin review', desc: 'An admin reviews the pending item and decides whether to approve it.' },
-  { title: 'Asset published', desc: 'Approved submissions are written into the Patra catalog.' },
+  { title: 'Record published', desc: 'Approved submissions are written into the Patra catalog.' },
 ]
 
 const assetSteps = [
-  { title: 'Paste the asset link', desc: 'Provide the existing model or dataset URL you want added to Patra.' },
+  { title: 'Paste the record link', desc: 'Provide the existing model or dataset URL you want added to Patra.' },
   { title: 'Generate queue payload', desc: 'The frontend converts the link into a backend-compatible review item.' },
   { title: 'Wait for approval', desc: 'The Patra backend stores the request in the review queue until an admin approves it.' },
 ]
 
-const steps = computed(() => (submitMode.value === 'manual' ? manualSteps : assetSteps))
+const steps = computed(() => {
+  if (submitMode.value === 'manual') {
+    return USE_V1_ASSET_CREATE ? manualStepsV1 : manualStepsQueue
+  }
+  return assetSteps
+})
 
 const submitButtonLabel = computed(() => {
-  if (submitMode.value === 'manual') return 'Queue for Review'
-  if (submitMode.value === 'asset_link') return 'Queue Asset Link'
-  return 'Queue Asset Links'
+  if (submitMode.value === 'manual') {
+    return USE_V1_ASSET_CREATE ? 'Create record' : 'Queue for Review'
+  }
+  if (submitMode.value === 'asset_link') return 'Queue Record Link'
+  return 'Queue Record Links'
 })
 
 const invalidAssetLines = computed(() => {
@@ -487,6 +514,32 @@ async function submitManualEntry() {
   const result = await store.createSubmission(activeTab.value, payload, submittedBy.value)
 
   if (result) {
+    if (result._directRecord) {
+      submissionResult.value = {
+        kind: 'single',
+        directRecord: true,
+        recordId: result.asset_id,
+        duplicate: Boolean(result.duplicate),
+        created: result.created !== false,
+        recordType: result.asset_type,
+        successCount: 1,
+        failureCount: 0,
+        totalCount: 1,
+        failures: [],
+      }
+      await Promise.allSettled([exploreStore.fetchModels(), exploreStore.fetchDatasheets()])
+      const label = activeTab.value === 'model_card' ? 'model card' : 'datasheet'
+      const idPart = result.asset_id != null ? ` Record id: ${result.asset_id}.` : ''
+      openSubmissionDialog({
+        variant: 'success',
+        title: result.duplicate ? 'Catalog match' : 'Record created',
+        message: result.duplicate
+          ? `Your ${label} matched an existing catalog record.${idPart}`
+          : `Your ${label} was created in the catalog.${idPart}`,
+      })
+      return
+    }
+
     submissionResult.value = {
       kind: 'single',
       successCount: 1,
@@ -540,19 +593,19 @@ async function submitBulkAssetLinks() {
   const invalidLines = parsedLines.filter((item) => !item.parsed)
 
   if (invalidLines.length > 0) {
-    validationError.value = 'Fix the invalid asset links before submitting the batch.'
+    validationError.value = 'Fix the invalid record links before submitting the batch.'
     return
   }
 
   const uniqueUrls = [...new Set(parsedLines.map((item) => item.parsed.normalized))]
 
   if (uniqueUrls.length === 0) {
-    validationError.value = 'Add at least one asset link to submit.'
+    validationError.value = 'Add at least one record link to submit.'
     return
   }
 
   if (uniqueUrls.length > 25) {
-    validationError.value = 'Bulk submission supports up to 25 asset links per request.'
+    validationError.value = 'Bulk submission supports up to 25 record links per request.'
     return
   }
 
@@ -580,8 +633,8 @@ async function submitBulkAssetLinks() {
     variant: result.failures.length > 0 ? 'error' : 'success',
     title: result.failures.length > 0 ? 'Bulk submission partially failed' : 'Bulk submission succeeded',
     message: result.failures.length > 0
-      ? `Submitted ${result.successes.length} of ${uniqueUrls.length} asset links.`
-      : `Queued all ${uniqueUrls.length} asset links successfully.`,
+      ? `Submitted ${result.successes.length} of ${uniqueUrls.length} record links.`
+      : `Queued all ${uniqueUrls.length} record links successfully.`,
     details: result.failures.map((failure) => `${failure.url}: ${failure.error}`),
   })
 }

@@ -2,8 +2,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiFetch } from '../lib/api'
 import { buildAssetIntakeData, normalizeAssetInput } from '../lib/assetIntake'
-import { getApiModeMeta, getStoredApiMode } from '../config/api'
+import { getApiModeMeta, getStoredApiMode, USE_V1_ASSET_CREATE } from '../config/api'
 import {
+    getAssetEndpointPath,
     getSubmissionDisplayName,
     mapSubmissionToAssetPayload,
 } from '../lib/submissionPayloads'
@@ -117,9 +118,9 @@ export const useSubmissionsStore = defineStore('submissions', () => {
             })
 
             if (failures.length === uniqueUrls.length) {
-                error.value = 'Failed to submit all asset links.'
+                error.value = 'Failed to submit all record links.'
             } else if (failures.length > 0) {
-                error.value = 'Some asset links could not be submitted.'
+                error.value = 'Some record links could not be submitted.'
             }
 
             return { successes, failures, created }
@@ -159,8 +160,42 @@ export const useSubmissionsStore = defineStore('submissions', () => {
         }
     }
 
+    function shouldPostDirectV1Asset(data) {
+        if (!USE_V1_ASSET_CREATE) return false
+        if (data?.intake_method === 'asset_link') return false
+        return true
+    }
+
+    async function postV1DirectAsset(type, data, submittedBy) {
+        const assetPayload = mapSubmissionToAssetPayload(type, data, submittedBy)
+        const path = getAssetEndpointPath(type, false)
+        const res = await apiFetch(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(assetPayload),
+        })
+
+        if (!res.ok) throw new Error(await parseErrorMessage(res, `HTTP ${res.status}`))
+
+        const body = await res.json()
+        supported.value = true
+        return {
+            ...body,
+            id: body.asset_id != null ? `v1-${body.asset_id}` : `v1-${Date.now()}`,
+            status: body.duplicate ? 'duplicate' : 'created',
+            submitted_at: new Date().toISOString(),
+            submitted_by: submittedBy,
+            _directRecord: true,
+        }
+    }
+
     async function postSubmission(type, data, submittedBy) {
         const assetPayload = mapSubmissionToAssetPayload(type, data, submittedBy)
+
+        if (shouldPostDirectV1Asset(data)) {
+            return postV1DirectAsset(type, data, submittedBy)
+        }
+
         const res = await apiFetch('/submissions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

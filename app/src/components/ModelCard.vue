@@ -50,7 +50,7 @@ defineProps({
 
 <style scoped>
 .model-card {
-  background: var(--color-surface);
+  background: linear-gradient(180deg, rgba(255,255,255,.9) 0%, var(--color-surface) 100%);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 20px;
@@ -63,13 +63,14 @@ defineProps({
 }
 .model-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-light);
+  border-color: rgba(47, 78, 162, .2);
   transform: translateY(-2px);
 }
 
 .model-card-header {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .model-card-name {
@@ -80,9 +81,9 @@ defineProps({
 }
 
 .model-card-desc {
-  font-size: .82rem;
+  font-size: .84rem;
   color: var(--color-text-secondary);
-  line-height: 1.45;
+  line-height: 1.55;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -139,9 +140,9 @@ defineProps({
   text-transform: uppercase;
   letter-spacing: .5px;
   color: var(--color-text-muted);
-  background: var(--color-bg);
+  background: var(--color-bg-elevated);
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: 999px;
 }
 .card-arrow {
   margin-left: auto;

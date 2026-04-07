@@ -1,33 +1,123 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { ADMIN_USERNAMES } from '../config/api'
+import { ADMIN_USERNAMES, SUPPORTS_DEV_OPEN_ACCESS } from '../config/api'
 
 // Tapis base URL for JWT authentication
 const TAPIS_BASE_URL = 'https://tacc.tapis.io'
 const TAPIS_TOKEN_URL = `${TAPIS_BASE_URL}/v3/oauth2/tokens`
+const LOCAL_USER_KEY = 'patra_user'
+const LOCAL_TOKEN_KEY = 'patra_token'
+const LOCAL_EXPIRY_KEY = 'patra_auth_expires_at'
+const SESSION_USER_KEY = 'patra_session_user'
+const SESSION_TOKEN_KEY = 'patra_session_token'
+const AUTH_SCHEMA_VERSION_KEY = 'patra_auth_schema_version'
+const AUTH_SCHEMA_VERSION = '2'
+const REMEMBER_ME_MS = 7 * 24 * 60 * 60 * 1000
+
+function loadPersistedAuth() {
+    migratePersistedAuth()
+    const expiresAt = Number(localStorage.getItem(LOCAL_EXPIRY_KEY) || 0)
+    if (expiresAt && Date.now() < expiresAt) {
+        return {
+            user: normalizePersistedUser(parseJson(localStorage.getItem(LOCAL_USER_KEY))),
+            token: localStorage.getItem(LOCAL_TOKEN_KEY) || '',
+        }
+    }
+
+    clearLocalAuth()
+
+    return {
+        user: normalizePersistedUser(parseJson(sessionStorage.getItem(SESSION_USER_KEY))),
+        token: sessionStorage.getItem(SESSION_TOKEN_KEY) || '',
+    }
+}
+
+function parseJson(value) {
+    try {
+        return JSON.parse(value || 'null')
+    } catch {
+        return null
+    }
+}
+
+function clearLocalAuth() {
+    localStorage.removeItem(LOCAL_USER_KEY)
+    localStorage.removeItem(LOCAL_TOKEN_KEY)
+    localStorage.removeItem(LOCAL_EXPIRY_KEY)
+}
+
+function clearSessionAuth() {
+    sessionStorage.removeItem(SESSION_USER_KEY)
+    sessionStorage.removeItem(SESSION_TOKEN_KEY)
+}
+
+function migratePersistedAuth() {
+    const currentVersion = localStorage.getItem(AUTH_SCHEMA_VERSION_KEY) || sessionStorage.getItem(AUTH_SCHEMA_VERSION_KEY)
+    if (currentVersion === AUTH_SCHEMA_VERSION) return
+
+    clearLocalAuth()
+    clearSessionAuth()
+    localStorage.setItem(AUTH_SCHEMA_VERSION_KEY, AUTH_SCHEMA_VERSION)
+    sessionStorage.setItem(AUTH_SCHEMA_VERSION_KEY, AUTH_SCHEMA_VERSION)
+}
+
+function normalizePersistedUser(user) {
+    if (!user || typeof user !== 'object') return user
+    if (user.auth_type !== 'tapis') return user
+
+    const normalizedUsername = String(user.username || '').trim().toLowerCase()
+    const isAdmin = normalizedUsername && ADMIN_USERNAMES.includes(normalizedUsername)
+
+    return {
+        ...user,
+        role: isAdmin ? 'admin' : (user.role || 'user'),
+    }
+}
 
 export const useAuthStore = defineStore('auth', () => {
-    const user = ref(JSON.parse(localStorage.getItem('patra_user') || 'null'))
-    const token = ref(localStorage.getItem('patra_token') || '')
+    const persisted = loadPersistedAuth()
+    const user = ref(persisted.user)
+    const token = ref(persisted.token)
     const loading = ref(false)
     const error = ref(null)
 
-    const isLoggedIn = computed(() => !!user.value && !!token.value)
-    const isAdmin = computed(() => user.value?.role === 'admin')
-    const isTapisUser = computed(() => user.value?.auth_type === 'tapis')
-    const displayName = computed(() => user.value?.name || user.value?.username || 'Guest')
+    const effectiveUser = computed(() => user.value)
+    const effectiveToken = computed(() => {
+        if (token.value) return token.value
+        return SUPPORTS_DEV_OPEN_ACCESS ? '__patra_dev_open_access__' : ''
+    })
+
+    const isLoggedIn = computed(() => !!effectiveUser.value && !!effectiveToken.value)
+    const normalizedUsername = computed(() => String(effectiveUser.value?.username || '').trim().toLowerCase())
+    const isTapisUser = computed(() => effectiveUser.value?.auth_type === 'tapis')
+    const isAdmin = computed(() => {
+        if (SUPPORTS_DEV_OPEN_ACCESS) return true
+        if (!effectiveUser.value) return false
+        if (!isTapisUser.value) return false
+        return normalizedUsername.value ? ADMIN_USERNAMES.includes(normalizedUsername.value) : false
+    })
+    const displayName = computed(() => effectiveUser.value?.name || effectiveUser.value?.username || 'Guest')
     const initials = computed(() => {
-        const name = user.value?.name || user.value?.username || ''
+        const name = effectiveUser.value?.name || effectiveUser.value?.username || ''
         if (!name) return '??'
         return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
     })
 
-    function persist() {
-        localStorage.setItem('patra_user', JSON.stringify(user.value))
-        localStorage.setItem('patra_token', token.value)
+    function persist(rememberMe = true) {
+        if (rememberMe) {
+            clearSessionAuth()
+            localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(user.value))
+            localStorage.setItem(LOCAL_TOKEN_KEY, token.value)
+            localStorage.setItem(LOCAL_EXPIRY_KEY, String(Date.now() + REMEMBER_ME_MS))
+            return
+        }
+
+        clearLocalAuth()
+        sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(user.value))
+        sessionStorage.setItem(SESSION_TOKEN_KEY, token.value)
     }
 
-    async function loginTapis(username, password) {
+    async function loginTapis(username, password, options = {}) {
         loading.value = true
         error.value = null
         try {
@@ -65,7 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
                 auth_type: 'tapis',
             }
             token.value = issuedToken
-            persist()
+            persist(options.rememberMe !== false)
             return true
         } catch (e) {
             error.value = e.message
@@ -78,8 +168,8 @@ export const useAuthStore = defineStore('auth', () => {
     function logout() {
         user.value = null
         token.value = ''
-        localStorage.removeItem('patra_user')
-        localStorage.removeItem('patra_token')
+        clearLocalAuth()
+        clearSessionAuth()
     }
 
     function clearError() {
@@ -88,6 +178,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     return {
         user, token, loading, error,
+        effectiveUser, effectiveToken,
         isLoggedIn, isAdmin, isTapisUser, displayName, initials,
         loginTapis, logout, clearError,
     }

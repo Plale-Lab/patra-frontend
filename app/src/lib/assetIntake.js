@@ -68,7 +68,7 @@ export function buildAssetIntakeData({
   const parsed = parseAssetInput(assetUrl)
 
   if (!parsed) {
-    throw new Error(`Invalid asset URL: ${assetUrl}`)
+    throw new Error(`Invalid record URL: ${assetUrl}`)
   }
 
   const data = {

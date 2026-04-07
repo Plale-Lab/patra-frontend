@@ -30,6 +30,11 @@ export const useApiModeStore = defineStore('apiMode', () => {
   const supportsSubmissionQueue = computed(() => Boolean(meta.value.supportsSubmissionQueue))
   const supportsAgentTools = computed(() => Boolean(meta.value.supportsAgentTools))
   const supportsEditRecords = computed(() => Boolean(meta.value.supportsEditRecords))
+  const supportsAutomatedIngestion = computed(() => Boolean(meta.value.supportsAutomatedIngestion))
+  const supportsAskPatra = computed(() => Boolean(meta.value.supportsAskPatra))
+  const supportsMcpExplorer = computed(() => Boolean(meta.value.supportsMcpExplorer))
+  const supportsDomainExperiments = computed(() => Boolean(meta.value.supportsDomainExperiments))
+  const supportsDevOpenAccess = computed(() => Boolean(meta.value.supportsDevOpenAccess))
 
   function setMode(nextMode) {
     if (!isApiMode(nextMode)) return
@@ -50,6 +55,11 @@ export const useApiModeStore = defineStore('apiMode', () => {
     supportsSubmissionQueue,
     supportsAgentTools,
     supportsEditRecords,
+    supportsAutomatedIngestion,
+    supportsAskPatra,
+    supportsMcpExplorer,
+    supportsDomainExperiments,
+    supportsDevOpenAccess,
     showSelector: SHOW_API_MODE,
     setMode,
   }

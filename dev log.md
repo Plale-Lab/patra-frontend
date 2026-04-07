@@ -1,5 +1,48 @@
 # Frontend Dev Log
 
+## Version 0.6.1 - 2026-04-07
+
+## Summary
+
+Version `0.6.1` brings the shared `patra-frontend` surface back into alignment with `patra-dev` as the current product baseline while preserving the newer `MCP Explorer` and domain experiment work from the latest frontend branch.
+
+## Problem
+
+- The shared frontend had drifted in two directions at once:
+  - the upstream SQL-migration branch introduced `MCP Explorer` and experiment pages
+  - `patra-dev` carried the newer product shell, access model, and visual system
+- The sidebar structure for `MCP Explorer`, `Animal Ecology`, and `Digital Agriculture` did not match the latest intended organization.
+- Runtime defaults still allowed deployment config to hide those features even though they were supposed to stay visible and show warnings when dependencies were missing.
+
+## Implementation
+
+- Rebased the shared frontend direction on the newer `patra-dev` shell and visual system.
+- Preserved and aligned the experimental surfaces:
+  - `MCP Explorer`
+  - `Animal Ecology`
+  - `Digital Agriculture`
+- Moved `MCP Explorer` into `Explore`.
+- Added a dedicated `Experiments` section for the two domain pages.
+- Removed route-level `tapis` gating from those three pages so they can remain visible and show graceful warning states.
+- Updated feature/runtime defaults and env injection so:
+  - `SUPPORTS_MCP_EXPLORER` defaults to `true`
+  - `SUPPORTS_DOMAIN_EXPERIMENTS` defaults to `true`
+  - `MCP_BASE_URL` continues to be runtime-configurable
+
+## Validation Performed
+
+- `npm --prefix app run build` -> passed
+- Verified local preview for:
+  - `/`
+  - `/mcp-explorer`
+  - `/animal-ecology`
+  - `/digital-agriculture`
+
+## Action Points
+
+- Promote this aligned frontend build to the deployed `patra` surface so the online sidebar matches the intended information architecture.
+- Configure `MCP_BASE_URL` explicitly when the MCP service is not running on the default local endpoint.
+
 ## Version 0.6.0 - 2026-04-06
 
 ## Summary

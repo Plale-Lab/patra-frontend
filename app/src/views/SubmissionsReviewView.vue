@@ -15,7 +15,7 @@
         <div class="empty-state">
           <IconInbox :size="48" stroke-width="1.2" />
           <h3>Submission review is not available</h3>
-          <p>This deployment supports asset ingestion, but it does not expose the legacy `/submissions` review API.</p>
+          <p>This deployment supports record ingestion, but it does not expose the legacy `/submissions` review API.</p>
         </div>
       </div>
     </div>
@@ -46,7 +46,7 @@
               </span>
               <span class="badge" :class="subStatusClass(sub.status)">{{ sub.status }}</span>
               <span class="badge badge-manual" v-if="!isAssetIntake(sub)">Manual Entry</span>
-              <span class="badge badge-asset-link" v-if="isAssetIntake(sub)">Asset Link</span>
+              <span class="badge badge-asset-link" v-if="isAssetIntake(sub)">Record Link</span>
               <span class="badge badge-info" v-if="isEditSubmission(sub)">Edit Existing</span>
               <span class="badge badge-bulk" v-if="isBulkAssetIntake(sub)">Bulk</span>
               <span class="sub-id">{{ sub.id }}</span>
@@ -73,7 +73,7 @@
           <div class="sub-details" v-if="expandedId === sub.id">
             <div class="asset-summary" v-if="isAssetIntake(sub)">
               <div class="asset-summary-item">
-                <span class="detail-key">Asset URL</span>
+                <span class="detail-key">Record URL</span>
                 <a class="detail-link" :href="sub.data.asset_url" target="_blank" rel="noreferrer">
                   {{ sub.data.asset_url }}
                 </a>
@@ -193,7 +193,14 @@ function formatDate(d) {
   })
 }
 
+const DETAIL_KEY_LABELS = {
+  asset_url: 'Record URL',
+  asset_provider: 'Provider',
+  asset_host: 'Host',
+}
+
 function formatKey(key) {
+  if (DETAIL_KEY_LABELS[key]) return DETAIL_KEY_LABELS[key]
   return String(key).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
 }
 
@@ -217,10 +224,10 @@ function isEditSubmission(submission) {
 
 function getSubmissionTitle(submission) {
   if (isEditSubmission(submission)) {
-    return submission.data.edit_target_name || submission.data.name || 'Edited asset'
+    return submission.data.edit_target_name || submission.data.name || 'Edited record'
   }
   if (isAssetIntake(submission)) {
-    return submission.data.display_name || submission.data.asset_url || 'Untitled asset intake'
+    return submission.data.display_name || submission.data.asset_url || 'Untitled record link intake'
   }
 
   return submission.data.name || 'Untitled'
