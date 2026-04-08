@@ -308,6 +308,31 @@ export const useExploreStore = defineStore('explore', () => {
         }
     }
 
+    async function updateModelCard(id, payload) {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await apiFetch(`/modelcard/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            if (!res.ok) throw new Error(await parseErrorMessage(res, `HTTP ${res.status}`))
+            const data = normalizeModel(await res.json())
+            currentModel.value = data
+            models.value = models.value.map((item) => {
+                const itemId = item.id ?? item.mc_id ?? item.external_id
+                return String(itemId) === String(id) ? { ...item, ...data } : item
+            })
+            return data
+        } catch (e) {
+            error.value = e.message
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
+
     async function fetchDeployments(id) {
         try {
             const res = await apiFetch(`/modelcard/${id}/deployments`)
@@ -351,6 +376,46 @@ export const useExploreStore = defineStore('explore', () => {
         }
     }
 
+    async function updateDatasheet(id, payload) {
+        loading.value = true
+        error.value = null
+        try {
+            const res = await apiFetch(`/datasheet/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            })
+            if (!res.ok) throw new Error(await parseErrorMessage(res, `HTTP ${res.status}`))
+            const data = normalizeDatasheet(await res.json())
+            currentDatasheet.value = data
+            datasheets.value = datasheets.value.map((item) => {
+                const itemId = item.id ?? item.identifier
+                return String(itemId) === String(id) ? { ...item, ...data } : item
+            })
+            return data
+        } catch (e) {
+            error.value = e.message
+            throw e
+        } finally {
+            loading.value = false
+        }
+    }
+
+    async function parseErrorMessage(res, fallback) {
+        const contentType = res.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+            const data = await res.json().catch(() => null)
+            if (typeof data?.detail === 'string') return data.detail
+            if (Array.isArray(data?.detail)) {
+                return data.detail.map((item) => item.msg || item.message || String(item)).join('; ')
+            }
+            if (typeof data?.message === 'string') return data.message
+            if (typeof data?.error === 'string') return data.error
+        }
+        const text = await res.text().catch(() => '')
+        return text || fallback
+    }
+
     function resetFilters() {
         searchQuery.value = ''
         selectedCategories.value = []
@@ -363,6 +428,6 @@ export const useExploreStore = defineStore('explore', () => {
         models, currentModel, datasheets, currentDatasheet, deployments, loading, error,
         searchQuery, selectedCategories, selectedFrameworks, selectedAuthor, visibilityFilter,
         allCategories, allFrameworks, allAuthors, filteredModels,
-        fetchModels, fetchModelById, fetchDeployments, fetchDatasheets, fetchDatasheetById, resetFilters,
+        fetchModels, fetchModelById, updateModelCard, fetchDeployments, fetchDatasheets, fetchDatasheetById, updateDatasheet, resetFilters,
     }
 })

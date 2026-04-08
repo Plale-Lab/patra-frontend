@@ -48,12 +48,12 @@ export const SUPPORTS_ASK_PATRA = resolveFeatureFlag(
 export const SUPPORTS_MCP_EXPLORER = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_MCP_EXPLORER,
   import.meta.env.VITE_SUPPORTS_MCP_EXPLORER,
-  true,
+  false,
 )
 export const SUPPORTS_DOMAIN_EXPERIMENTS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_DOMAIN_EXPERIMENTS,
   import.meta.env.VITE_SUPPORTS_DOMAIN_EXPERIMENTS,
-  true,
+  false,
 )
 export const SUPPORTS_DEV_OPEN_ACCESS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_DEV_OPEN_ACCESS,
