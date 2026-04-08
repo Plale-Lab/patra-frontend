@@ -45,6 +45,14 @@ The difference between the two pods is runtime configuration only.
 }
 ```
 
+## Example `patra-dev` pod config
+
+A complete `patra-dev` pod example now lives here:
+
+- [docs/pod-config.patra-dev.json](./pod-config.patra-dev.json)
+
+This replaces the old `patra-dev` repo-local `pod_config.json` so the deployment example stays with the canonical frontend repository.
+
 ## Feature flag defaults
 
 The frontend now defaults these dev-only features to `false` unless explicitly enabled:
