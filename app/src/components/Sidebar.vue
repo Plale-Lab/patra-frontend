@@ -5,6 +5,14 @@
     </div>
 
     <nav class="sidebar-nav">
+      <template v-if="auth.isTapisUser || auth.isAdmin">
+        <div class="sidebar-section-label">Start Here</div>
+        <RouterLink v-if="apiMode.supportsAskPatra" to="/ask-patra" class="sidebar-link" :class="{ active: $route.path === '/ask-patra' }">
+          <IconSparkles :size="20" stroke-width="1.8" />
+          <span>Ask Patra</span>
+        </RouterLink>
+      </template>
+
       <div class="sidebar-section-label">Overview</div>
       <RouterLink to="/" class="sidebar-link" :class="{ active: $route.path === '/' }">
         <IconLayoutDashboard :size="20" stroke-width="1.8" />
@@ -37,9 +45,13 @@
 
       <template v-if="auth.isTapisUser || auth.isAdmin">
         <div class="sidebar-section-label">Contribute</div>
-        <RouterLink v-if="apiMode.supportsAskPatra" to="/ask-patra" class="sidebar-link" :class="{ active: $route.path === '/ask-patra' }">
-          <IconSparkles :size="20" stroke-width="1.8" />
-          <span>Ask Patra</span>
+        <RouterLink v-if="apiMode.supportsIntentSchema" to="/intent-schema" class="sidebar-link" :class="{ active: $route.path === '/intent-schema' }">
+          <IconSchema :size="20" stroke-width="1.8" />
+          <span>Intent Schema</span>
+        </RouterLink>
+        <RouterLink v-if="apiMode.supportsIntentSchema" to="/mvp-demo-report" class="sidebar-link" :class="{ active: $route.path === '/mvp-demo-report' }">
+          <IconPresentation :size="20" stroke-width="1.8" />
+          <span>MVP Demo Report</span>
         </RouterLink>
         <RouterLink v-if="apiMode.supportsAgentTools" to="/agent-tools" class="sidebar-link" :class="{ active: $route.path === '/agent-tools' }">
           <IconSparkles :size="20" stroke-width="1.8" />
@@ -169,7 +181,7 @@ import {
   IconUpload, IconMessageCircle, IconClipboardCheck,
   IconListDetails, IconLogout, IconLogin, IconKey, IconEdit,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
-  IconTerminal2, IconPaw, IconPlant,
+  IconTerminal2, IconPaw, IconPlant, IconSchema, IconPresentation,
 } from '@tabler/icons-vue'
 
 const auth = useAuthStore()

@@ -24,6 +24,14 @@
             inspect datasheets, and review contribution paths before signing in through Tapis.
           </p>
           <div class="hero-actions">
+            <RouterLink
+              v-if="apiMode.supportsAskPatra && (auth.isTapisUser || auth.isAdmin)"
+              :to="{ path: '/ask-patra', query: { prompt: 'Help me find the right PATRA tool for my task.' } }"
+              class="btn btn-primary"
+            >
+              <IconSparkles :size="16" stroke-width="1.8" />
+              Start in Ask Patra
+            </RouterLink>
             <RouterLink to="/explore-model-cards" class="btn btn-primary">
               <IconSearch :size="16" stroke-width="1.8" />
               Explore Model Cards
@@ -190,6 +198,16 @@
             </div>
 
             <div class="workspace-actions">
+              <RouterLink v-if="apiMode.supportsAskPatra" to="/ask-patra" class="quick-link">
+                <div class="quick-link-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
+                  <IconSparkles :size="20" stroke-width="1.8" />
+                </div>
+                <div>
+                  <div class="quick-link-title">Start in Ask Patra</div>
+                  <div class="quick-link-desc">Route a task through PATRA before opening a specific tool.</div>
+                </div>
+                <IconChevronRight :size="18" class="quick-link-arrow" />
+              </RouterLink>
               <RouterLink to="/submit" class="quick-link">
                 <div class="quick-link-icon" style="background: var(--color-success-bg); color: var(--color-success);">
                   <IconUpload :size="20" stroke-width="1.8" />
@@ -291,6 +309,7 @@ import {
   IconEye,
   IconLock,
   IconSearch,
+  IconSparkles,
   IconTable,
   IconUpload,
   IconChevronRight,

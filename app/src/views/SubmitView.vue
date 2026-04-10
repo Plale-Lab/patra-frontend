@@ -5,6 +5,21 @@
       <p>{{ pageSubtitle }}</p>
     </div>
 
+    <div v-if="apiMode.supportsAskPatra" class="ask-patra-callout">
+      <div>
+        <div class="ask-patra-callout-title">Start in Ask Patra</div>
+        <div class="ask-patra-callout-text">
+          Use Ask Patra if you want help choosing between manual entry, record-link intake, or automated ingestion before submitting.
+        </div>
+      </div>
+      <RouterLink
+        :to="{ path: '/ask-patra', query: { prompt: 'Help me decide how to submit this record.' } }"
+        class="btn btn-outline"
+      >
+        Open Ask Patra
+      </RouterLink>
+    </div>
+
     <div class="success-banner" v-if="submissionResult">
       <IconCircleCheck :size="20" stroke-width="1.8" />
       <div v-if="submissionResult.kind === 'single' && submissionResult.directRecord">
@@ -355,7 +370,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { useSubmissionsStore } from '../stores/submissions'
 import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
@@ -377,6 +393,7 @@ import {
 const store = useSubmissionsStore()
 const exploreStore = useExploreStore()
 const auth = useAuthStore()
+const route = useRoute()
 
 const pageSubtitle = computed(() =>
   USE_V1_ASSET_CREATE
@@ -460,6 +477,18 @@ const canSubmit = computed(() => {
 
   return !!currentBulkForm.value.urls.trim()
 })
+
+function syncRoutePrefill() {
+  if (typeof route.query.type === 'string' && (route.query.type === 'model_card' || route.query.type === 'datasheet')) {
+    activeTab.value = route.query.type
+  }
+  if (typeof route.query.mode === 'string' && ['manual', 'asset_link', 'bulk_asset_links'].includes(route.query.mode)) {
+    submitMode.value = route.query.mode
+  }
+  if (typeof route.query.asset_url === 'string' && route.query.asset_url.trim()) {
+    currentAssetLinkForm.value.assetUrl = route.query.asset_url
+  }
+}
 
 async function handleSubmit() {
   validationError.value = ''
@@ -702,6 +731,9 @@ watch(() => auth.displayName, (nextName, previousName) => {
   }
 })
 
+onMounted(syncRoutePrefill)
+watch(() => route.query, syncRoutePrefill, { deep: true })
+
 function createModelForm() {
   return {
     name: '',
@@ -789,6 +821,29 @@ function parseBulkLines(value) {
 </script>
 
 <style scoped>
+.ask-patra-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.72);
+  margin-bottom: 18px;
+}
+
+.ask-patra-callout-title {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ask-patra-callout-text {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: .88rem;
+}
+
 .submit-layout {
   display: flex;
   gap: 24px;

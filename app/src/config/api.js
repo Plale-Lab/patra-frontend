@@ -45,6 +45,11 @@ export const SUPPORTS_ASK_PATRA = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_ASK_PATRA,
   import.meta.env.DEV,
 )
+export const SUPPORTS_INTENT_SCHEMA = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_INTENT_SCHEMA,
+  import.meta.env.VITE_SUPPORTS_INTENT_SCHEMA,
+  false,
+)
 export const SUPPORTS_MCP_EXPLORER = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_MCP_EXPLORER,
   import.meta.env.VITE_SUPPORTS_MCP_EXPLORER,
@@ -134,6 +139,7 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
       supportsEditRecords: true,
       supportsAutomatedIngestion: true,
       supportsAskPatra: true,
+      supportsIntentSchema: false,
       supportsMcpExplorer: true,
       supportsDomainExperiments: true,
       supportsDevOpenAccess: false,
@@ -152,6 +158,7 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
     supportsEditRecords: SUPPORTS_EDIT_RECORDS,
     supportsAutomatedIngestion: SUPPORTS_AUTOMATED_INGESTION,
     supportsAskPatra: SUPPORTS_ASK_PATRA,
+    supportsIntentSchema: SUPPORTS_INTENT_SCHEMA,
     supportsMcpExplorer: SUPPORTS_MCP_EXPLORER,
     supportsDomainExperiments: SUPPORTS_DOMAIN_EXPERIMENTS,
     supportsDevOpenAccess: SUPPORTS_DEV_OPEN_ACCESS,

@@ -1,5 +1,41 @@
 # Frontend Dev Log
 
+## Version 0.7.0 - 2026-04-10
+
+## Summary
+
+This milestone records two frontend status changes:
+
+- the current MVP demo pipeline framework has reached a high-level end-to-end shape and is now paused pending LLM invocation stability fixes
+- a new Ask Patra milestone has started, focused on making Ask Patra the unified entry point for user-facing tools through hybrid routing, tool cards, and structured handoffs
+
+## Current MVP Demo Status
+
+- The frontend already has the high-level demo surfaces needed for:
+  - Intent Schema
+  - Metadata Discovery
+  - Dataset Assembly Plan
+  - Composition Preview
+  - Baseline Training Stub
+  - MVP Demo Report
+- The demo framework is largely in place, but the final run-through is not yet considered stable.
+- The current blocking suspicion is LLM invocation / integration stability rather than missing page structure.
+- This branch is temporarily paused so the new Ask Patra unification milestone can proceed without being blocked by the remaining demo-path LLM issue.
+
+## Next Milestone
+
+- Ask Patra will be expanded into a hybrid router for user-facing PATRA tools.
+- First stage scope:
+  - user tools only
+  - deterministic-first routing
+  - structured tool cards and deep-link handoffs
+  - no admin-only surfaces in the first pass
+
+## Action Points
+
+- Resume the MVP demo branch after the Ask Patra milestone reaches a stable first slice.
+- Repair LLM invocation / handoff stability separately instead of mixing that work into the Ask Patra routing implementation.
+
 ## Version 0.6.1 - 2026-04-07
 
 ## Summary

@@ -5,6 +5,21 @@
       <p>Select a published record, edit its visible fields, and save the updated record directly.</p>
     </div>
 
+    <div v-if="apiMode.supportsAskPatra && (auth.isTapisUser || auth.isAdmin)" class="ask-patra-callout">
+      <div>
+        <div class="ask-patra-callout-title">Start in Ask Patra</div>
+        <div class="ask-patra-callout-text">
+          Use Ask Patra first when you need help finding the right record, deciding whether to edit or submit a new version, or preparing a search query before editing.
+        </div>
+      </div>
+      <RouterLink
+        :to="{ path: '/ask-patra', query: { prompt: 'Help me find the record I should edit and route me into Edit Records.' } }"
+        class="btn btn-outline"
+      >
+        Open Ask Patra
+      </RouterLink>
+    </div>
+
     <div v-if="!(auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess)" class="card">
       <div class="card-body">
         <div class="empty-state compact">
@@ -264,6 +279,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { IconCircleCheck, IconEdit, IconLock, IconSearch, IconSearchOff } from '@tabler/icons-vue'
 import { useAuthStore } from '../../stores/auth'
 import { useApiModeStore } from '../../stores/apiMode'
@@ -278,6 +294,7 @@ import {
 
 const auth = useAuthStore()
 const apiMode = useApiModeStore()
+const route = useRoute()
 
 const searchQuery = ref('')
 const searching = ref(false)
@@ -304,6 +321,9 @@ const selectedAssetName = computed(() => (
 
 onMounted(() => {
   if (auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess) {
+    if (typeof route.query.q === 'string' && route.query.q.trim()) {
+      searchQuery.value = route.query.q
+    }
     loadSuggestions()
   }
 })
@@ -322,6 +342,12 @@ watch(searchQuery, () => {
   searchTimer = setTimeout(() => {
     runSearch()
   }, DEBOUNCE_MS)
+})
+
+watch(() => route.query.q, (nextValue) => {
+  if (typeof nextValue === 'string' && nextValue !== searchQuery.value) {
+    searchQuery.value = nextValue
+  }
 })
 
 function recordKey(record) {
@@ -672,7 +698,31 @@ async function submitEdit() {
   margin-top: 16px;
 }
 
+.ask-patra-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: rgba(255, 253, 249, 0.88);
+  margin-bottom: 18px;
+}
+
+.ask-patra-callout-title {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ask-patra-callout-text {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: .88rem;
+}
+
 @media (max-width: 720px) {
+  .ask-patra-callout,
   .search-row {
     flex-direction: column;
     align-items: stretch;

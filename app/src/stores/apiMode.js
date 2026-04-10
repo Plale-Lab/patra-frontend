@@ -32,6 +32,7 @@ export const useApiModeStore = defineStore('apiMode', () => {
   const supportsEditRecords = computed(() => Boolean(meta.value.supportsEditRecords))
   const supportsAutomatedIngestion = computed(() => Boolean(meta.value.supportsAutomatedIngestion))
   const supportsAskPatra = computed(() => Boolean(meta.value.supportsAskPatra))
+  const supportsIntentSchema = computed(() => Boolean(meta.value.supportsIntentSchema))
   const supportsMcpExplorer = computed(() => Boolean(meta.value.supportsMcpExplorer))
   const supportsDomainExperiments = computed(() => Boolean(meta.value.supportsDomainExperiments))
   const supportsDevOpenAccess = computed(() => Boolean(meta.value.supportsDevOpenAccess))
@@ -57,6 +58,7 @@ export const useApiModeStore = defineStore('apiMode', () => {
     supportsEditRecords,
     supportsAutomatedIngestion,
     supportsAskPatra,
+    supportsIntentSchema,
     supportsMcpExplorer,
     supportsDomainExperiments,
     supportsDevOpenAccess,

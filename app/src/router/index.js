@@ -15,6 +15,8 @@ import AskPatraView from '../features/ask-patra/AskPatraView.vue'
 import AutomatedIngestionView from '../features/automated-ingestion/AutomatedIngestionView.vue'
 import ExperimentsView from '../features/experiment-domains/ExperimentsView.vue'
 import EditRecordsView from '../features/edit-records/EditRecordsView.vue'
+import IntentSchemaView from '../features/intent-schema/IntentSchemaView.vue'
+import MvpDemoReportView from '../features/intent-schema/MvpDemoReportView.vue'
 import McpExplorerView from '../features/mcp-explorer/McpExplorerView.vue'
 import SubmitView from '../views/SubmitView.vue'
 import TicketSubmitView from '../views/TicketSubmitView.vue'
@@ -28,6 +30,8 @@ const routes = [
   { path: '/explore-datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
   { path: '/explore-datasheets/:id', name: 'DatasheetDetail', component: DatasheetDetailView },
   { path: '/ask-patra', name: 'AskPatra', component: AskPatraView, meta: { feature: 'askPatra', tapis: true } },
+  { path: '/intent-schema', name: 'IntentSchema', component: IntentSchemaView, meta: { feature: 'intentSchema', tapis: true } },
+  { path: '/mvp-demo-report', name: 'MvpDemoReport', component: MvpDemoReportView, meta: { feature: 'intentSchema', tapis: true } },
   { path: '/agent-tools', name: 'AgentTools', component: AgentToolkitView, meta: { feature: 'agentTools', tapis: true } },
   { path: '/mcp-explorer', name: 'McpExplorer', component: McpExplorerView, meta: { feature: 'mcpExplorer' } },
   { path: '/animal-ecology', name: 'AnimalEcology', component: ExperimentsView, props: { domain: 'animal-ecology' }, meta: { feature: 'domainExperiments' } },
@@ -59,6 +63,7 @@ router.beforeEach((to) => {
   if (to.meta.admin && !auth.isAdmin) return { name: 'Dashboard' }
   if (to.meta.tapis && !auth.isTapisUser) return { name: 'Dashboard' }
   if (to.meta.feature === 'askPatra' && !apiMode.supportsAskPatra) return { name: 'Dashboard' }
+  if (to.meta.feature === 'intentSchema' && !apiMode.supportsIntentSchema) return { name: 'Dashboard' }
   if (to.meta.feature === 'agentTools' && !apiMode.supportsAgentTools) return { name: 'Dashboard' }
   if (to.meta.feature === 'automatedIngestion' && !apiMode.supportsAutomatedIngestion) return { name: 'Dashboard' }
   if (to.meta.feature === 'editRecords' && !apiMode.supportsEditRecords) return { name: 'Dashboard' }

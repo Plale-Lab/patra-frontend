@@ -2,7 +2,7 @@
   <div class="ask-page">
     <div class="page-header">
       <h1>Ask Patra</h1>
-      <p>Ask PATRA to find model cards, datasheets, and platform workflows using structured memory and PATRA AI.</p>
+      <p>Start here for most PATRA tasks. Ask PATRA to find records, route into the right tool, or run safe read-only previews before you open a full workflow surface.</p>
     </div>
 
     <div class="chatbot-shell card">
@@ -13,7 +13,7 @@
             <span class="assistant-badge">AI Assistant</span>
             <span class="provider-chip">{{ providerLabel }}</span>
           </div>
-          <div class="chatbot-subtitle">Ask about records, workflows, PATRA capabilities, or metadata lookups.</div>
+          <div class="chatbot-subtitle">Default entry point for user tools, guided routing, and safe inline previews.</div>
         </div>
         <button class="btn btn-outline btn-sm" type="button" @click="resetConversation" :disabled="sending || isAnimating">
           Reset chat
@@ -32,6 +32,18 @@
             <span class="starter-chip-title">{{ starter.title }}</span>
             <span class="starter-chip-prompt">{{ starter.prompt }}</span>
           </button>
+        </div>
+        <div class="available-tools-strip" v-if="toolCapabilities.length && !messages.length && !sending">
+          <span class="available-tools-label">Available tools</span>
+          <div class="available-tool-chips">
+            <span
+              v-for="capability in visibleBootstrapCapabilities"
+              :key="capability.tool_id"
+              class="available-tool-chip"
+            >
+              {{ capability.title }}
+            </span>
+          </div>
         </div>
 
         <div class="chat-scroll" ref="chatScrollRef" v-if="visibleMessages.length || sending">
@@ -101,6 +113,93 @@
                   </div>
                 </template>
               </div>
+              <div v-if="message.role === 'assistant' && toolCardsForMessage(message).length" class="tool-handoff-block">
+                <div class="inline-citations-title">Suggested tools</div>
+                <div class="tool-card-list">
+                  <article
+                    v-for="entry in toolCardsForMessage(message)"
+                    :key="`${message.created_at}-${entry.card.tool_id}`"
+                    class="tool-card"
+                    :class="`tool-card-${entry.availability}`"
+                  >
+                    <div class="tool-card-top">
+                      <div>
+                        <div class="tool-card-title">{{ entry.card.title }}</div>
+                        <div class="tool-card-domain">{{ formatToolDomain(entry.card.domain) }}</div>
+                      </div>
+                      <span class="tool-card-status" :class="`tool-card-status-${entry.availability}`">
+                        {{ formatAvailability(entry.availability) }}
+                      </span>
+                    </div>
+                    <p class="tool-card-summary">{{ entry.card.summary }}</p>
+                    <p class="tool-card-reason">{{ entry.card.reason }}</p>
+                    <div class="tool-card-footer">
+                      <div class="tool-card-actions">
+                        <button
+                          class="btn btn-outline btn-sm"
+                          type="button"
+                          :disabled="entry.availability !== 'available' || !entry.action?.route"
+                          @click="openSuggestedAction(entry.action)"
+                        >
+                          {{ entry.action?.label || entry.card.cta_label || 'Open tool' }}
+                        </button>
+                        <button
+                          v-if="canRunInline(entry)"
+                          class="btn btn-primary btn-sm"
+                          type="button"
+                          :disabled="executingActionId === inlineActionIdFor(message, entry)"
+                          @click="runInlineTool(message, entry, index)"
+                        >
+                          {{ executingActionId === inlineActionIdFor(message, entry) ? 'Running...' : 'Run here' }}
+                        </button>
+                      </div>
+                      <span v-if="entry.availabilityReason" class="tool-card-note">{{ entry.availabilityReason }}</span>
+                    </div>
+                  </article>
+                </div>
+                <div v-if="message.handoff?.tool_target" class="handoff-note">
+                  <strong>Handoff:</strong>
+                  {{ formatHandoffMessage(message.handoff) }}
+                </div>
+              </div>
+              <div v-if="shouldShowExecution(message)" class="execution-block">
+                <div class="execution-top">
+                  <div class="inline-citations-title">Inline execution</div>
+                  <span class="execution-status" :class="`execution-status-${message.execution.state}`">
+                    {{ formatExecutionState(message.execution.state) }}
+                  </span>
+                </div>
+                <p v-if="message.execution.message" class="execution-message">{{ message.execution.message }}</p>
+                <div v-if="executionSummaryItems(message).length" class="execution-summary-grid">
+                  <div v-for="(item, itemIndex) in executionSummaryItems(message)" :key="`${message.created_at}-execution-${itemIndex}`" class="execution-summary-item">
+                    <div class="execution-summary-label">{{ item.label }}</div>
+                    <div class="execution-summary-value">{{ item.value }}</div>
+                  </div>
+                </div>
+                <div v-if="executionPreviewRows(message).length" class="execution-table-wrap">
+                  <table class="execution-table">
+                    <thead>
+                      <tr>
+                        <th v-for="column in executionPreviewColumns(message)" :key="column">{{ column }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(row, rowIndex) in executionPreviewRows(message)" :key="`${message.created_at}-row-${rowIndex}`">
+                        <td v-for="column in executionPreviewColumns(message)" :key="`${rowIndex}-${column}`">{{ row[column] }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <ul v-else-if="executionListItems(message).length" class="execution-list">
+                  <li v-for="(item, itemIndex) in executionListItems(message)" :key="`${message.created_at}-list-${itemIndex}`">
+                    {{ item }}
+                  </li>
+                </ul>
+                <div v-if="message.execution.next_step_route" class="handoff-note">
+                  <strong>Next step:</strong>
+                  Open the full surface for more detail or the full workflow.
+                </div>
+              </div>
               <div v-if="message.role === 'assistant' && isLatestAssistantMessage(message) && lastAssistantCitations.length" class="inline-citations-block">
                 <div class="inline-citations-title">Relevant records</div>
                 <div class="citation-list">
@@ -150,7 +249,7 @@
             class="composer-input"
             rows="3"
             v-model="draftMessage"
-            placeholder="Ask about model cards, datasheets, Agent Toolkit, Automated Ingestion, or metadata lookups"
+            placeholder="Start here: ask about records, experiments, MCP, editing, ingestion, tickets, or planning tools"
             @keydown.enter.exact.prevent="handleSend"
           ></textarea>
           <div class="composer-footer">
@@ -168,8 +267,11 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { IconSend } from '@tabler/icons-vue'
-import { fetchAskPatraBootstrap, sendAskPatraMessage } from './api'
+import { useAuthStore } from '../../stores/auth'
+import { useApiModeStore } from '../../stores/apiMode'
+import { executeAskPatraAction, fetchAskPatraBootstrap, sendAskPatraMessage } from './api'
 
 const draftMessage = ref('')
 const errorMessage = ref('')
@@ -183,8 +285,21 @@ const lastAssistantCitations = ref([])
 const isAnimating = ref(false)
 const chatScrollRef = ref(null)
 const animationTimer = ref(null)
+const toolCapabilities = ref([])
+const executingActionId = ref('')
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+const apiMode = useApiModeStore()
+const INLINE_EXECUTABLE_TOOL_IDS = new Set(['intent_schema', 'mvp_demo_report', 'mcp_explorer', 'animal_ecology', 'digital_agriculture'])
 
 const providerLabel = computed(() => provider.value || 'PATRA AI')
+const visibleBootstrapCapabilities = computed(() => {
+  return toolCapabilities.value
+    .map((capability) => withFrontendAvailability(capability))
+    .filter((capability) => capability.availability === 'available')
+    .slice(0, 6)
+})
 const latestAssistantTimestamp = computed(() => {
   const assistants = visibleMessages.value.filter((message) => message.role === 'assistant')
   return assistants.length ? assistants[assistants.length - 1].created_at : ''
@@ -192,9 +307,8 @@ const latestAssistantTimestamp = computed(() => {
 
 onMounted(async () => {
   try {
-    const bootstrap = await fetchAskPatraBootstrap()
-    provider.value = bootstrap.provider
-    starterPrompts.value = bootstrap.starter_prompts || []
+    await refreshBootstrap()
+    applyRoutePrompt()
   } catch (error) {
     errorMessage.value = error.message || 'Could not load Ask Patra bootstrap state.'
   }
@@ -209,7 +323,26 @@ watch(visibleMessages, async () => {
   scrollChatToBottom()
 }, { deep: true })
 
+watch(() => route.query.prompt, () => {
+  applyRoutePrompt()
+})
+
 function applyStarter(prompt) {
+  draftMessage.value = prompt
+}
+
+async function refreshBootstrap() {
+  const bootstrap = await fetchAskPatraBootstrap()
+  provider.value = bootstrap.provider
+  starterPrompts.value = bootstrap.starter_prompts || []
+  toolCapabilities.value = bootstrap.tool_capabilities || []
+}
+
+function applyRoutePrompt() {
+  const prompt = typeof route.query.prompt === 'string' ? route.query.prompt.trim() : ''
+  if (!prompt) return
+  if (draftMessage.value.trim()) return
+  if (messages.value.length) return
   draftMessage.value = prompt
 }
 
@@ -232,8 +365,230 @@ function formatTimestamp(value) {
   }
 }
 
+function formatToolDomain(domain) {
+  return String(domain || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function formatAvailability(availability) {
+  return {
+    available: 'Available',
+    requires_login: 'Sign in required',
+    admin_only: 'Admin only',
+    disabled: 'Unavailable',
+  }[availability] || 'Unavailable'
+}
+
 function isLatestAssistantMessage(message) {
   return message.role === 'assistant' && message.created_at === latestAssistantTimestamp.value
+}
+
+function frontendAvailabilityForTool(toolId) {
+  if (apiMode.supportsDevOpenAccess) return { availability: 'available', reason: null }
+  switch (toolId) {
+    case 'browse_model_cards':
+    case 'browse_datasheets':
+      return { availability: 'available', reason: null }
+    case 'intent_schema':
+    case 'mvp_demo_report':
+      if (!apiMode.supportsIntentSchema) return { availability: 'disabled', reason: 'This planning surface is disabled in the current frontend deployment.' }
+      if (!auth.isTapisUser) return { availability: 'requires_login', reason: 'This planning surface requires a signed-in PATRA session.' }
+      return { availability: 'available', reason: null }
+    case 'agent_tools':
+      if (!apiMode.supportsAgentTools) return { availability: 'disabled', reason: 'Agent Toolkit is disabled in the current frontend deployment.' }
+      if (!auth.isTapisUser && !auth.isAdmin) return { availability: 'requires_login', reason: 'Agent Toolkit requires a signed-in PATRA session.' }
+      return { availability: 'available', reason: null }
+    case 'automated_ingestion':
+      if (!apiMode.supportsAutomatedIngestion) return { availability: 'disabled', reason: 'Automated Ingestion is disabled in the current frontend deployment.' }
+      if (!auth.isAdmin) return { availability: 'admin_only', reason: 'Automated Ingestion is limited to admin sessions in the current frontend.' }
+      return { availability: 'available', reason: null }
+    case 'edit_records':
+      if (!apiMode.supportsEditRecords) return { availability: 'disabled', reason: 'Edit Records is disabled in the current frontend deployment.' }
+      if (!auth.isTapisUser && !auth.isAdmin) return { availability: 'requires_login', reason: 'Edit Records requires a signed-in PATRA session.' }
+      return { availability: 'available', reason: null }
+    case 'submit_records':
+      if (!auth.isTapisUser) return { availability: 'requires_login', reason: 'Submitting records requires a signed-in PATRA session.' }
+      return { availability: 'available', reason: null }
+    case 'tickets':
+      if (!apiMode.supportsTickets) return { availability: 'disabled', reason: 'Tickets are disabled in the current frontend deployment.' }
+      if (!auth.isTapisUser) return { availability: 'requires_login', reason: 'Tickets require a signed-in PATRA session.' }
+      return { availability: 'available', reason: null }
+    case 'mcp_explorer':
+      return apiMode.supportsMcpExplorer
+        ? { availability: 'available', reason: null }
+        : { availability: 'disabled', reason: 'MCP Explorer is disabled in the current frontend deployment.' }
+    case 'animal_ecology':
+    case 'digital_agriculture':
+      return apiMode.supportsDomainExperiments
+        ? { availability: 'available', reason: null }
+        : { availability: 'disabled', reason: 'Experiments are disabled in the current frontend deployment.' }
+    default:
+      return { availability: 'available', reason: null }
+  }
+}
+
+function withFrontendAvailability(capability) {
+  const frontend = frontendAvailabilityForTool(capability.tool_id)
+  if (capability.availability === 'disabled' || capability.availability === 'admin_only' || capability.availability === 'requires_login') {
+    return capability
+  }
+  return {
+    ...capability,
+    availability: frontend.availability,
+    availability_reason: frontend.reason,
+  }
+}
+
+function toolCardsForMessage(message) {
+  const cards = Array.isArray(message.tool_cards) ? message.tool_cards : []
+  const actions = Array.isArray(message.suggested_actions) ? message.suggested_actions : []
+  return cards.map((card) => {
+    const capability = withFrontendAvailability(card)
+    const action = actions.find((item) => String(item.action_id || '').startsWith(`${card.tool_id}:`)) || null
+    const frontend = frontendAvailabilityForTool(card.tool_id)
+    return {
+      card: capability,
+      action,
+      availability: capability.availability ?? frontend.availability,
+      availabilityReason: capability.availability_reason || frontend.reason,
+    }
+  })
+}
+
+function formatHandoffMessage(handoff) {
+  if (!handoff) return ''
+  if (handoff.kind === 'prefill') {
+    return `A draft handoff is prepared for ${handoff.tool_target || 'the target tool'}.`
+  }
+  if (handoff.kind === 'navigate') {
+    return `Continue in ${handoff.tool_target || 'the target tool'} to complete this task.`
+  }
+  if (handoff.kind === 'inline') {
+    return `This action can continue inside the chat.`
+  }
+  return `This response is routing-oriented rather than execution-oriented.`
+}
+
+async function openSuggestedAction(action) {
+  if (!action || !action.route) return
+  const query = action.query && Object.keys(action.query).length ? action.query : undefined
+  await router.push({ path: action.route, query })
+}
+
+function canRunInline(entry) {
+  return (
+    entry.availability === 'available' &&
+    entry.card.supports_inline &&
+    INLINE_EXECUTABLE_TOOL_IDS.has(entry.card.tool_id)
+  )
+}
+
+function inlineActionIdFor(message, entry) {
+  return `inline:${message.created_at}:${entry.card.tool_id}`
+}
+
+function previousUserMessage(index) {
+  for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+    const candidate = visibleMessages.value[cursor]
+    if (candidate?.role === 'user' && candidate.content?.trim()) {
+      return candidate.content.trim()
+    }
+  }
+  return draftMessage.value.trim()
+}
+
+async function runInlineTool(message, entry, index) {
+  if (!canRunInline(entry)) return
+  const actionId = inlineActionIdFor(message, entry)
+  executingActionId.value = actionId
+  errorMessage.value = ''
+  try {
+    const response = await executeAskPatraAction({
+      conversation_id: conversationId.value || null,
+      tool_id: entry.card.tool_id,
+      message: previousUserMessage(index),
+      query: entry.action?.query || {},
+      prefilled_payload: entry.action?.prefilled_payload || {},
+      disable_llm: true,
+    })
+    conversationId.value = response.conversation_id
+    messages.value = response.messages || []
+    animateLatestAssistant(messages.value)
+  } catch (error) {
+    errorMessage.value = error.message || 'Inline execution failed.'
+  } finally {
+    executingActionId.value = ''
+  }
+}
+
+function shouldShowExecution(message) {
+  return message.role === 'assistant' && message.execution && message.execution.state && message.execution.state !== 'idle'
+}
+
+function executionSummaryItems(message) {
+  const result = message.execution?.result || {}
+  if (Array.isArray(result.executive_summary)) {
+    return result.executive_summary
+  }
+  if (result.kind === 'intent_schema') {
+    return [
+      { label: 'Task Type', value: result.task_type || 'unknown', tone: 'neutral' },
+      { label: 'Target Column', value: result.target_column || 'n/a', tone: 'neutral' },
+      { label: 'Fields Drafted', value: String(result.field_count ?? 0), tone: 'neutral' },
+      { label: 'Ambiguity Warnings', value: String(result.ambiguity_count ?? 0), tone: result.ambiguity_count ? 'warn' : 'good' },
+    ]
+  }
+  if (result.kind === 'mcp_explorer') {
+    return [
+      { label: 'Connection', value: result.connected ? 'Connected' : 'Failed', tone: result.connected ? 'good' : 'bad' },
+      { label: 'Tool Count', value: String(result.tool_count ?? 0), tone: 'neutral' },
+      { label: 'Server', value: result.server_name || 'unknown', tone: 'neutral' },
+    ]
+  }
+  if (result.kind === 'animal_ecology' || result.kind === 'digital_agriculture') {
+    return [
+      { label: 'Users Indexed', value: String(result.user_count ?? 0), tone: 'neutral' },
+      { label: 'Event Rows', value: String(result.total_rows ?? 0), tone: 'neutral' },
+      { label: 'Experiments Previewed', value: String((result.experiments || []).length), tone: 'neutral' },
+    ]
+  }
+  return []
+}
+
+function executionPreviewColumns(message) {
+  const rows = message.execution?.result?.preview_rows
+  if (!Array.isArray(rows) || !rows.length || typeof rows[0] !== 'object' || rows[0] === null) {
+    return []
+  }
+  return Object.keys(rows[0]).slice(0, 6)
+}
+
+function executionPreviewRows(message) {
+  const rows = message.execution?.result?.preview_rows
+  return Array.isArray(rows) ? rows.slice(0, 3) : []
+}
+
+function executionListItems(message) {
+  const result = message.execution?.result || {}
+  if (result.kind === 'mcp_explorer') {
+    return Array.isArray(result.tools) ? result.tools.slice(0, 6) : []
+  }
+  if (result.kind === 'animal_ecology' || result.kind === 'digital_agriculture') {
+    return Array.isArray(result.experiments)
+      ? result.experiments.slice(0, 4).map((item) => `${item.experiment_id} · ${item.model_id} · ${item.total_images ?? 0} images`)
+      : []
+  }
+  return []
+}
+
+function formatExecutionState(state) {
+  return {
+    running: 'Running',
+    blocked: 'Blocked',
+    succeeded: 'Succeeded',
+    failed: 'Failed',
+  }[state] || 'Idle'
 }
 
 function parseAssistantBlocks(content) {
@@ -459,9 +814,7 @@ async function resetConversation() {
   lastAssistantCitations.value = []
   errorMessage.value = ''
   try {
-    const bootstrap = await fetchAskPatraBootstrap()
-    provider.value = bootstrap.provider
-    starterPrompts.value = bootstrap.starter_prompts || []
+    await refreshBootstrap()
   } catch {
     // ignore reset bootstrap failures
   }
@@ -533,6 +886,37 @@ async function resetConversation() {
 .starter-strip {
   display: grid;
   gap: 10px;
+}
+
+.available-tools-strip {
+  display: grid;
+  gap: 10px;
+}
+
+.available-tools-label {
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--color-text-muted);
+}
+
+.available-tool-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.available-tool-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: .78rem;
+  font-weight: 700;
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .starter-chip {
@@ -766,6 +1150,100 @@ async function resetConversation() {
   gap: 10px;
 }
 
+.tool-handoff-block {
+  margin-left: 48px;
+  display: grid;
+  gap: 10px;
+}
+
+.tool-card-list {
+  display: grid;
+  gap: 12px;
+}
+
+.tool-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+}
+
+.tool-card-available {
+  border-color: rgba(88, 108, 255, 0.25);
+}
+
+.tool-card-disabled,
+.tool-card-admin_only,
+.tool-card-requires_login {
+  opacity: 0.88;
+}
+
+.tool-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tool-card-title {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tool-card-domain {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: .78rem;
+}
+
+.tool-card-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.tool-card-status-available {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.tool-card-status-disabled,
+.tool-card-status-admin_only,
+.tool-card-status-requires_login {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--color-text-secondary);
+}
+
+.tool-card-summary,
+.tool-card-reason,
+.tool-card-note,
+.handoff-note {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: .86rem;
+  line-height: 1.55;
+}
+
+.tool-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tool-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .inline-citations-title {
   font-size: .78rem;
   font-weight: 700;
@@ -777,6 +1255,116 @@ async function resetConversation() {
 .citation-list {
   display: grid;
   gap: 12px;
+}
+
+.execution-block {
+  margin-left: 48px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.execution-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.execution-status {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: .74rem;
+  font-weight: 700;
+}
+
+.execution-status-succeeded {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.execution-status-blocked,
+.execution-status-failed {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.execution-status-running {
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+
+.execution-message {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: .88rem;
+}
+
+.execution-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.execution-summary-item {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--color-surface);
+}
+
+.execution-summary-label {
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.execution-summary-value {
+  margin-top: 6px;
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.execution-table-wrap {
+  overflow-x: auto;
+}
+
+.execution-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .84rem;
+}
+
+.execution-table th,
+.execution-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.execution-table th {
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.execution-list {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: .86rem;
 }
 
 .citation-card {
@@ -921,6 +1509,14 @@ async function resetConversation() {
   }
 
   .inline-citations-block {
+    margin-left: 0;
+  }
+
+  .tool-handoff-block {
+    margin-left: 0;
+  }
+
+  .execution-block {
     margin-left: 0;
   }
 }

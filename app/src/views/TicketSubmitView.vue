@@ -5,6 +5,21 @@
       <p>Submit a service request or report an issue</p>
     </div>
 
+    <div v-if="apiMode.supportsAskPatra" class="ask-patra-callout">
+      <div>
+        <div class="ask-patra-callout-title">Start in Ask Patra</div>
+        <div class="ask-patra-callout-text">
+          Use Ask Patra first if you want help routing the issue, drafting a subject line, or choosing the right PATRA workflow.
+        </div>
+      </div>
+      <RouterLink
+        :to="{ path: '/ask-patra', query: { prompt: 'Help me prepare a support ticket for PATRA.' } }"
+        class="btn btn-outline"
+      >
+        Open Ask Patra
+      </RouterLink>
+    </div>
+
     <div class="card" v-if="!apiMode.supportsTickets">
       <div class="card-body">
         <div class="ticket-empty">
@@ -140,6 +155,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { useTicketsStore } from '../stores/tickets'
 import { useApiModeStore } from '../stores/apiMode'
 import { useAuthStore } from '../stores/auth'
@@ -151,6 +167,7 @@ import {
 const store = useTicketsStore()
 const apiMode = useApiModeStore()
 const auth = useAuthStore()
+const route = useRoute()
 const submitted = ref(false)
 const lastTicketId = ref('')
 const filter = ref('all')
@@ -211,16 +228,55 @@ function loadTickets() {
   store.fetchTickets()
 }
 
-onMounted(loadTickets)
+function syncRoutePrefill() {
+  if (typeof route.query.subject === 'string' && route.query.subject.trim()) {
+    form.subject = route.query.subject
+  }
+  if (typeof route.query.description === 'string' && route.query.description.trim()) {
+    form.description = route.query.description
+  }
+  if (typeof route.query.category === 'string' && route.query.category.trim()) {
+    form.category = route.query.category
+  }
+}
+
+onMounted(() => {
+  syncRoutePrefill()
+  loadTickets()
+})
 watch(() => apiMode.mode, loadTickets)
 watch(() => auth.displayName, (nextName, previousName) => {
   if (!form.submittedBy.trim() || form.submittedBy === previousName) {
     form.submittedBy = auth.isLoggedIn ? nextName : ''
   }
 })
+watch(() => route.query, syncRoutePrefill, { deep: true })
 </script>
 
 <style scoped>
+.ask-patra-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.72);
+  margin-bottom: 18px;
+}
+
+.ask-patra-callout-title {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ask-patra-callout-text {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: .88rem;
+}
+
 .ticket-layout { display: flex; gap: 24px; align-items: flex-start; }
 .ticket-form { flex: 0 0 420px; }
 .ticket-list { flex: 1; }

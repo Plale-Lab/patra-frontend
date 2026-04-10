@@ -5,6 +5,21 @@
       <p>Discover external CSV resources, validate them with controlled AI checks, and keep the resulting artifacts in an admin-only ingestion pool.</p>
     </div>
 
+    <div v-if="apiMode.supportsAskPatra && (auth.isTapisUser || auth.isAdmin)" class="ask-patra-callout">
+      <div>
+        <div class="ask-patra-callout-title">Start in Ask Patra</div>
+        <div class="ask-patra-callout-text">
+          Use Ask Patra first when you want help deciding whether this source belongs in automated ingestion, preparing the source URL, or routing to a safer workflow.
+        </div>
+      </div>
+      <RouterLink
+        :to="{ path: '/ask-patra', query: { prompt: 'Help me evaluate whether this CSV source should go through automated ingestion.' } }"
+        class="btn btn-outline"
+      >
+        Open Ask Patra
+      </RouterLink>
+    </div>
+
     <div v-if="!(auth.isAdmin || apiMode.supportsDevOpenAccess)" class="card">
       <div class="card-body">
         <div class="empty-state compact">
@@ -320,7 +335,8 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import {
   IconDatabaseSearch,
   IconFileSearch,
@@ -344,6 +360,7 @@ import {
 
 const auth = useAuthStore()
 const apiMode = useApiModeStore()
+const route = useRoute()
 
 const sourceUrl = ref('')
 const submittingJob = ref(false)
@@ -364,8 +381,17 @@ const sampleTableHeaders = computed(() => {
 })
 
 onMounted(async () => {
+  if (typeof route.query.source_url === 'string' && route.query.source_url.trim()) {
+    sourceUrl.value = route.query.source_url
+  }
   if (!(auth.isAdmin || apiMode.supportsDevOpenAccess)) return
   await Promise.all([loadJobs(), loadArtifacts()])
+})
+
+watch(() => route.query.source_url, (nextValue) => {
+  if (typeof nextValue === 'string' && nextValue !== sourceUrl.value) {
+    sourceUrl.value = nextValue
+  }
 })
 
 onBeforeUnmount(() => {
@@ -683,7 +709,35 @@ function formatCell(value) {
   margin-top: 16px;
 }
 
+.ask-patra-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: rgba(255, 253, 249, 0.88);
+  margin-bottom: 18px;
+}
+
+.ask-patra-callout-title {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ask-patra-callout-text {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: .88rem;
+}
+
 @media (max-width: 960px) {
+  .ask-patra-callout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .two-column-grid,
   .detail-grid {
     grid-template-columns: 1fr;

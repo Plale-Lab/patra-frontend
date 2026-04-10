@@ -5,6 +5,21 @@
       <p>Run code-first schema extraction, public dataset-schema search, and strict missing-attribute feasibility analysis for PATRA substitution workflows across domains.</p>
     </div>
 
+    <div v-if="apiMode.supportsAskPatra && (auth.isTapisUser || auth.isAdmin)" class="ask-patra-callout">
+      <div>
+        <div class="ask-patra-callout-title">Start in Ask Patra</div>
+        <div class="ask-patra-callout-text">
+          Use Ask Patra first when you want help choosing the right toolkit workflow, preparing a schema search query, or deciding whether to stay in chat or continue in this execution surface.
+        </div>
+      </div>
+      <RouterLink
+        :to="{ path: '/ask-patra', query: { prompt: 'Help me choose the right Agent Toolkit workflow for my schema and missing-column task.' } }"
+        class="btn btn-outline"
+      >
+        Open Ask Patra
+      </RouterLink>
+    </div>
+
     <div class="connection-banner error" v-if="errorMessage">
       <IconAlertTriangle :size="18" stroke-width="1.8" />
       <span>{{ errorMessage }}</span>
@@ -442,6 +457,7 @@
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   IconAlertTriangle,
   IconBinaryTree2,
@@ -462,9 +478,13 @@ import {
   runPaperSchemaSearchUpload,
   submitGeneratedArtifactForReview,
 } from './api'
+import { useAuthStore } from '../../stores/auth'
+import { useApiModeStore } from '../../stores/apiMode'
 
 const activeTab = ref('search')
 const errorMessage = ref('')
+const auth = useAuthStore()
+const apiMode = useApiModeStore()
 
 const schemaPool = ref([])
 const schemaPoolLoading = ref(false)
@@ -1038,7 +1058,35 @@ function statusClass(status) {
   font-size: .88rem;
 }
 
+.ask-patra-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: rgba(255, 253, 249, 0.88);
+  margin-bottom: 18px;
+}
+
+.ask-patra-callout-title {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.ask-patra-callout-text {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: .88rem;
+}
+
 @media (max-width: 1180px) {
+  .ask-patra-callout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .agent-layout {
     flex-direction: column;
   }

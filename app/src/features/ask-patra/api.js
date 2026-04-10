@@ -20,6 +20,18 @@ export async function sendAskPatraMessage(payload) {
   return response.json()
 }
 
+export async function executeAskPatraAction(payload) {
+  const response = await apiFetch('/api/ask-patra/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok) {
+    throw new Error(await parseError(response, `HTTP ${response.status}`))
+  }
+  return response.json()
+}
+
 async function parseError(response, fallback) {
   try {
     const payload = await response.json()
