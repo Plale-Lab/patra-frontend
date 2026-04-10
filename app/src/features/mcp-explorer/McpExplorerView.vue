@@ -5,10 +5,6 @@
       <p>Inspect MCP tools, execute calls, and read resources from the configured MCP endpoint.</p>
     </div>
 
-    <div class="loading-bar warning-bar">
-      MCP Explorer is always visible in this build. If the MCP endpoint is not configured or reachable, the page will stay available and show connection warnings instead of being hidden.
-    </div>
-
     <div class="card mcp-connection-card">
       <div class="card-header">
         <div class="flex items-center gap-8">

@@ -2,24 +2,31 @@
   <div>
     <div class="page-header">
       <h1>{{ pageTitle }}</h1>
-      <p>Browse edge experiment telemetry, detection metrics, image traces, and power usage for {{ domainLabel }}.</p>
     </div>
 
-    <div class="loading-bar warning-bar">
-      {{ domainLabel }} remains visible even when the backend is not ready. If experiment data cannot be loaded, this page will show warnings instead of disappearing from the sidebar.
-    </div>
-
-    <div class="card domain-banner">
-      <div class="card-body domain-banner-body">
-        <div class="domain-icon">
-          <component :is="domainIcon" :size="28" stroke-width="1.8" />
-        </div>
-        <div>
-          <div class="domain-title">{{ domainLabel }}</div>
-          <p class="domain-copy">
-            This view aggregates experiment events, raw image decisions, and deployment power metrics from the Patra
-            knowledge base.
-          </p>
+    <div class="ckn-banner card block-spacing">
+      <div class="card-body">
+        <div class="ckn-banner-inner">
+          <img src="/img/ckn-logo.png" alt="CKN" class="ckn-logo" />
+          <div class="ckn-banner-text">
+            <div class="ckn-banner-title">Powered by the Cyberinfrastructure Knowledge Network (CKN)</div>
+            <p class="ckn-banner-desc">
+              CKN is a distributed framework for optimizing AI at the edge. It captures real-time inference events
+              from edge devices via Kafka, stores performance and provenance data in a knowledge graph, and feeds
+              deployment metrics back to Patra for full model lifecycle transparency.
+            </p>
+            <div class="ckn-banner-links">
+              <a href="https://cyberinfrastructure-knowledge-network.readthedocs.io/en/latest/" target="_blank" class="ckn-link">
+                <IconExternalLink :size="14" stroke-width="1.8" /> Documentation
+              </a>
+              <a href="https://github.com/Data-to-Insight-Center/cyberinfrastructure-knowledge-network" target="_blank" class="ckn-link">
+                <IconBrandGithub :size="14" stroke-width="1.8" /> GitHub
+              </a>
+              <a href="https://ieeexplore.ieee.org/document/10254827" target="_blank" class="ckn-link">
+                <IconExternalLink :size="14" stroke-width="1.8" /> Paper
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -234,7 +241,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { IconLeaf, IconTractor } from '@tabler/icons-vue'
+import { IconBrandGithub, IconExternalLink, IconLeaf, IconTractor } from '@tabler/icons-vue'
 import { useExperimentsStore } from '../../stores/experiments'
 
 const props = defineProps({
@@ -296,6 +303,53 @@ function pct(value) {
 </script>
 
 <style scoped>
+.ckn-banner-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.ckn-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+
+.ckn-banner-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.ckn-banner-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+
+.ckn-banner-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ckn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.ckn-link:hover {
+  text-decoration: underline;
+}
+
 .block-spacing {
   margin-bottom: 24px;
 }
@@ -327,13 +381,6 @@ function pct(value) {
 .domain-copy {
   color: var(--color-text-secondary);
   max-width: 72ch;
-}
-
-.warning-bar {
-  margin-bottom: 16px;
-  background: color-mix(in srgb, var(--color-warning, #f59e0b) 10%, white);
-  color: color-mix(in srgb, var(--color-warning, #b45309) 80%, black);
-  border: 1px solid color-mix(in srgb, var(--color-warning, #f59e0b) 35%, white);
 }
 
 .domain-select {
