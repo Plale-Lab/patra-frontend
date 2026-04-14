@@ -2,7 +2,7 @@
   <div class="ask-page">
     <div class="page-header">
       <h1>Ask Patra</h1>
-      <p>Start here for most PATRA tasks. Ask PATRA to find records, route into the right tool, or run safe read-only previews before you open a full workflow surface.</p>
+      <p>Start here for most PATRA tasks. Patra can find records, route into the right tool, or run safe read-only previews before you open a full workflow surface.</p>
     </div>
 
     <div class="chatbot-shell card">
@@ -10,7 +10,7 @@
         <div>
           <div class="assistant-badge-row">
             <img class="assistant-mark" src="/img/patra-logo.png" alt="Patra" />
-            <span class="assistant-badge">AI Assistant</span>
+            <span class="assistant-badge">Patra</span>
             <span class="provider-chip">{{ providerLabel }}</span>
           </div>
           <div class="chatbot-subtitle">Default entry point for user tools, guided routing, and safe inline previews.</div>

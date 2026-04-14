@@ -1,5 +1,27 @@
 # Frontend Dev Log
 
+## Version 0.7.3 - 2026-04-14
+
+## Summary
+
+This update records the frontend changes for Patra naming and pod-config-managed admin UI behavior.
+
+## Frontend Changes
+
+- Updated the Ask Patra page copy so the assistant is presented as `Patra`.
+- Changed the assistant badge from `AI Assistant` to `Patra`.
+- Removed the hardcoded frontend default admin list.
+- Updated runtime env generation so `ADMIN_USERNAMES` can be sourced from `PATRA_ADMIN_USERS`, allowing pod config to manage the admin-visible UI consistently with the backend.
+
+## Operational Notes
+
+- Use `PATRA_ADMIN_USERS` in the pod config as the shared admin username list for both frontend UI visibility and backend authorization.
+- The frontend only controls UI visibility. The backend remains authoritative and must also receive the same admin username list.
+
+## Validation
+
+- `npm run build` passed.
+
 ## Version 0.7.2 - 2026-04-13
 
 ## Summary

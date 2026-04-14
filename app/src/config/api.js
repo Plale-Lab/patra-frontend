@@ -93,7 +93,7 @@ export const SUPPORTS_DEV_OPEN_ACCESS = resolveFeatureFlag(
 export const ADMIN_USERNAMES = parseCsvList(
   runtimeConfig.ADMIN_USERNAMES,
   import.meta.env.VITE_ADMIN_USERNAMES,
-  'williamq96,neelk',
+  '',
 )
 
 export const USE_V1_ASSET_CREATE = resolveFeatureFlag(
