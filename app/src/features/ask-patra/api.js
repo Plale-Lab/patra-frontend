@@ -9,11 +9,19 @@ export async function fetchAskPatraBootstrap() {
 }
 
 export async function sendAskPatraMessage(payload) {
-  const response = await apiFetch('/api/ask-patra/chat', {
+  let response = await apiFetch('/api/ask-patra/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
+  if (response.status === 404) {
+    console.warn('[AskPatra] /api/ask-patra/chat returned 404, retrying legacy /api/ask-patra endpoint')
+    response = await apiFetch('/api/ask-patra', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  }
   if (!response.ok) {
     throw new Error(await parseError(response, `HTTP ${response.status}`))
   }

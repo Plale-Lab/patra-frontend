@@ -33,6 +33,11 @@ export const useApiModeStore = defineStore('apiMode', () => {
   const supportsAutomatedIngestion = computed(() => Boolean(meta.value.supportsAutomatedIngestion))
   const supportsAskPatra = computed(() => Boolean(meta.value.supportsAskPatra))
   const supportsIntentSchema = computed(() => Boolean(meta.value.supportsIntentSchema))
+  const supportsMetadataDiscovery = computed(() => Boolean(meta.value.supportsMetadataDiscovery))
+  const supportsDatasetAssembly = computed(() => Boolean(meta.value.supportsDatasetAssembly))
+  const supportsTrainingReadiness = computed(() => Boolean(meta.value.supportsTrainingReadiness))
+  const supportsBaselineTrainingStub = computed(() => Boolean(meta.value.supportsBaselineTrainingStub))
+  const supportsMvpDemoReport = computed(() => Boolean(meta.value.supportsMvpDemoReport))
   const supportsMcpExplorer = computed(() => Boolean(meta.value.supportsMcpExplorer))
   const supportsDomainExperiments = computed(() => Boolean(meta.value.supportsDomainExperiments))
   const supportsDevOpenAccess = computed(() => Boolean(meta.value.supportsDevOpenAccess))
@@ -59,6 +64,11 @@ export const useApiModeStore = defineStore('apiMode', () => {
     supportsAutomatedIngestion,
     supportsAskPatra,
     supportsIntentSchema,
+    supportsMetadataDiscovery,
+    supportsDatasetAssembly,
+    supportsTrainingReadiness,
+    supportsBaselineTrainingStub,
+    supportsMvpDemoReport,
     supportsMcpExplorer,
     supportsDomainExperiments,
     supportsDevOpenAccess,

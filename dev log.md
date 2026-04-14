@@ -1,5 +1,87 @@
 # Frontend Dev Log
 
+## Version 0.7.2 - 2026-04-13
+
+## Summary
+
+This update records the latest dev frontend work shipped for the PATRA planning and Ask Patra surfaces.
+
+The main deployment target is now:
+
+- Frontend image: `plalelab/patra-frontend:WQ-4-13-2`
+- Backend companion image: `plalelab/patra-backend:WQ-4-12-7`
+
+## Frontend Changes
+
+- Kept the new `/llm-test` vanilla LLM tab for isolating LiteLLM/JWT behavior from Ask Patra orchestration.
+- Expanded dev feature flags and route availability for the full planning pipeline:
+  - Intent Schema
+  - Metadata Discovery
+  - Dataset Assembly
+  - Training Readiness
+  - Baseline Training Stub
+  - MVP Demo Report
+- Updated `Intent Schema` so the downstream pipeline actions are no longer hidden or disabled by stale frontend-only subfeature gating once a schema result exists.
+- Moved the five Intent Schema pipeline actions into a compact sticky right-side rail:
+  - Generate Schema
+  - Metadata Discovery
+  - Assembly Plan
+  - Preview Dataset
+  - Training Stub
+- Adjusted the rail to sit next to the main content card instead of the browser edge.
+- Added explicit Baseline Training Stub messaging that the module does not run a real model fit and does not create reusable model artifacts.
+- Added `Copy Report JSON` and `Download Report JSON` actions for the Baseline Training Stub report.
+- Updated Ask Patra rendering behavior to reduce raw inline Markdown artifacts from assistant responses.
+
+## Current Behavior Notes
+
+- The Baseline Training Stub intentionally returns a readiness/eval stub, not a downloadable model artifact.
+- If the readiness gate is blocked, the UI should show that no real training, train/validation/test split, or reusable model package was produced.
+- A blocked report with zero selected datasets and zero preview rows is expected when the current schema has no safe direct or derivable source coverage.
+
+## Validation
+
+- `npm run build` passed.
+- Docker image `plalelab/patra-frontend:WQ-4-13-2` was built and pushed.
+
+## Version 0.7.1 - 2026-04-12
+
+## Summary
+
+This update records the current suspended state for the LLM/JWT investigation and the frontend changes shipped in Docker tag `WQ-4-12-2`.
+
+The working assumption is now that the UI and backend routes are wired, but LiteLLM access still depends on a valid Tapis service token or a user JWT that has access to `litellm.pods.tacc.tapis.io`. The issue is paused until the Tapis Pods maintainer can provide or validate a service token.
+
+## Frontend Changes
+
+- Added a new `LLM Test` tab at `/llm-test`.
+- Added a `Start Here` sidebar entry for `LLM Test` when Ask Patra support is enabled.
+- Implemented a minimal vanilla chatbot surface for direct LLM connection testing.
+- The LLM test page intentionally does not use:
+  - Ask Patra tool routing
+  - starter prompts
+  - citations
+  - tool cards
+  - templates
+  - workflow handoff behavior
+- The page displays the raw provider, model, API base, success mode, or backend error so the LLM path can be debugged without Ask Patra orchestration noise.
+- Normalized runtime base URLs with `.trim()` so accidental leading/trailing whitespace in pod env values does not break frontend endpoint configuration.
+
+## Current Suspended State
+
+- `Ask Patra` and `Intent Schema` can still produce deterministic fallback responses when LiteLLM returns `403 Forbidden`.
+- A valid service token is not yet confirmed in the pod configuration.
+- The next step is to retest `/llm-test` after a valid service token is installed on `patrabackenddev`.
+
+## Docker Images
+
+- Frontend image pushed: `plalelab/patra-frontend:WQ-4-12-2`
+- Backend companion image expected for the same test run: `plalelab/patra-backend:WQ-4-12-2`
+
+## Validation
+
+- `npm run build` passed.
+
 ## Version 0.7.0 - 2026-04-10
 
 ## Summary

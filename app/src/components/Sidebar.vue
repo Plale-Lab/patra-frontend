@@ -11,6 +11,10 @@
           <IconSparkles :size="20" stroke-width="1.8" />
           <span>Ask Patra</span>
         </RouterLink>
+        <RouterLink v-if="apiMode.supportsAskPatra" to="/llm-test" class="sidebar-link" :class="{ active: $route.path === '/llm-test' }">
+          <IconMessages :size="20" stroke-width="1.8" />
+          <span>LLM Test</span>
+        </RouterLink>
       </template>
 
       <div class="sidebar-section-label">Overview</div>
@@ -49,7 +53,7 @@
           <IconSchema :size="20" stroke-width="1.8" />
           <span>Intent Schema</span>
         </RouterLink>
-        <RouterLink v-if="apiMode.supportsIntentSchema" to="/mvp-demo-report" class="sidebar-link" :class="{ active: $route.path === '/mvp-demo-report' }">
+        <RouterLink v-if="apiMode.supportsMvpDemoReport" to="/mvp-demo-report" class="sidebar-link" :class="{ active: $route.path === '/mvp-demo-report' }">
           <IconPresentation :size="20" stroke-width="1.8" />
           <span>MVP Demo Report</span>
         </RouterLink>
@@ -181,7 +185,7 @@ import {
   IconUpload, IconMessageCircle, IconClipboardCheck,
   IconListDetails, IconLogout, IconLogin, IconKey, IconEdit,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
-  IconTerminal2, IconPaw, IconPlant, IconSchema, IconPresentation,
+  IconTerminal2, IconPaw, IconPlant, IconSchema, IconPresentation, IconMessages,
 } from '@tabler/icons-vue'
 
 const auth = useAuthStore()

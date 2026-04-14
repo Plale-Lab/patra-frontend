@@ -50,6 +50,31 @@ export const SUPPORTS_INTENT_SCHEMA = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_INTENT_SCHEMA,
   false,
 )
+export const SUPPORTS_METADATA_DISCOVERY = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_METADATA_DISCOVERY,
+  import.meta.env.VITE_SUPPORTS_METADATA_DISCOVERY,
+  SUPPORTS_INTENT_SCHEMA,
+)
+export const SUPPORTS_DATASET_ASSEMBLY = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_DATASET_ASSEMBLY,
+  import.meta.env.VITE_SUPPORTS_DATASET_ASSEMBLY,
+  SUPPORTS_INTENT_SCHEMA,
+)
+export const SUPPORTS_TRAINING_READINESS = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_TRAINING_READINESS,
+  import.meta.env.VITE_SUPPORTS_TRAINING_READINESS,
+  SUPPORTS_INTENT_SCHEMA,
+)
+export const SUPPORTS_BASELINE_TRAINING_STUB = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_BASELINE_TRAINING_STUB,
+  import.meta.env.VITE_SUPPORTS_BASELINE_TRAINING_STUB,
+  SUPPORTS_INTENT_SCHEMA,
+)
+export const SUPPORTS_MVP_DEMO_REPORT = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_MVP_DEMO_REPORT,
+  import.meta.env.VITE_SUPPORTS_MVP_DEMO_REPORT,
+  SUPPORTS_INTENT_SCHEMA,
+)
 export const SUPPORTS_MCP_EXPLORER = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_MCP_EXPLORER,
   import.meta.env.VITE_SUPPORTS_MCP_EXPLORER,
@@ -140,6 +165,11 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
       supportsAutomatedIngestion: true,
       supportsAskPatra: true,
       supportsIntentSchema: false,
+      supportsMetadataDiscovery: false,
+      supportsDatasetAssembly: false,
+      supportsTrainingReadiness: false,
+      supportsBaselineTrainingStub: false,
+      supportsMvpDemoReport: false,
       supportsMcpExplorer: true,
       supportsDomainExperiments: true,
       supportsDevOpenAccess: false,
@@ -159,6 +189,11 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
     supportsAutomatedIngestion: SUPPORTS_AUTOMATED_INGESTION,
     supportsAskPatra: SUPPORTS_ASK_PATRA,
     supportsIntentSchema: SUPPORTS_INTENT_SCHEMA,
+    supportsMetadataDiscovery: SUPPORTS_METADATA_DISCOVERY,
+    supportsDatasetAssembly: SUPPORTS_DATASET_ASSEMBLY,
+    supportsTrainingReadiness: SUPPORTS_TRAINING_READINESS,
+    supportsBaselineTrainingStub: SUPPORTS_BASELINE_TRAINING_STUB,
+    supportsMvpDemoReport: SUPPORTS_MVP_DEMO_REPORT,
     supportsMcpExplorer: SUPPORTS_MCP_EXPLORER,
     supportsDomainExperiments: SUPPORTS_DOMAIN_EXPERIMENTS,
     supportsDevOpenAccess: SUPPORTS_DEV_OPEN_ACCESS,
@@ -177,7 +212,7 @@ export function resolveMcpUrl(path = '') {
 }
 
 function normalizeBaseUrl(value) {
-  return String(value || '').replace(/\/+$/, '')
+  return String(value || '').trim().replace(/\/+$/, '')
 }
 
 function resolveApiMode(value) {

@@ -631,7 +631,7 @@ function parseAssistantBlocks(content) {
 }
 
 function parseTextIntoBlocks(text, blocks, sourceItems) {
-  const normalized = String(text || '').trim()
+  const normalized = normalizeAssistantMarkdown(text)
   if (!normalized) return
 
   const sections = []
@@ -649,6 +649,15 @@ function parseTextIntoBlocks(text, blocks, sourceItems) {
   if (sections.length) {
     blocks.push({ type: 'text', sections })
   }
+}
+
+function normalizeAssistantMarkdown(text) {
+  return String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/([^\n])\s+\*\s+(?=\S)/g, '$1\n- ')
+    .replace(/^\s*\*\s+/gm, '- ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 function parseTextSection(text) {

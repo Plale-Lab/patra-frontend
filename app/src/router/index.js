@@ -12,6 +12,7 @@ import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
 import AgentToolkitView from '../features/agent-toolkit/AgentToolkitView.vue'
 import AskPatraView from '../features/ask-patra/AskPatraView.vue'
+import LlmTestView from '../features/llm-test/LlmTestView.vue'
 import AutomatedIngestionView from '../features/automated-ingestion/AutomatedIngestionView.vue'
 import ExperimentsView from '../features/experiment-domains/ExperimentsView.vue'
 import EditRecordsView from '../features/edit-records/EditRecordsView.vue'
@@ -30,8 +31,9 @@ const routes = [
   { path: '/explore-datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
   { path: '/explore-datasheets/:id', name: 'DatasheetDetail', component: DatasheetDetailView },
   { path: '/ask-patra', name: 'AskPatra', component: AskPatraView, meta: { feature: 'askPatra', tapis: true } },
+  { path: '/llm-test', name: 'LlmTest', component: LlmTestView, meta: { feature: 'askPatra', tapis: true } },
   { path: '/intent-schema', name: 'IntentSchema', component: IntentSchemaView, meta: { feature: 'intentSchema', tapis: true } },
-  { path: '/mvp-demo-report', name: 'MvpDemoReport', component: MvpDemoReportView, meta: { feature: 'intentSchema', tapis: true } },
+  { path: '/mvp-demo-report', name: 'MvpDemoReport', component: MvpDemoReportView, meta: { feature: 'mvpDemoReport', tapis: true } },
   { path: '/agent-tools', name: 'AgentTools', component: AgentToolkitView, meta: { feature: 'agentTools', tapis: true } },
   { path: '/mcp-explorer', name: 'McpExplorer', component: McpExplorerView, meta: { feature: 'mcpExplorer' } },
   { path: '/animal-ecology', name: 'AnimalEcology', component: ExperimentsView, props: { domain: 'animal-ecology' }, meta: { feature: 'domainExperiments' } },
@@ -64,9 +66,12 @@ router.beforeEach((to) => {
   if (to.meta.tapis && !auth.isTapisUser) return { name: 'Dashboard' }
   if (to.meta.feature === 'askPatra' && !apiMode.supportsAskPatra) return { name: 'Dashboard' }
   if (to.meta.feature === 'intentSchema' && !apiMode.supportsIntentSchema) return { name: 'Dashboard' }
+  if (to.meta.feature === 'mvpDemoReport' && !apiMode.supportsMvpDemoReport) return { name: 'Dashboard' }
   if (to.meta.feature === 'agentTools' && !apiMode.supportsAgentTools) return { name: 'Dashboard' }
   if (to.meta.feature === 'automatedIngestion' && !apiMode.supportsAutomatedIngestion) return { name: 'Dashboard' }
   if (to.meta.feature === 'editRecords' && !apiMode.supportsEditRecords) return { name: 'Dashboard' }
+  if (to.meta.feature === 'mcpExplorer' && !apiMode.supportsMcpExplorer) return { name: 'Dashboard' }
+  if (to.meta.feature === 'domainExperiments' && !apiMode.supportsDomainExperiments) return { name: 'Dashboard' }
   if (to.meta.privileged && !(auth.isTapisUser || auth.isAdmin)) return { name: 'Dashboard' }
   return true
 })
