@@ -17,6 +17,8 @@ This update records the frontend changes for Patra naming and pod-config-managed
 
 - Use `PATRA_ADMIN_USERS` in the pod config as the shared admin username list for both frontend UI visibility and backend authorization.
 - The frontend only controls UI visibility. The backend remains authoritative and must also receive the same admin username list.
+- Added JWT `exp` validation before sending stored Tapis tokens to backend APIs. This prevents stale local/session auth from making every LiteLLM test fail with a reused expired token.
+- If a stored Tapis JWT is expired, the frontend clears it and the user must sign in again.
 
 ## Validation
 

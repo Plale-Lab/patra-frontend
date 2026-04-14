@@ -54,6 +54,11 @@ function getStoredAuth() {
   if (expiresAt && Date.now() < expiresAt) {
     storedToken = localStorage.getItem(LOCAL_TOKEN_KEY) || ''
     storedUser = parseStoredUser(localStorage.getItem(LOCAL_USER_KEY))
+    if (isJwtExpired(storedToken)) {
+      clearLocalAuth()
+      storedToken = ''
+      storedUser = null
+    }
   } else {
     if (expiresAt) {
       clearLocalAuth()
@@ -61,6 +66,11 @@ function getStoredAuth() {
 
     storedToken = sessionStorage.getItem(SESSION_TOKEN_KEY) || ''
     storedUser = parseStoredUser(sessionStorage.getItem(SESSION_USER_KEY))
+    if (isJwtExpired(storedToken)) {
+      clearSessionAuth()
+      storedToken = ''
+      storedUser = null
+    }
   }
 
   if (SUPPORTS_DEV_OPEN_ACCESS) {
@@ -104,4 +114,28 @@ function clearLocalAuth() {
   localStorage.removeItem(LOCAL_USER_KEY)
   localStorage.removeItem(LOCAL_TOKEN_KEY)
   localStorage.removeItem(LOCAL_EXPIRY_KEY)
+}
+
+function clearSessionAuth() {
+  sessionStorage.removeItem(SESSION_USER_KEY)
+  sessionStorage.removeItem(SESSION_TOKEN_KEY)
+}
+
+function isJwtExpired(token) {
+  const exp = getJwtExp(token)
+  if (!exp) return false
+  return Date.now() >= (exp * 1000) - 30_000
+}
+
+function getJwtExp(token) {
+  try {
+    const payload = String(token || '').split('.')[1]
+    if (!payload) return null
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+    const decoded = JSON.parse(atob(padded))
+    return typeof decoded.exp === 'number' ? decoded.exp : null
+  } catch {
+    return null
+  }
 }

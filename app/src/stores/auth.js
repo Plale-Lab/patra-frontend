@@ -18,17 +18,33 @@ function loadPersistedAuth() {
     migratePersistedAuth()
     const expiresAt = Number(localStorage.getItem(LOCAL_EXPIRY_KEY) || 0)
     if (expiresAt && Date.now() < expiresAt) {
-        return {
-            user: normalizePersistedUser(parseJson(localStorage.getItem(LOCAL_USER_KEY))),
-            token: localStorage.getItem(LOCAL_TOKEN_KEY) || '',
+        const localToken = localStorage.getItem(LOCAL_TOKEN_KEY) || ''
+        if (isJwtExpired(localToken)) {
+            clearLocalAuth()
+        } else {
+            return {
+                user: normalizePersistedUser(parseJson(localStorage.getItem(LOCAL_USER_KEY))),
+                token: localToken,
+            }
         }
     }
 
-    clearLocalAuth()
+    if (expiresAt) {
+        clearLocalAuth()
+    }
+
+    const sessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY) || ''
+    if (isJwtExpired(sessionToken)) {
+        clearSessionAuth()
+        return {
+            user: null,
+            token: '',
+        }
+    }
 
     return {
         user: normalizePersistedUser(parseJson(sessionStorage.getItem(SESSION_USER_KEY))),
-        token: sessionStorage.getItem(SESSION_TOKEN_KEY) || '',
+        token: sessionToken,
     }
 }
 
@@ -71,6 +87,25 @@ function normalizePersistedUser(user) {
     return {
         ...user,
         role: isAdmin ? 'admin' : (user.role || 'user'),
+    }
+}
+
+function isJwtExpired(token) {
+    const exp = getJwtExp(token)
+    if (!exp) return false
+    return Date.now() >= (exp * 1000) - 30_000
+}
+
+function getJwtExp(token) {
+    try {
+        const payload = String(token || '').split('.')[1]
+        if (!payload) return null
+        const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
+        const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, '=')
+        const decoded = JSON.parse(atob(padded))
+        return typeof decoded.exp === 'number' ? decoded.exp : null
+    } catch {
+        return null
     }
 }
 
