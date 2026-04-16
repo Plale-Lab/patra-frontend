@@ -40,6 +40,7 @@
               <div class="form-group">
                 <label class="form-label">Category</label>
                 <select class="form-input" v-model="form.category">
+                  <option value="" disabled>Select category…</option>
                   <option>Bug Report</option>
                   <option>Feature Request</option>
                   <option>Access Request</option>
@@ -50,6 +51,7 @@
               <div class="form-group">
                 <label class="form-label">Priority</label>
                 <select class="form-input" v-model="form.priority">
+                  <option value="" disabled>Select priority…</option>
                   <option>Low</option>
                   <option>Medium</option>
                   <option>High</option>

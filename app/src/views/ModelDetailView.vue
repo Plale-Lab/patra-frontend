@@ -41,13 +41,17 @@
                     <input type="checkbox" v-model="editForm.is_private" />
                     {{ editForm.is_private ? 'Private' : 'Public' }}
                   </label>
+                  <label class="toggle-label">
+                    <input type="checkbox" v-model="editForm.is_gated" />
+                    {{ editForm.is_gated ? 'Gated' : 'Open' }}
+                  </label>
                 </template>
                 <template v-else>
                   <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
                     {{ model.is_private ? 'Private' : 'Public' }}
                   </span>
                 </template>
-                <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
+                <span v-if="!editing && model.is_gated" class="badge badge-accent">Gated</span>
                 <span v-if="model.ai_model?.framework" class="badge badge-info">{{ model.ai_model.framework }}</span>
                 <span v-if="!editing" class="badge badge-accent">v{{ model.version }}</span>
               </div>
@@ -473,6 +477,7 @@ function startEdit() {
   editForm.documentation = m.documentation || ''
   editForm.foundational_model = m.foundational_model || ''
   editForm.is_private = Boolean(m.is_private)
+  editForm.is_gated = Boolean(m.is_gated)
   editForm.ai_model_name = ai.name || ''
   editForm.ai_model_version = ai.version || ''
   editForm.ai_model_description = ai.description || ''

@@ -69,10 +69,6 @@
           <IconCube :size="20" stroke-width="1.8" />
           <span>Models & Data</span>
         </RouterLink>
-        <RouterLink v-if="apiMode.supportsSubmissionQueue" to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
-          <IconClipboardCheck :size="20" stroke-width="1.8" />
-          <span>Review Submissions</span>
-        </RouterLink>
         <RouterLink v-if="apiMode.supportsTickets" to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
           <IconListDetails :size="20" stroke-width="1.8" />
           <span>Manage Tickets</span>
@@ -150,7 +146,7 @@
               <span>Remember me for 7 days</span>
             </label>
             <button class="btn-login" @click="handleLogin" :disabled="!loginForm.username || !loginForm.password || auth.loading">
-              {{ auth.loading ? 'Authenticating...' : 'Get JWT Token' }}
+              {{ auth.loading ? 'Authenticating...' : 'Sign In' }}
             </button>
           </div>
         </div>
@@ -166,7 +162,7 @@ import { useAuthStore } from '../stores/auth'
 import { useApiModeStore } from '../stores/apiMode'
 import {
   IconLayoutDashboard, IconCube, IconDatabaseSearch, IconFileText, IconSettings, IconSearch,
-  IconUpload, IconMessageCircle, IconClipboardCheck,
+  IconMessageCircle, IconUpload,
   IconListDetails, IconLogout, IconLogin, IconKey, IconEdit,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
   IconTerminal2, IconPaw, IconPlant,

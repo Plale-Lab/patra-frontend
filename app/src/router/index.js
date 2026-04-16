@@ -18,7 +18,6 @@ import EditRecordsView from '../features/edit-records/EditRecordsView.vue'
 import McpExplorerView from '../features/mcp-explorer/McpExplorerView.vue'
 import SubmitView from '../views/SubmitView.vue'
 import TicketSubmitView from '../views/TicketSubmitView.vue'
-import SubmissionsReviewView from '../views/SubmissionsReviewView.vue'
 import TicketManagementView from '../views/TicketManagementView.vue'
 
 const routes = [
@@ -41,7 +40,6 @@ const routes = [
   { path: '/submit', name: 'Submit', component: SubmitView, meta: { tapis: true } },
   { path: '/tickets', name: 'Tickets', component: TicketSubmitView, meta: { tapis: true } },
   { path: '/models', name: 'Models', component: ModelsView, meta: { admin: true } },
-  { path: '/submissions', name: 'SubmissionsReview', component: SubmissionsReviewView, meta: { admin: true } },
   { path: '/ticket-management', name: 'TicketManagement', component: TicketManagementView, meta: { admin: true } },
   { path: '/audit-log', name: 'AuditLog', component: AuditLogView, meta: { admin: true } },
   { path: '/settings', name: 'Settings', component: SettingsView, meta: { admin: true } },

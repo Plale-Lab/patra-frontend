@@ -27,7 +27,6 @@ export const useApiModeStore = defineStore('apiMode', () => {
   const helpText = computed(() => meta.value.helpText)
   const isMockMode = computed(() => mode.value === 'mock')
   const supportsTickets = computed(() => Boolean(meta.value.supportsTickets))
-  const supportsSubmissionQueue = computed(() => Boolean(meta.value.supportsSubmissionQueue))
   const supportsAgentTools = computed(() => Boolean(meta.value.supportsAgentTools))
   const supportsEditRecords = computed(() => Boolean(meta.value.supportsEditRecords))
   const supportsAutomatedIngestion = computed(() => Boolean(meta.value.supportsAutomatedIngestion))
@@ -52,7 +51,6 @@ export const useApiModeStore = defineStore('apiMode', () => {
     helpText,
     isMockMode,
     supportsTickets,
-    supportsSubmissionQueue,
     supportsAgentTools,
     supportsEditRecords,
     supportsAutomatedIngestion,

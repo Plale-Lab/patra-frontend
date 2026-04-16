@@ -24,16 +24,12 @@
           <span class="api-mode-target">{{ apiMode.apiBaseUrl }}</span>
         </div>
       </div>
-      <button class="btn-icon" title="Search">
-        <IconSearch :size="18" stroke-width="1.8" />
-      </button>
     </div>
   </header>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { IconSearch } from '@tabler/icons-vue'
 import { useAuthStore } from '../stores/auth'
 import { useApiModeStore } from '../stores/apiMode'
 

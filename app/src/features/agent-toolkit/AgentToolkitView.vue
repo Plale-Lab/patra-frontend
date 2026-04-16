@@ -359,10 +359,6 @@
                   <span>Rows</span>
                   <strong>{{ generatedResult.artifact.row_count }}</strong>
                 </div>
-                <div class="summary-chip">
-                  <span>Review</span>
-                  <strong>{{ generatedResult.artifact.review_submission_id || 'not submitted' }}</strong>
-                </div>
               </div>
 
               <p class="result-message">{{ generatedResult.message }}</p>
@@ -370,13 +366,13 @@
               <div class="action-row stacked-actions">
                 <a class="btn btn-outline" :href="artifactDownloadUrl('csv')" target="_blank" rel="noreferrer">Download CSV</a>
                 <a class="btn btn-outline" :href="artifactDownloadUrl('schema')" target="_blank" rel="noreferrer">Download schema</a>
-                <button class="btn btn-primary" :disabled="submitLoading" @click="handleSubmitForReview">
-                  {{ submitLoading ? 'Submitting...' : 'Submit to PATRA review' }}
+                <button class="btn btn-primary" :disabled="createLoading" @click="handleCreateDatasheet">
+                  {{ createLoading ? 'Creating...' : 'Create Datasheet' }}
                 </button>
               </div>
 
-              <p class="table-subtitle" v-if="reviewResult">
-                Pending submission {{ reviewResult.submission_id }} created for PATRA admin review.
+              <p class="table-subtitle" v-if="createdAssetId">
+                Datasheet created (ID: {{ createdAssetId }}). View it in Explore Datasheets.
               </p>
 
               <div class="mini-section">
@@ -456,11 +452,11 @@ import {
 import {
   fetchSchemaPool,
   generateSynthesizedDataset,
+  createDatasheetFromArtifact,
   generatedArtifactDownloadUrl,
   runMissingColumnAnalysis,
   runPaperSchemaSearch,
   runPaperSchemaSearchUpload,
-  submitGeneratedArtifactForReview,
 } from './api'
 
 const activeTab = ref('search')
@@ -478,8 +474,8 @@ const missingLoading = ref(false)
 const missingResult = ref(null)
 const generateLoading = ref(false)
 const generatedResult = ref(null)
-const submitLoading = ref(false)
-const reviewResult = ref(null)
+const createLoading = ref(false)
+const createdAssetId = ref(null)
 
 const searchForm = reactive({
   documentUrl: '',
@@ -523,7 +519,7 @@ async function handleSearch() {
   errorMessage.value = ''
   missingResult.value = null
   generatedResult.value = null
-  reviewResult.value = null
+  createdAssetId.value = null
 
   const provided = [
     Boolean(searchForm.documentUrl.trim()),
@@ -589,7 +585,7 @@ async function handleMissingAnalysis() {
       candidate_dataset_id: missingForm.candidateDatasetId,
     })
     generatedResult.value = null
-    reviewResult.value = null
+    createdAssetId.value = null
     synthesisForm.selectedDerivableFields = derivableRows.value.map((row) => row.target_field)
   } catch (error) {
     errorMessage.value = error.message
@@ -673,7 +669,6 @@ async function handleGenerateDataset() {
       use_llm_plan: synthesisForm.useLlmPlan,
       submitted_by: synthesisForm.submittedBy.trim() || null,
     })
-    reviewResult.value = null
   } catch (error) {
     errorMessage.value = error.message
   } finally {
@@ -681,32 +676,29 @@ async function handleGenerateDataset() {
   }
 }
 
-async function handleSubmitForReview() {
+async function handleCreateDatasheet() {
   errorMessage.value = ''
-  if (!generatedResult.value?.artifact?.artifact_key) {
+  if (!generatedResult.value?.artifact) {
     errorMessage.value = 'Generate a synthesized dataset first.'
     return
   }
   if (!synthesisForm.submittedBy.trim()) {
-    errorMessage.value = 'Enter your name before submitting for PATRA admin review.'
+    errorMessage.value = 'Enter your name before creating a datasheet.'
     return
   }
 
-  submitLoading.value = true
+  createLoading.value = true
   try {
-    reviewResult.value = await submitGeneratedArtifactForReview(
-      generatedResult.value.artifact.artifact_key,
-      {
-        submitted_by: synthesisForm.submittedBy.trim(),
-        title: generatedResult.value.artifact.title,
-        notes: synthesisForm.reviewNotes.trim() || null,
-      },
+    const result = await createDatasheetFromArtifact(
+      generatedResult.value.artifact,
+      synthesisForm.submittedBy.trim(),
+      synthesisForm.reviewNotes?.trim() || null,
     )
-    generatedResult.value.artifact.review_submission_id = reviewResult.value.submission_id
+    createdAssetId.value = result.identifier ?? result.id ?? null
   } catch (error) {
     errorMessage.value = error.message
   } finally {
-    submitLoading.value = false
+    createLoading.value = false
   }
 }
 

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiFetch } from '../lib/api'
+import { parseErrorMessage } from '../lib/errorParsing'
 
 function asArray(value) {
     if (Array.isArray(value)) return value
@@ -399,21 +400,6 @@ export const useExploreStore = defineStore('explore', () => {
         } finally {
             loading.value = false
         }
-    }
-
-    async function parseErrorMessage(res, fallback) {
-        const contentType = res.headers.get('content-type') || ''
-        if (contentType.includes('application/json')) {
-            const data = await res.json().catch(() => null)
-            if (typeof data?.detail === 'string') return data.detail
-            if (Array.isArray(data?.detail)) {
-                return data.detail.map((item) => item.msg || item.message || String(item)).join('; ')
-            }
-            if (typeof data?.message === 'string') return data.message
-            if (typeof data?.error === 'string') return data.error
-        }
-        const text = await res.text().catch(() => '')
-        return text || fallback
     }
 
     function resetFilters() {

@@ -156,6 +156,27 @@
                 <input class="form-input" v-model="editForm.keywords" />
               </div>
             </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Author</label>
+                <input class="form-input" v-model="editForm.author" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Foundational Model</label>
+                <input class="form-input" v-model="editForm.foundational_model" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Citation</label>
+              <textarea class="form-input form-textarea" rows="2" v-model="editForm.citation"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Documentation URL</label>
+              <input class="form-input" v-model="editForm.documentation" />
+            </div>
           </template>
 
           <template v-else>
@@ -214,6 +235,14 @@
             <div class="filter-chips">
               <button type="button" class="chip" :class="{ active: !editForm.is_private }" @click="editForm.is_private = false">Public</button>
               <button type="button" class="chip" :class="{ active: editForm.is_private }" @click="editForm.is_private = true">Private</button>
+            </div>
+          </div>
+
+          <div class="form-group" v-if="selectedRecord?.assetType === 'model_card'">
+            <label class="form-label">Access</label>
+            <div class="filter-chips">
+              <button type="button" class="chip" :class="{ active: !editForm.is_gated }" @click="editForm.is_gated = false">Open</button>
+              <button type="button" class="chip" :class="{ active: editForm.is_gated }" @click="editForm.is_gated = true">Gated</button>
             </div>
           </div>
 

@@ -5,7 +5,7 @@
       <p>
         {{ isGuest
           ? 'Discover public model cards, browse datasheets, and understand how to contribute to the ICICLE ecosystem.'
-          : 'Your workspace snapshot for submissions, authored records, and support activity.' }}
+          : 'Your workspace snapshot for authored records and support activity.' }}
       </p>
     </div>
 
@@ -149,15 +149,6 @@
             <div class="stat-label">My Catalog Models</div>
           </div>
         </div>
-        <div class="stat-card" v-if="apiMode.supportsSubmissionQueue">
-          <div class="stat-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-            <IconClipboardCheck :size="24" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="stat-value">{{ mySubmissionCount }}</div>
-            <div class="stat-label">My Submissions</div>
-          </div>
-        </div>
         <div class="stat-card">
           <div class="stat-icon" style="background: var(--color-accent-bg); color: #c68200;">
             <IconLock :size="24" stroke-width="1.8" />
@@ -183,23 +174,9 @@
                   This view tracks what you submitted, what you authored, and the current state of your workspace activity.
                 </div>
               </div>
-              <div class="workspace-chips">
-                <span class="chip active" v-if="apiMode.supportsSubmissionQueue">{{ myPendingSubmissionCount }} pending submissions</span>
-                <span class="chip active">{{ myAssetIntakeCount }} record-link requests</span>
-              </div>
             </div>
 
             <div class="workspace-actions">
-              <RouterLink to="/submit" class="quick-link">
-                <div class="quick-link-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-                  <IconUpload :size="20" stroke-width="1.8" />
-                </div>
-                <div>
-                  <div class="quick-link-title">Create a new submission</div>
-                  <div class="quick-link-desc">Manual entry, single record link, or bulk record links.</div>
-                </div>
-                <IconChevronRight :size="18" class="quick-link-arrow" />
-              </RouterLink>
               <RouterLink to="/explore-model-cards" class="quick-link">
                 <div class="quick-link-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
                   <IconSearch :size="20" stroke-width="1.8" />
@@ -244,34 +221,6 @@
           </div>
         </div>
 
-        <div class="card" v-if="apiMode.supportsSubmissionQueue">
-          <div class="card-header">
-            <span>My Recent Submissions</span>
-            <RouterLink v-if="auth.isAdmin" to="/submissions" class="btn btn-sm btn-outline">Review Queue</RouterLink>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="mySubmissions.length === 0">
-              You have not created any tracked submissions in the current API mode yet.
-            </div>
-            <div v-else class="stack-list">
-              <div v-for="submission in mySubmissions" :key="submission.id" class="stack-item stack-item-static">
-                <div class="stack-item-main">
-                  <div class="stack-item-title">{{ getSubmissionTitle(submission) }}</div>
-                  <div class="stack-item-subtitle">
-                    {{ formatSubmissionType(submission.type) }} · {{ formatTime(submission.submitted_at) }}
-                  </div>
-                </div>
-                <div
-                  v-if="submission.data?.intake_method === 'asset_link'"
-                  class="stack-item-meta stack-item-meta-column"
-                >
-                  <span class="badge badge-accent">Record Link</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </template>
   </div>
@@ -281,30 +230,26 @@
 import { computed, onMounted, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
-import { useSubmissionsStore } from '../stores/submissions'
 import { useAuthStore } from '../stores/auth'
 import { useApiModeStore } from '../stores/apiMode'
 import {
   IconAlertCircle,
-  IconClipboardCheck,
   IconCube,
   IconEye,
   IconLock,
   IconSearch,
   IconTable,
-  IconUpload,
   IconChevronRight,
 } from '@tabler/icons-vue'
 
 const exploreStore = useExploreStore()
-const submissionsStore = useSubmissionsStore()
 const auth = useAuthStore()
 const apiMode = useApiModeStore()
 
 const isGuest = computed(() => !auth.isLoggedIn)
 
 const dashboardError = computed(() => (
-  exploreStore.error || submissionsStore.error || ''
+  exploreStore.error || ''
 ))
 
 const totalModels = computed(() => exploreStore.models.length)
@@ -332,19 +277,10 @@ const identityKeys = computed(() => {
 })
 
 const myModelsAll = computed(() => exploreStore.models.filter(model => matchesCurrentUser(model.author)))
-const mySubmissionsAll = computed(() => submissionsStore.submissions.filter(submission => matchesCurrentUser(submission.submitted_by)))
 
 const myModels = computed(() => myModelsAll.value.slice(0, 5))
-const mySubmissions = computed(() => (
-  [...mySubmissionsAll.value]
-    .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
-    .slice(0, 5)
-))
 
 const myModelCount = computed(() => myModelsAll.value.length)
-const mySubmissionCount = computed(() => mySubmissionsAll.value.length)
-const myPendingSubmissionCount = computed(() => mySubmissionsAll.value.filter(item => item.status === 'pending').length)
-const myAssetIntakeCount = computed(() => mySubmissionsAll.value.filter(item => item.data?.intake_method === 'asset_link').length)
 
 function normalizeIdentity(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')
@@ -369,13 +305,6 @@ async function loadDashboard() {
     exploreStore.fetchDatasheets(),
   ]
 
-  if (auth.isLoggedIn && apiMode.supportsSubmissionQueue) {
-    tasks.push(submissionsStore.fetchSubmissions())
-  } else {
-    submissionsStore.submissions = []
-    submissionsStore.error = null
-  }
-
   await Promise.allSettled(tasks)
 }
 
@@ -390,18 +319,6 @@ function formatTime(timestamp) {
   if (hours < 24) return `${hours}h ago`
 
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-function formatSubmissionType(type) {
-  return type === 'model_card' ? 'Model Card' : 'Datasheet'
-}
-
-function getSubmissionTitle(submission) {
-  if (submission.data?.intake_method === 'asset_link') {
-    return submission.data.display_name || submission.data.asset_url || 'Record link intake'
-  }
-
-  return submission.data?.name || submission.id
 }
 
 onMounted(loadDashboard)

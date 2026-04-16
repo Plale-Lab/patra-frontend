@@ -1,4 +1,5 @@
 import { apiFetch } from '../../lib/api'
+import { parseErrorMessage } from '../../lib/errorParsing'
 
 export async function searchEditableRecords(query, limitPerType = 8) {
   const normalized = String(query || '').trim()
@@ -209,6 +210,11 @@ function mapModelCardDetailToForm(detail) {
     output_data: detail.output_data || detail.ai_model?.location || '',
     keywords: detail.keywords || '',
     is_private: Boolean(detail.is_private),
+    is_gated: Boolean(detail.is_gated),
+    author: detail.author || '',
+    citation: detail.citation || '',
+    documentation: detail.documentation || '',
+    foundational_model: detail.foundational_model || '',
   }
 }
 
@@ -236,16 +242,16 @@ function buildModelCardVersionPayload(form, detail, editorName = '') {
     short_description: normalizeText(form.short_description),
     full_description: normalizeText(form.full_description),
     keywords: normalizeText(form.keywords),
-    author: normalizeText(detail.author) || normalizeText(editorName) || null,
-    citation: normalizeText(detail.citation),
+    author: normalizeText(form.author) || normalizeText(editorName) || null,
+    citation: normalizeText(form.citation),
     input_data: normalizeText(form.input_data),
     input_type: normalizeText(form.input_type),
     output_data: normalizeText(form.output_data),
-    foundational_model: normalizeText(detail.foundational_model),
+    foundational_model: normalizeText(form.foundational_model),
     category: normalizeText(form.category),
-    documentation: normalizeText(detail.documentation),
+    documentation: normalizeText(form.documentation),
     is_private: Boolean(form.is_private),
-    is_gated: Boolean(detail.is_gated),
+    is_gated: Boolean(form.is_gated),
     asset_version: Number(detail.asset_version || 1) + 1,
     previous_version_id: detail.external_id,
     root_version_id: detail.root_version_id || detail.external_id,
@@ -254,7 +260,7 @@ function buildModelCardVersionPayload(form, detail, editorName = '') {
           name: normalizeText(aiModel?.name) || normalizeText(form.name) || detail.name,
           version: normalizeText(aiModel?.version) || normalizeText(form.version) || detail.version || null,
           description: normalizeText(aiModel?.description) || normalizeText(form.short_description) || null,
-          owner: normalizeText(aiModel?.owner) || normalizeText(detail.author) || normalizeText(editorName) || null,
+          owner: normalizeText(aiModel?.owner) || normalizeText(form.author) || normalizeText(editorName) || null,
           location: normalizeText(form.output_data) || normalizeText(aiModel?.location) || null,
           license: normalizeText(form.license) || normalizeText(aiModel?.license) || null,
           framework: normalizeText(form.framework) || normalizeText(aiModel?.framework) || null,
@@ -407,19 +413,6 @@ function buildRelatedIdentifiers(form, detail) {
 function pickDownloadUrl(relatedIdentifiers) {
   const httpLink = relatedIdentifiers.find((item) => String(item.related_identifier || '').startsWith('http'))
   return httpLink?.related_identifier || ''
-}
-
-async function parseErrorMessage(response, fallback) {
-  const contentType = response.headers.get('content-type') || ''
-  if (contentType.includes('application/json')) {
-    const data = await response.json().catch(() => null)
-    if (typeof data?.detail === 'string') return data.detail
-    if (Array.isArray(data?.detail)) return data.detail.map((item) => item.msg || item.message || String(item)).join('; ')
-    if (typeof data?.message === 'string') return data.message
-    if (typeof data?.error === 'string') return data.error
-  }
-  const text = await response.text().catch(() => '')
-  return text || fallback
 }
 
 function shouldIncludeAiModel(aiModel, form) {
