@@ -45,11 +45,11 @@ const routes = [
   { path: '/explore', redirect: { name: 'ExploreModelCards' } },
   { path: '/explore/:id', redirect: (to) => ({ name: 'ModelDetail', params: { id: to.params.id } }) },
   { path: '/submit', name: 'Submit', component: SubmitView, meta: { tapis: true } },
-  { path: '/tickets', name: 'Tickets', component: TicketSubmitView, meta: { tapis: true } },
+  { path: '/tickets', name: 'Tickets', component: TicketSubmitView, meta: { feature: 'tickets', tapis: true } },
   { path: '/models', name: 'Models', component: ModelsView, meta: { admin: true } },
-  { path: '/submissions', name: 'SubmissionsReview', component: SubmissionsReviewView, meta: { admin: true } },
-  { path: '/ticket-management', name: 'TicketManagement', component: TicketManagementView, meta: { admin: true } },
-  { path: '/audit-log', name: 'AuditLog', component: AuditLogView, meta: { admin: true } },
+  { path: '/submissions', name: 'SubmissionsReview', component: SubmissionsReviewView, meta: { feature: 'reviewSubmissions', admin: true } },
+  { path: '/ticket-management', name: 'TicketManagement', component: TicketManagementView, meta: { feature: 'manageTickets', admin: true } },
+  { path: '/audit-log', name: 'AuditLog', component: AuditLogView, meta: { feature: 'auditLog', admin: true } },
   { path: '/settings', name: 'Settings', component: SettingsView, meta: { admin: true } },
 ]
 
@@ -61,17 +61,21 @@ const router = createRouter({
 router.beforeEach((to) => {
   const auth = useAuthStore()
   const apiMode = useApiModeStore()
-  if (apiMode.supportsDevOpenAccess) return true
-  if (to.meta.admin && !auth.isAdmin) return { name: 'Dashboard' }
-  if (to.meta.tapis && !auth.isTapisUser) return { name: 'Dashboard' }
   if (to.meta.feature === 'askPatra' && !apiMode.supportsAskPatra) return { name: 'Dashboard' }
   if (to.meta.feature === 'intentSchema' && !apiMode.supportsIntentSchema) return { name: 'Dashboard' }
   if (to.meta.feature === 'mvpDemoReport' && !apiMode.supportsMvpDemoReport) return { name: 'Dashboard' }
   if (to.meta.feature === 'agentTools' && !apiMode.supportsAgentTools) return { name: 'Dashboard' }
   if (to.meta.feature === 'automatedIngestion' && !apiMode.supportsAutomatedIngestion) return { name: 'Dashboard' }
   if (to.meta.feature === 'editRecords' && !apiMode.supportsEditRecords) return { name: 'Dashboard' }
+  if (to.meta.feature === 'tickets' && !apiMode.supportsTickets) return { name: 'Dashboard' }
+  if (to.meta.feature === 'reviewSubmissions' && !apiMode.supportsReviewSubmissions) return { name: 'Dashboard' }
+  if (to.meta.feature === 'manageTickets' && !apiMode.supportsManageTickets) return { name: 'Dashboard' }
+  if (to.meta.feature === 'auditLog' && !apiMode.supportsAuditLog) return { name: 'Dashboard' }
   if (to.meta.feature === 'mcpExplorer' && !apiMode.supportsMcpExplorer) return { name: 'Dashboard' }
   if (to.meta.feature === 'domainExperiments' && !apiMode.supportsDomainExperiments) return { name: 'Dashboard' }
+  if (apiMode.supportsDevOpenAccess) return true
+  if (to.meta.admin && !auth.isAdmin) return { name: 'Dashboard' }
+  if (to.meta.tapis && !auth.isTapisUser) return { name: 'Dashboard' }
   if (to.meta.privileged && !(auth.isTapisUser || auth.isAdmin)) return { name: 'Dashboard' }
   return true
 })

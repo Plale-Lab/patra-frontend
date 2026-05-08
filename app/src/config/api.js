@@ -18,10 +18,20 @@ export const SUPPORTS_TICKETS = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_TICKETS,
   false,
 )
-export const SUPPORTS_SUBMISSIONS_API = resolveFeatureFlag(
-  runtimeConfig.SUPPORTS_SUBMISSIONS_API,
-  import.meta.env.VITE_SUPPORTS_SUBMISSIONS_API,
-  true,
+export const SUPPORTS_REVIEW_SUBMISSIONS = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_REVIEW_SUBMISSIONS,
+  import.meta.env.VITE_SUPPORTS_REVIEW_SUBMISSIONS,
+  false,
+)
+export const SUPPORTS_MANAGE_TICKETS = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_MANAGE_TICKETS,
+  import.meta.env.VITE_SUPPORTS_MANAGE_TICKETS,
+  false,
+)
+export const SUPPORTS_AUDIT_LOG = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_AUDIT_LOG,
+  import.meta.env.VITE_SUPPORTS_AUDIT_LOG,
+  false,
 )
 export const SUPPORTS_AGENT_TOOLS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_AGENT_TOOLS,
@@ -159,7 +169,9 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
       description: 'Use the local mock server for frontend testing.',
       helpText: 'Start the local mock server with `cd frontend/mock-server && npm start`.',
       supportsTickets: false,
-      supportsSubmissionQueue: true,
+      supportsReviewSubmissions: false,
+      supportsManageTickets: false,
+      supportsAuditLog: false,
       supportsAgentTools: false,
       supportsEditRecords: true,
       supportsAutomatedIngestion: true,
@@ -183,7 +195,9 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
     description: 'Call the real Patra REST API.',
     helpText: 'Ensure the Patra REST server is running on the live API URL.',
     supportsTickets: SUPPORTS_TICKETS,
-    supportsSubmissionQueue: SUPPORTS_SUBMISSIONS_API,
+    supportsReviewSubmissions: SUPPORTS_REVIEW_SUBMISSIONS,
+    supportsManageTickets: SUPPORTS_MANAGE_TICKETS,
+    supportsAuditLog: SUPPORTS_AUDIT_LOG,
     supportsAgentTools: SUPPORTS_AGENT_TOOLS,
     supportsEditRecords: SUPPORTS_EDIT_RECORDS,
     supportsAutomatedIngestion: SUPPORTS_AUTOMATED_INGESTION,

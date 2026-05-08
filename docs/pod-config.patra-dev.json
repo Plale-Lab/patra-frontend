@@ -1,16 +1,20 @@
 {
-  "pod_id": "patra-dev",
+  "pod_id": "patradev-frontend",
   "image": "plalelab/patra-frontend:latest",
   "template": "",
   "description": "Development frontend for Patra pre-release features",
   "environment_variables": {
-    "API_BASE_URL": "https://patrabackend-dev.pods.icicleai.tapis.io",
+    "API_BASE_URL": "https://patradev-backend.pods.icicleai.tapis.io",
     "SUPPORTS_AGENT_TOOLS": "true",
+    "SUPPORTS_EDIT_EXISTING_ASSETS": "true",
     "SUPPORTS_EDIT_EXISTING_RESOURCES": "true",
     "SUPPORTS_EDIT_RECORDS": "true",
     "SUPPORTS_AUTOMATED_INGESTION": "true",
     "SUPPORTS_ASK_PATRA": "true",
     "SUPPORTS_TICKETS": "true",
+    "SUPPORTS_REVIEW_SUBMISSIONS": "true",
+    "SUPPORTS_MANAGE_TICKETS": "true",
+    "SUPPORTS_AUDIT_LOG": "true",
     "SUPPORTS_MCP_EXPLORER": "true",
     "SUPPORTS_DOMAIN_EXPERIMENTS": "true",
     "MCP_BASE_URL": "http://<mcp-host>:8050"
@@ -23,6 +27,7 @@
     "default": {
       "protocol": "http",
       "port": 80,
+      "url": "patradev-frontend.pods.icicleai.tapis.io",
       "ip_allow_list": [],
       "tapis_auth": false,
       "tapis_auth_response_headers": {},

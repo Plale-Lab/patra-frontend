@@ -10,7 +10,7 @@
       </div>
     </div>
 
-    <div class="card" v-if="!apiMode.supportsSubmissionQueue">
+    <div class="card" v-if="!apiMode.supportsReviewSubmissions">
       <div class="card-body">
         <div class="empty-state">
           <IconInbox :size="48" stroke-width="1.2" />
@@ -280,7 +280,7 @@ async function handleReview(id, status) {
 }
 
 function loadSubmissions() {
-  if (!apiMode.supportsSubmissionQueue) return
+  if (!apiMode.supportsReviewSubmissions) return
   store.fetchSubmissions()
 }
 

@@ -5,6 +5,15 @@
       <p>Chronological record of all administrative actions</p>
     </div>
 
+    <div class="card" v-if="!apiMode.supportsAuditLog">
+      <div class="card-body">
+        <div class="empty-state">
+          Audit Log is not available in this deployment.
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
     <!-- Filters -->
     <div class="flex items-center gap-8 mb-16">
       <button class="chip" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">All</button>
@@ -54,17 +63,20 @@
         </table>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuditLogStore } from '../stores/auditLog'
+import { useApiModeStore } from '../stores/apiMode'
 import {
   IconPlus, IconPencil, IconTrash, IconSettings2,
 } from '@tabler/icons-vue'
 
 const store = useAuditLogStore()
+const apiMode = useApiModeStore()
 const activeFilter = ref('all')
 
 const filteredEvents = computed(() => store.filteredEvents(activeFilter.value))
@@ -91,3 +103,13 @@ function actionIcon(type) {
   return map[type] || IconSettings2
 }
 </script>
+
+<style scoped>
+.empty-state {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+</style>

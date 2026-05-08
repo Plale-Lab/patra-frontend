@@ -104,7 +104,8 @@ export const useTicketsStore = defineStore('tickets', () => {
     }
 
     function supportsTicketApi() {
-        return Boolean(getApiModeMeta(getStoredApiMode()).supportsTickets)
+        const meta = getApiModeMeta(getStoredApiMode())
+        return Boolean(meta.supportsTickets || meta.supportsManageTickets)
     }
 
     return { tickets, loading, error, supported, openCount, fetchTickets, createTicket, updateTicket }

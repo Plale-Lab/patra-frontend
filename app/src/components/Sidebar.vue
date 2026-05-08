@@ -1,7 +1,9 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <img src="/img/logo.png" alt="Patra" class="sidebar-logo-img" />
+      <RouterLink to="/" class="sidebar-logo-link" aria-label="Go to dashboard">
+        <img src="/img/logo.png" alt="Patra" class="sidebar-logo-img" />
+      </RouterLink>
     </div>
 
     <nav class="sidebar-nav">
@@ -85,17 +87,17 @@
           <IconCube :size="20" stroke-width="1.8" />
           <span>Models & Data</span>
         </RouterLink>
-        <RouterLink v-if="apiMode.supportsSubmissionQueue" to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
-          <IconClipboardCheck :size="20" stroke-width="1.8" />
+        <RouterLink v-if="apiMode.supportsReviewSubmissions" to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
+          <IconChecklist :size="20" stroke-width="1.8" />
           <span>Review Submissions</span>
         </RouterLink>
-        <RouterLink v-if="apiMode.supportsTickets" to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
+        <RouterLink v-if="apiMode.supportsManageTickets" to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
           <IconListDetails :size="20" stroke-width="1.8" />
           <span>Manage Tickets</span>
         </RouterLink>
 
         <div class="sidebar-section-label">System</div>
-        <RouterLink to="/audit-log" class="sidebar-link" :class="{ active: $route.path === '/audit-log' }">
+        <RouterLink v-if="apiMode.supportsAuditLog" to="/audit-log" class="sidebar-link" :class="{ active: $route.path === '/audit-log' }">
           <IconFileText :size="20" stroke-width="1.8" />
           <span>Audit Log</span>
         </RouterLink>
@@ -182,8 +184,8 @@ import { useAuthStore } from '../stores/auth'
 import { useApiModeStore } from '../stores/apiMode'
 import {
   IconLayoutDashboard, IconCube, IconDatabaseSearch, IconFileText, IconSettings, IconSearch,
-  IconUpload, IconMessageCircle, IconClipboardCheck,
-  IconListDetails, IconLogout, IconLogin, IconKey, IconEdit,
+  IconMessageCircle, IconUpload,
+  IconListDetails, IconLogout, IconLogin, IconKey, IconEdit, IconChecklist,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
   IconTerminal2, IconPaw, IconPlant, IconSchema, IconPresentation, IconMessages,
 } from '@tabler/icons-vue'
@@ -241,6 +243,19 @@ function handleLogout() {
   max-width: 200px;
   height: auto;
   object-fit: contain;
+}
+
+.sidebar-logo-link {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  border-radius: 10px;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.sidebar-logo-link:hover {
+  opacity: .88;
+  transform: translateY(-1px);
 }
 
 .sidebar-nav {
@@ -492,5 +507,67 @@ function handleLogout() {
 .btn-login:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    max-width: 100vw;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    overflow: hidden;
+  }
+
+  .sidebar-brand {
+    justify-content: flex-start;
+    padding: 14px 16px 12px;
+  }
+
+  .sidebar-logo-link {
+    justify-content: flex-start;
+    width: auto;
+  }
+
+  .sidebar-logo-img {
+    max-width: 154px;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px 12px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .sidebar-section-label {
+    display: none;
+  }
+
+  .sidebar-link {
+    flex: 0 0 auto;
+    padding: 9px 11px;
+    font-size: 0.84rem;
+    white-space: nowrap;
+    max-width: 190px;
+  }
+
+  .sidebar-link span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-link svg {
+    flex-shrink: 0;
+  }
+
+  .sidebar-footer {
+    padding: 10px 12px 12px;
+  }
 }
 </style>

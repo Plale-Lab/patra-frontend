@@ -5,7 +5,7 @@
       <p>Manage and respond to user service requests</p>
     </div>
 
-    <div class="card" v-if="!apiMode.supportsTickets">
+    <div class="card" v-if="!apiMode.supportsManageTickets">
       <div class="card-body">
         <div class="empty-state" style="min-height: 160px;">
           <IconMoodSmile :size="32" stroke-width="1.2" />
@@ -203,7 +203,7 @@ async function saveTicket() {
 }
 
 function loadTickets() {
-  if (!apiMode.supportsTickets) return
+  if (!apiMode.supportsManageTickets) return
   store.fetchTickets()
 }
 

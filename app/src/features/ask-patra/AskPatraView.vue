@@ -414,6 +414,18 @@ function frontendAvailabilityForTool(toolId) {
       if (!apiMode.supportsTickets) return { availability: 'disabled', reason: 'Tickets are disabled in the current frontend deployment.' }
       if (!auth.isTapisUser) return { availability: 'requires_login', reason: 'Tickets require a signed-in PATRA session.' }
       return { availability: 'available', reason: null }
+    case 'review_submissions':
+      if (!apiMode.supportsReviewSubmissions) return { availability: 'disabled', reason: 'Submission review is disabled in the current frontend deployment.' }
+      if (!auth.isAdmin) return { availability: 'admin_only', reason: 'Submission review is limited to admin sessions.' }
+      return { availability: 'available', reason: null }
+    case 'manage_tickets':
+      if (!apiMode.supportsManageTickets) return { availability: 'disabled', reason: 'Ticket management is disabled in the current frontend deployment.' }
+      if (!auth.isAdmin) return { availability: 'admin_only', reason: 'Ticket management is limited to admin sessions.' }
+      return { availability: 'available', reason: null }
+    case 'audit_log':
+      if (!apiMode.supportsAuditLog) return { availability: 'disabled', reason: 'Audit Log is disabled in the current frontend deployment.' }
+      if (!auth.isAdmin) return { availability: 'admin_only', reason: 'Audit Log is limited to admin sessions.' }
+      return { availability: 'available', reason: null }
     case 'mcp_explorer':
       return apiMode.supportsMcpExplorer
         ? { availability: 'available', reason: null }

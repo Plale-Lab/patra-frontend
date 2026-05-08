@@ -94,12 +94,14 @@ input, select, textarea {
   margin-left: var(--sidebar-width);
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .admin-content {
   flex: 1;
   padding: 32px 36px 40px;
   max-width: var(--content-max-width);
+  min-width: 0;
 }
 
 .card {
@@ -107,6 +109,7 @@ input, select, textarea {
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border);
+  min-width: 0;
 }
 
 .card-header {
@@ -551,5 +554,30 @@ input, select, textarea {
 
   .page-header h1 {
     font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  html,
+  body,
+  #app {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .admin-layout {
+    display: block;
+    width: 100%;
+  }
+
+  .admin-main {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .admin-content {
+    padding: 18px 14px 28px;
+    max-width: none;
+    width: 100%;
   }
 }

@@ -20,7 +20,7 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     async function fetchSubmissions(status) {
         loading.value = true
         error.value = null
-        supported.value = supportsSubmissionQueueApi()
+        supported.value = supportsReviewSubmissionsApi()
 
         if (!supported.value) {
             submissions.value = []
@@ -133,7 +133,7 @@ export const useSubmissionsStore = defineStore('submissions', () => {
     }
 
     async function reviewSubmission(id, status, adminNotes) {
-        supported.value = supportsSubmissionQueueApi()
+        supported.value = supportsReviewSubmissionsApi()
         if (!supported.value) {
             error.value = 'Submission review is not available in this deployment.'
             return null
@@ -282,8 +282,8 @@ export const useSubmissionsStore = defineStore('submissions', () => {
         return { ...data, intake_method: data?.intake_method || 'manual' }
     }
 
-    function supportsSubmissionQueueApi() {
-        return Boolean(getApiModeMeta(getStoredApiMode()).supportsSubmissionQueue)
+    function supportsReviewSubmissionsApi() {
+        return Boolean(getApiModeMeta(getStoredApiMode()).supportsReviewSubmissions)
     }
 
     return {

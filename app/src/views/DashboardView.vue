@@ -4,8 +4,8 @@
       <h1>{{ isGuest ? 'Patra Knowledge Base' : `Welcome back, ${auth.displayName}` }}</h1>
       <p>
         {{ isGuest
-          ? 'Discover public model cards, browse datasheets, and understand how to contribute to the ICICLE ecosystem.'
-          : 'Your workspace snapshot for submissions, authored records, and support activity.' }}
+          ? 'Browse the public catalog and inspect the current coverage of model cards and datasheets.'
+          : 'Catalog status, record quality, and the work surfaces available in this deployment.' }}
       </p>
     </div>
 
@@ -14,217 +14,121 @@
       <span>Some dashboard data could not be loaded from {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>.</span>
     </div>
 
-    <template v-if="isGuest">
-      <section class="hero-panel">
-        <div class="hero-copy">
-          <div class="hero-eyebrow">Open discovery for the ICICLE ecosystem</div>
-          <h2>Explore curated AI records before you decide what to submit.</h2>
-          <p>
-            Guests get a clean public landing experience focused on discovery. Browse public model cards,
-            inspect datasheets, and review contribution paths before signing in through Tapis.
-          </p>
-          <div class="hero-actions">
-            <RouterLink
-              v-if="apiMode.supportsAskPatra && (auth.isTapisUser || auth.isAdmin)"
-              :to="{ path: '/ask-patra', query: { prompt: 'Help me find the right PATRA tool for my task.' } }"
-              class="btn btn-primary"
-            >
-              <IconSparkles :size="16" stroke-width="1.8" />
-              Start in Ask Patra
-            </RouterLink>
-            <RouterLink to="/explore-model-cards" class="btn btn-primary">
-              <IconSearch :size="16" stroke-width="1.8" />
-              Explore Model Cards
-            </RouterLink>
-            <RouterLink to="/explore-datasheets" class="btn btn-outline">
-              <IconTable :size="16" stroke-width="1.8" />
-              Browse Datasheets
-            </RouterLink>
-          </div>
+    <section class="summary-grid">
+      <RouterLink to="/explore-model-cards" class="summary-tile">
+        <div class="summary-icon primary"><IconCube :size="22" stroke-width="1.8" /></div>
+        <div>
+          <div class="summary-value">{{ totalModels }}</div>
+          <div class="summary-label">Model Cards</div>
+          <div class="summary-note">{{ publicModelCount }} public, {{ privateModelCount }} private</div>
         </div>
-      </section>
+      </RouterLink>
+      <RouterLink to="/explore-datasheets" class="summary-tile">
+        <div class="summary-icon info"><IconTable :size="22" stroke-width="1.8" /></div>
+        <div>
+          <div class="summary-value">{{ totalDatasheets }}</div>
+          <div class="summary-label">Datasheets</div>
+          <div class="summary-note">{{ publicDatasheetCount }} public, {{ privateDatasheetCount }} private</div>
+        </div>
+      </RouterLink>
+      <RouterLink to="/explore-model-cards" class="summary-tile">
+        <div class="summary-icon accent"><IconShieldLock :size="22" stroke-width="1.8" /></div>
+        <div>
+          <div class="summary-value">{{ gatedModelCount }}</div>
+          <div class="summary-label">Gated Models</div>
+          <div class="summary-note">{{ visibilityReviewItems.length }} visibility items to inspect</div>
+        </div>
+      </RouterLink>
+      <div class="summary-tile">
+        <div class="summary-icon success"><IconChecks :size="22" stroke-width="1.8" /></div>
+        <div>
+          <div class="summary-value">{{ qualityScore }}%</div>
+          <div class="summary-label">Completeness</div>
+          <div class="summary-note">{{ qualityIssueCount }} quality gaps detected</div>
+        </div>
+      </div>
+    </section>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-            <IconCube :size="24" stroke-width="1.8" />
+    <section class="dashboard-layout">
+      <div class="dashboard-main">
+        <div class="card">
+          <div class="card-header">
+            <span>Recent Activity</span>
+            <span class="panel-meta">{{ recentActivity.length }} records</span>
           </div>
-          <div>
-            <div class="stat-value">{{ totalModels }}</div>
-            <div class="stat-label">Catalog Models</div>
+          <div class="card-body">
+            <div class="empty-block" v-if="recentActivity.length === 0">
+              No recent records are available from the current API mode.
+            </div>
+            <div v-else class="activity-list">
+              <RouterLink
+                v-for="item in recentActivity"
+                :key="`${item.type}-${item.id}`"
+                :to="item.route"
+                class="activity-row"
+              >
+                <div class="activity-mark" :class="item.type">
+                  <component :is="item.icon" :size="17" stroke-width="1.8" />
+                </div>
+                <div class="activity-main">
+                  <div class="activity-title">{{ item.title }}</div>
+                  <div class="activity-subtitle">{{ item.subtitle }}</div>
+                </div>
+                <div class="activity-meta">
+                  <span class="badge" :class="item.private ? 'badge-private' : 'badge-public'">
+                    {{ item.private ? 'Private' : 'Public' }}
+                  </span>
+                  <span>{{ item.timeLabel }}</span>
+                </div>
+              </RouterLink>
+            </div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-            <IconEye :size="24" stroke-width="1.8" />
+
+        <div class="card">
+          <div class="card-header">
+            <span>Data Quality</span>
+            <span class="panel-meta">{{ qualityIssueCount }} gaps</span>
           </div>
-          <div>
-            <div class="stat-value">{{ publicModelCount }}</div>
-            <div class="stat-label">Public Model Cards</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: var(--color-info-bg); color: var(--color-info);">
-            <IconTable :size="24" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="stat-value">{{ totalDatasheets }}</div>
-            <div class="stat-label">Datasheets</div>
+          <div class="card-body">
+            <div class="quality-grid">
+              <RouterLink
+                v-for="item in qualityChecks"
+                :key="item.key"
+                :to="item.route"
+                class="quality-item"
+              >
+                <div class="quality-count">{{ item.count }}</div>
+                <div>
+                  <div class="quality-label">{{ item.label }}</div>
+                  <div class="quality-desc">{{ item.description }}</div>
+                </div>
+                <IconChevronRight :size="17" class="quality-arrow" />
+              </RouterLink>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="dashboard-grid guest-grid">
+      <aside class="dashboard-side">
         <div class="card">
           <div class="card-header">
-            <span>What You Can Do</span>
+            <span>Quick Actions</span>
           </div>
           <div class="card-body">
             <div class="action-list">
-              <RouterLink to="/explore-model-cards" class="quick-link">
-                <div class="quick-link-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-                  <IconSearch :size="20" stroke-width="1.8" />
-                </div>
-                <div>
-                  <div class="quick-link-title">Browse model cards</div>
-                  <div class="quick-link-desc">Inspect public metadata, metrics, and deployment context.</div>
-                </div>
-                <IconChevronRight :size="18" class="quick-link-arrow" />
-              </RouterLink>
-              <RouterLink to="/explore-datasheets" class="quick-link">
-                <div class="quick-link-icon" style="background: var(--color-info-bg); color: var(--color-info);">
-                  <IconTable :size="20" stroke-width="1.8" />
-                </div>
-                <div>
-                  <div class="quick-link-title">Browse datasheets</div>
-                  <div class="quick-link-desc">Inspect dataset documentation and public resource metadata.</div>
-                </div>
-                <IconChevronRight :size="18" class="quick-link-arrow" />
-              </RouterLink>
-              <div class="quick-link quick-link-static">
-                <div class="quick-link-icon" style="background: var(--color-accent-bg); color: #a8701f;">
-                  <IconLock :size="20" stroke-width="1.8" />
-                </div>
-                <div>
-                  <div class="quick-link-title">Sign in to contribute</div>
-                  <div class="quick-link-desc">Tapis users can submit records, use assistant tools, and access workspace workflows.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span>Featured Public Models</span>
-            <RouterLink to="/explore-model-cards" class="btn btn-sm btn-outline">View All</RouterLink>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="featuredModels.length === 0">
-              No public models are available from the current API mode.
-            </div>
-            <div v-else class="stack-list">
               <RouterLink
-                v-for="model in featuredModels"
-                :key="model.id"
-                :to="`/explore-model-cards/${model.id}`"
-                class="stack-item"
+                v-for="action in quickActions"
+                :key="action.route"
+                :to="action.route"
+                class="quick-link"
               >
-                <div class="stack-item-main">
-                  <div class="stack-item-title">{{ model.name }}</div>
-                  <div class="stack-item-subtitle">{{ model.author || 'Unknown author' }}</div>
-                </div>
-                <div class="stack-item-meta">
-                  <span class="badge badge-info">{{ model.framework || 'n/a' }}</span>
-                  <span class="stack-item-arrow">View</span>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </template>
-
-    <template v-else>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-            <IconCube :size="24" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="stat-value">{{ myModelCount }}</div>
-            <div class="stat-label">My Catalog Models</div>
-          </div>
-        </div>
-        <div class="stat-card" v-if="apiMode.supportsSubmissionQueue">
-          <div class="stat-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-            <IconClipboardCheck :size="24" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="stat-value">{{ mySubmissionCount }}</div>
-            <div class="stat-label">My Submissions</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: var(--color-accent-bg); color: #c68200;">
-            <IconLock :size="24" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="stat-value">{{ privateModelCount }}</div>
-            <div class="stat-label">Private Catalog Models</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="member-grid">
-        <div class="card workspace-card">
-          <div class="card-header">
-            <span>Workspace Focus</span>
-            <span class="badge badge-info">{{ auth.isAdmin ? 'Admin Session' : (auth.isTapisUser ? 'Tapis Session' : 'Signed In') }}</span>
-          </div>
-          <div class="card-body">
-            <div class="workspace-hero">
-              <div>
-                <div class="workspace-title">Your personalized dashboard is live.</div>
-                <div class="workspace-text">
-                  This view tracks what you submitted, what you authored, and the current state of your workspace activity.
-                </div>
-              </div>
-              <div class="workspace-chips">
-                <span class="chip active" v-if="apiMode.supportsSubmissionQueue">{{ myPendingSubmissionCount }} pending submissions</span>
-                <span class="chip active">{{ myAssetIntakeCount }} record-link requests</span>
-              </div>
-            </div>
-
-            <div class="workspace-actions">
-              <RouterLink v-if="apiMode.supportsAskPatra" to="/ask-patra" class="quick-link">
-                <div class="quick-link-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-                  <IconSparkles :size="20" stroke-width="1.8" />
+                <div class="quick-link-icon" :class="action.tone">
+                  <component :is="action.icon" :size="20" stroke-width="1.8" />
                 </div>
                 <div>
-                  <div class="quick-link-title">Start in Ask Patra</div>
-                  <div class="quick-link-desc">Route a task through PATRA before opening a specific tool.</div>
-                </div>
-                <IconChevronRight :size="18" class="quick-link-arrow" />
-              </RouterLink>
-              <RouterLink to="/submit" class="quick-link">
-                <div class="quick-link-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-                  <IconUpload :size="20" stroke-width="1.8" />
-                </div>
-                <div>
-                  <div class="quick-link-title">Create a new submission</div>
-                  <div class="quick-link-desc">Manual entry, single record link, or bulk record links.</div>
-                </div>
-                <IconChevronRight :size="18" class="quick-link-arrow" />
-              </RouterLink>
-              <RouterLink to="/explore-model-cards" class="quick-link">
-                <div class="quick-link-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-                  <IconSearch :size="20" stroke-width="1.8" />
-                </div>
-                <div>
-                  <div class="quick-link-title">Return to the catalog</div>
-                  <div class="quick-link-desc">Review current public and private model coverage.</div>
+                  <div class="quick-link-title">{{ action.label }}</div>
+                  <div class="quick-link-desc">{{ action.description }}</div>
                 </div>
                 <IconChevronRight :size="18" class="quick-link-arrow" />
               </RouterLink>
@@ -234,64 +138,59 @@
 
         <div class="card">
           <div class="card-header">
-            <span>My Models</span>
+            <span>Visibility Review</span>
+            <RouterLink to="/explore-model-cards" class="btn btn-sm btn-outline">Open</RouterLink>
+          </div>
+          <div class="card-body">
+            <div class="empty-block" v-if="visibilityReviewItems.length === 0">
+              No gated or private records are visible in the current catalog snapshot.
+            </div>
+            <div v-else class="compact-list">
+              <RouterLink
+                v-for="item in visibilityReviewItems"
+                :key="`${item.type}-${item.id}`"
+                :to="item.route"
+                class="compact-item"
+              >
+                <div>
+                  <div class="compact-title">{{ item.title }}</div>
+                  <div class="compact-subtitle">{{ item.subtitle }}</div>
+                </div>
+                <span class="badge" :class="item.badgeClass">{{ item.badge }}</span>
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" v-if="!isGuest">
+          <div class="card-header">
+            <span>My Records</span>
             <RouterLink to="/explore-model-cards" class="btn btn-sm btn-outline">Explore</RouterLink>
           </div>
           <div class="card-body">
-            <div class="empty-block" v-if="myModels.length === 0">
-              No catalog models are currently associated with your profile.
+            <div class="empty-block" v-if="myRecords.length === 0">
+              No records currently match your signed-in identity.
             </div>
-            <div v-else class="stack-list">
+            <div v-else class="compact-list">
               <RouterLink
-                v-for="model in myModels"
-                :key="model.id"
-                :to="`/explore-model-cards/${model.id}`"
-                class="stack-item"
+                v-for="item in myRecords"
+                :key="`${item.type}-${item.id}`"
+                :to="item.route"
+                class="compact-item"
               >
-                <div class="stack-item-main">
-                  <div class="stack-item-title">{{ model.name }}</div>
-                  <div class="stack-item-subtitle">{{ model.category || 'Uncategorized' }}</div>
+                <div>
+                  <div class="compact-title">{{ item.title }}</div>
+                  <div class="compact-subtitle">{{ item.subtitle }}</div>
                 </div>
-                <div class="stack-item-meta">
-                  <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
-                    {{ model.is_private ? 'Private' : 'Public' }}
-                  </span>
-                </div>
+                <span class="badge" :class="item.private ? 'badge-private' : 'badge-public'">
+                  {{ item.private ? 'Private' : 'Public' }}
+                </span>
               </RouterLink>
             </div>
           </div>
         </div>
-
-        <div class="card" v-if="apiMode.supportsSubmissionQueue">
-          <div class="card-header">
-            <span>My Recent Submissions</span>
-            <RouterLink v-if="auth.isAdmin" to="/submissions" class="btn btn-sm btn-outline">Review Queue</RouterLink>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="mySubmissions.length === 0">
-              You have not created any tracked submissions in the current API mode yet.
-            </div>
-            <div v-else class="stack-list">
-              <div v-for="submission in mySubmissions" :key="submission.id" class="stack-item stack-item-static">
-                <div class="stack-item-main">
-                  <div class="stack-item-title">{{ getSubmissionTitle(submission) }}</div>
-                  <div class="stack-item-subtitle">
-                    {{ formatSubmissionType(submission.type) }} · {{ formatTime(submission.submitted_at) }}
-                  </div>
-                </div>
-                <div
-                  v-if="submission.data?.intake_method === 'asset_link'"
-                  class="stack-item-meta stack-item-meta-column"
-                >
-                  <span class="badge badge-accent">Record Link</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </template>
+      </aside>
+    </section>
   </div>
 </template>
 
@@ -299,42 +198,85 @@
 import { computed, onMounted, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
-import { useSubmissionsStore } from '../stores/submissions'
 import { useAuthStore } from '../stores/auth'
 import { useApiModeStore } from '../stores/apiMode'
 import {
   IconAlertCircle,
-  IconClipboardCheck,
+  IconChecks,
+  IconChevronRight,
   IconCube,
-  IconEye,
-  IconLock,
+  IconEdit,
+  IconMessageCircle,
   IconSearch,
+  IconShieldLock,
   IconSparkles,
   IconTable,
   IconUpload,
-  IconChevronRight,
 } from '@tabler/icons-vue'
 
 const exploreStore = useExploreStore()
-const submissionsStore = useSubmissionsStore()
 const auth = useAuthStore()
 const apiMode = useApiModeStore()
 
 const isGuest = computed(() => !auth.isLoggedIn)
-
-const dashboardError = computed(() => (
-  exploreStore.error || submissionsStore.error || ''
-))
+const dashboardError = computed(() => exploreStore.error || '')
 
 const totalModels = computed(() => exploreStore.models.length)
-const publicModelCount = computed(() => exploreStore.models.filter(model => !model.is_private).length)
-const privateModelCount = computed(() => exploreStore.models.filter(model => model.is_private).length)
 const totalDatasheets = computed(() => exploreStore.datasheets.length)
-const featuredModels = computed(() => exploreStore.models.filter(model => !model.is_private).slice(0, 4))
+const publicModelCount = computed(() => exploreStore.models.filter((model) => !model.is_private).length)
+const privateModelCount = computed(() => exploreStore.models.filter((model) => model.is_private).length)
+const publicDatasheetCount = computed(() => exploreStore.datasheets.filter((ds) => !ds.is_private).length)
+const privateDatasheetCount = computed(() => exploreStore.datasheets.filter((ds) => ds.is_private).length)
+const gatedModelCount = computed(() => exploreStore.models.filter((model) => model.is_gated).length)
+
+const modelRecords = computed(() => exploreStore.models.map((model) => ({
+  id: model.id,
+  type: 'model',
+  icon: IconCube,
+  title: model.name || 'Untitled model card',
+  subtitle: [model.author || 'Unknown author', model.framework || model.category || 'Model card'].filter(Boolean).join(' | '),
+  private: Boolean(model.is_private),
+  gated: Boolean(model.is_gated),
+  route: `/explore-model-cards/${model.id}`,
+  date: recordDate(model),
+  raw: model,
+})))
+
+const datasheetRecords = computed(() => exploreStore.datasheets.map((ds) => ({
+  id: ds.id,
+  type: 'datasheet',
+  icon: IconTable,
+  title: getDatasheetTitle(ds),
+  subtitle: [getDatasheetCreator(ds) || getDatasheetPublisher(ds) || 'Unknown creator', getResourceType(ds)].filter(Boolean).join(' | '),
+  private: Boolean(ds.is_private),
+  gated: false,
+  route: `/explore-datasheets/${ds.id}`,
+  date: recordDate(ds),
+  raw: ds,
+})))
+
+const allRecords = computed(() => [...modelRecords.value, ...datasheetRecords.value])
+
+const recentActivity = computed(() => allRecords.value
+  .slice()
+  .sort((a, b) => b.date.getTime() - a.date.getTime())
+  .slice(0, 8)
+  .map((item) => ({
+    ...item,
+    timeLabel: formatTime(item.date),
+  })))
+
+const visibilityReviewItems = computed(() => allRecords.value
+  .filter((item) => item.private || item.gated)
+  .slice(0, 6)
+  .map((item) => ({
+    ...item,
+    badge: item.gated ? 'Gated' : 'Private',
+    badgeClass: item.gated ? 'badge-accent' : 'badge-private',
+  })))
 
 const identityKeys = computed(() => {
   if (!auth.user) return []
-
   const baseKeys = [
     auth.displayName,
     auth.user.name,
@@ -342,28 +284,154 @@ const identityKeys = computed(() => {
     auth.user.email,
     auth.user.email?.split('@')[0],
   ]
-
-  if (auth.user.name) {
-    baseKeys.push(...auth.user.name.split(' '))
-  }
-
+  if (auth.user.name) baseKeys.push(...auth.user.name.split(' '))
   return [...new Set(baseKeys.map(normalizeIdentity).filter(Boolean))]
 })
 
-const myModelsAll = computed(() => exploreStore.models.filter(model => matchesCurrentUser(model.author)))
-const mySubmissionsAll = computed(() => submissionsStore.submissions.filter(submission => matchesCurrentUser(submission.submitted_by)))
+const myRecords = computed(() => allRecords.value
+  .filter((record) => matchesCurrentUser(record.raw.author || getDatasheetCreator(record.raw)))
+  .slice(0, 5))
 
-const myModels = computed(() => myModelsAll.value.slice(0, 5))
-const mySubmissions = computed(() => (
-  [...mySubmissionsAll.value]
-    .sort((a, b) => new Date(b.submitted_at) - new Date(a.submitted_at))
-    .slice(0, 5)
-))
+const missingModelAuthorCount = computed(() => exploreStore.models.filter((model) => !model.author).length)
+const missingModelLicenseCount = computed(() => exploreStore.models.filter((model) => !model.ai_model?.license && !model.license).length)
+const missingModelDocumentationCount = computed(() => exploreStore.models.filter((model) => !model.documentation && !model.citation).length)
+const missingDatasheetCreatorCount = computed(() => exploreStore.datasheets.filter((ds) => !getDatasheetCreator(ds)).length)
 
-const myModelCount = computed(() => myModelsAll.value.length)
-const mySubmissionCount = computed(() => mySubmissionsAll.value.length)
-const myPendingSubmissionCount = computed(() => mySubmissionsAll.value.filter(item => item.status === 'pending').length)
-const myAssetIntakeCount = computed(() => mySubmissionsAll.value.filter(item => item.data?.intake_method === 'asset_link').length)
+const qualityChecks = computed(() => [
+  {
+    key: 'model-author',
+    label: 'Model cards without author',
+    description: 'Add owner context for attribution and support routing.',
+    count: missingModelAuthorCount.value,
+    route: '/explore-model-cards',
+  },
+  {
+    key: 'model-license',
+    label: 'Model cards without license',
+    description: 'Clarify reuse terms for public catalog consumers.',
+    count: missingModelLicenseCount.value,
+    route: '/explore-model-cards',
+  },
+  {
+    key: 'model-docs',
+    label: 'Model cards missing citation/docs',
+    description: 'Improve traceability with citation or documentation links.',
+    count: missingModelDocumentationCount.value,
+    route: '/explore-model-cards',
+  },
+  {
+    key: 'datasheet-creator',
+    label: 'Datasheets without creator',
+    description: 'Add creator metadata for discovery and provenance.',
+    count: missingDatasheetCreatorCount.value,
+    route: '/explore-datasheets',
+  },
+])
+
+const qualityIssueCount = computed(() => qualityChecks.value.reduce((sum, item) => sum + item.count, 0))
+const qualityScore = computed(() => {
+  const possible = Math.max((totalModels.value * 3) + totalDatasheets.value, 1)
+  return Math.max(0, Math.round(((possible - qualityIssueCount.value) / possible) * 100))
+})
+
+const quickActions = computed(() => {
+  const actions = [
+    {
+      label: 'Browse model cards',
+      description: 'Search public and private model metadata.',
+      route: '/explore-model-cards',
+      icon: IconSearch,
+      tone: 'primary',
+    },
+    {
+      label: 'Browse datasheets',
+      description: 'Inspect dataset records and provenance metadata.',
+      route: '/explore-datasheets',
+      icon: IconTable,
+      tone: 'info',
+    },
+  ]
+
+  if (auth.isTapisUser || auth.isAdmin) {
+    actions.push({
+      label: 'Submit records',
+      description: 'Create a model card or datasheet.',
+      route: '/submit',
+      icon: IconUpload,
+      tone: 'success',
+    })
+  }
+  if (apiMode.supportsEditRecords && (auth.isTapisUser || auth.isAdmin)) {
+    actions.push({
+      label: 'Edit records',
+      description: 'Update metadata, visibility, and gated flags.',
+      route: '/edit-records',
+      icon: IconEdit,
+      tone: 'accent',
+    })
+  }
+  if (apiMode.supportsAskPatra && (auth.isTapisUser || auth.isAdmin)) {
+    actions.push({
+      label: 'Ask Patra',
+      description: 'Route work through the assistant surface.',
+      route: '/ask-patra',
+      icon: IconSparkles,
+      tone: 'primary',
+    })
+  }
+  if (apiMode.supportsTickets && (auth.isTapisUser || auth.isAdmin)) {
+    actions.push({
+      label: 'Support tickets',
+      description: 'Submit or review service requests.',
+      route: '/tickets',
+      icon: IconMessageCircle,
+      tone: 'info',
+    })
+  }
+
+  return actions
+})
+
+function getDatasheetTitle(ds) {
+  if (Array.isArray(ds.title) && ds.title.length) {
+    const title = ds.title[0]
+    return typeof title === 'object' ? title.title || 'Untitled datasheet' : title
+  }
+  if (Array.isArray(ds.titles) && ds.titles.length) {
+    const title = ds.titles[0]
+    return typeof title === 'object' ? title.title || 'Untitled datasheet' : title
+  }
+  return ds.title || ds.name || 'Untitled datasheet'
+}
+
+function getDatasheetCreator(ds) {
+  const creators = ds.creator || ds.creators
+  if (Array.isArray(creators) && creators.length) {
+    const creator = creators[0]
+    return creator.creatorName?.name || creator.creator_name || creator.name || ''
+  }
+  return typeof creators === 'string' ? creators : ''
+}
+
+function getDatasheetPublisher(ds) {
+  if (ds.publisher && typeof ds.publisher === 'object') return ds.publisher.name || ''
+  return ds.publisher || ''
+}
+
+function getResourceType(ds) {
+  return ds.resource_type?.resourceType || ds.resource_type?.resource_type || 'Dataset'
+}
+
+function recordDate(record) {
+  const value = record.updated_at || record.created_at || record.submitted_at || record.created || record.date
+  const parsed = value ? new Date(value) : null
+  if (parsed && !Number.isNaN(parsed.getTime())) return parsed
+
+  const year = Number(record.publication_year)
+  if (year > 1900) return new Date(`${year}-01-01T00:00:00Z`)
+
+  return new Date(0)
+}
 
 function normalizeIdentity(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')
@@ -371,56 +439,30 @@ function normalizeIdentity(value) {
 
 function matchesCurrentUser(value) {
   if (!auth.isLoggedIn) return false
-
   const candidate = normalizeIdentity(value)
   if (!candidate) return false
-
-  return identityKeys.value.some(key => (
+  return identityKeys.value.some((key) => (
     candidate === key ||
     candidate.startsWith(`${key} `) ||
     candidate.endsWith(` ${key}`)
   ))
 }
 
-async function loadDashboard() {
-  const tasks = [
-    exploreStore.fetchModels(),
-    exploreStore.fetchDatasheets(),
-  ]
-
-  if (auth.isLoggedIn && apiMode.supportsSubmissionQueue) {
-    tasks.push(submissionsStore.fetchSubmissions())
-  } else {
-    submissionsStore.submissions = []
-    submissionsStore.error = null
-  }
-
-  await Promise.allSettled(tasks)
-}
-
-function formatTime(timestamp) {
-  const date = new Date(timestamp)
+function formatTime(date) {
+  if (!date || date.getTime() === 0) return 'No date'
   const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
-
   if (minutes < 1) return 'just now'
   if (minutes < 60) return `${minutes}m ago`
-
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours}h ago`
-
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function formatSubmissionType(type) {
-  return type === 'model_card' ? 'Model Card' : 'Datasheet'
-}
-
-function getSubmissionTitle(submission) {
-  if (submission.data?.intake_method === 'asset_link') {
-    return submission.data.display_name || submission.data.asset_url || 'Record link intake'
-  }
-
-  return submission.data?.name || submission.id
+async function loadDashboard() {
+  await Promise.allSettled([
+    exploreStore.fetchModels(),
+    exploreStore.fetchDatasheets(),
+  ])
 }
 
 onMounted(loadDashboard)
@@ -429,105 +471,209 @@ watch(() => auth.isLoggedIn, loadDashboard)
 </script>
 
 <style scoped>
-.hero-panel {
-  margin-bottom: 28px;
-}
-
-.hero-copy {
-  padding: 32px;
-  border-radius: var(--radius);
-  border: 1px solid var(--color-border);
-  background:
-    radial-gradient(circle at top right, rgba(47, 78, 162, 0.10), transparent 30%),
-    linear-gradient(135deg, #f7f9ff 0%, #fffdf7 58%, #fcf5ea 100%);
-  box-shadow: var(--shadow-sm);
-}
-
-.hero-eyebrow {
-  font-size: .74rem;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--color-primary);
-  margin-bottom: 12px;
-}
-
-.hero-copy h2 {
-  margin: 0 0 10px;
-  font-size: 2.15rem;
-  line-height: 1.06;
-  max-width: 12ch;
-  letter-spacing: -.04em;
-}
-
-.hero-copy p {
-  margin: 0;
-  max-width: 62ch;
-  color: var(--color-text-secondary);
-  line-height: 1.7;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 22px;
-}
-
-.dashboard-grid {
+.summary-grid {
   display: grid;
-  gap: 20px;
-}
-
-.guest-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.member-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.workspace-card {
-  grid-column: 1 / -1;
-}
-
-.workspace-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
-.workspace-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.workspace-text {
-  font-size: .9rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  max-width: 66ch;
-}
-
-.workspace-chips {
+.summary-tile {
+  min-height: 112px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(255,255,255,.92), var(--color-surface));
+  text-decoration: none;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+  min-width: 0;
 }
 
-.workspace-actions,
+.summary-tile:hover {
+  border-color: rgba(47, 78, 162, .28);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.summary-icon,
+.quick-link-icon,
+.activity-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.summary-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+}
+
+.summary-icon.primary,
+.quick-link-icon.primary,
+.activity-mark.model { background: var(--color-primary-bg); color: var(--color-primary); }
+.summary-icon.info,
+.quick-link-icon.info,
+.activity-mark.datasheet { background: var(--color-info-bg); color: var(--color-info); }
+.summary-icon.success,
+.quick-link-icon.success { background: var(--color-success-bg); color: var(--color-success); }
+.summary-icon.accent,
+.quick-link-icon.accent { background: var(--color-accent-bg); color: #a8701f; }
+
+.summary-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+.summary-label {
+  margin-top: 5px;
+  font-size: .86rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.summary-note {
+  margin-top: 3px;
+  font-size: .76rem;
+  color: var(--color-text-muted);
+}
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, .8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.dashboard-main,
+.dashboard-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.panel-meta {
+  color: var(--color-text-muted);
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.activity-list,
+.compact-list,
 .action-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.activity-row,
+.compact-item,
+.quick-link,
+.quality-item {
+  text-decoration: none;
+}
+
+.activity-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: rgba(255,255,255,.48);
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.activity-row:hover,
+.compact-item:hover,
+.quality-item:hover,
+.quick-link:hover {
+  border-color: rgba(47, 78, 162, .32);
+  transform: translateY(-1px);
+}
+
+.activity-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.activity-main,
+.compact-item > div {
+  min-width: 0;
+}
+
+.activity-title,
+.compact-title,
+.quick-link-title,
+.quality-label {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.activity-subtitle,
+.compact-subtitle,
+.quick-link-desc,
+.quality-desc {
+  margin-top: 2px;
+  font-size: .78rem;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  font-size: .75rem;
+  color: var(--color-text-muted);
+}
+
+.quality-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quality-item {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 18px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: rgba(255,255,255,.45);
+  transition: border-color var(--transition), transform var(--transition);
+}
+
+.quality-count {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.quality-arrow,
+.quick-link-arrow {
+  color: var(--color-text-muted);
 }
 
 .quick-link {
@@ -535,115 +681,38 @@ watch(() => auth.isLoggedIn, loadDashboard)
   align-items: center;
   gap: 14px;
   padding: 14px;
-  border-radius: 14px;
-  border: 1px solid transparent;
-  transition: background var(--transition), border-color var(--transition), transform var(--transition);
-  text-decoration: none;
-}
-
-.quick-link:hover {
-  background: rgba(255,255,255,.72);
-  border-color: var(--color-border);
-  transform: translateY(-1px);
-}
-
-.quick-link-static:hover {
-  transform: none;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: rgba(255,255,255,.45);
+  transition: border-color var(--transition), transform var(--transition);
 }
 
 .quick-link-icon {
   width: 42px;
   height: 42px;
   border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.quick-link-title {
-  font-weight: 600;
-  font-size: .92rem;
-}
-
-.quick-link-desc {
-  font-size: .78rem;
-  color: var(--color-text-muted);
-  margin-top: 1px;
 }
 
 .quick-link-arrow {
   margin-left: auto;
-  color: var(--color-text-muted);
 }
 
-.stack-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.stack-item {
+.compact-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 14px 16px;
+  gap: 12px;
+  padding: 12px;
   border: 1px solid var(--color-border);
-  border-radius: 14px;
-  background: rgba(255,255,255,.55);
-  text-decoration: none;
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
-}
-
-.stack-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.stack-item-static:hover {
-  border-color: var(--color-border);
-  box-shadow: none;
-  transform: none;
-}
-
-.stack-item-main {
-  min-width: 0;
-}
-
-.stack-item-title {
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.stack-item-subtitle {
-  margin-top: 3px;
-  font-size: .78rem;
-  color: var(--color-text-muted);
-}
-
-.stack-item-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.stack-item-meta-column {
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.stack-item-arrow {
-  font-size: .8rem;
-  color: var(--color-text-muted);
+  border-radius: 12px;
+  background: rgba(255,255,255,.45);
+  transition: border-color var(--transition), transform var(--transition);
 }
 
 .empty-block {
   padding: 22px;
   border: 1px dashed var(--color-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255,255,255,.35);
   color: var(--color-text-muted);
   font-size: .88rem;
@@ -674,43 +743,42 @@ watch(() => auth.isLoggedIn, loadDashboard)
 }
 
 @media (max-width: 1180px) {
-  .guest-grid,
-  .member-grid {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-layout {
     grid-template-columns: 1fr;
-  }
-
-  .workspace-hero {
-    flex-direction: column;
-  }
-
-  .workspace-chips {
-    justify-content: flex-start;
   }
 }
 
-@media (max-width: 768px) {
-  .hero-copy {
-    padding: 22px;
+@media (max-width: 720px) {
+  .page-header h1,
+  .page-header p,
+  .summary-note,
+  .item-subtitle,
+  .quick-link-desc {
+    overflow-wrap: anywhere;
   }
 
-  .hero-copy h2 {
-    font-size: 1.6rem;
-    max-width: none;
+  .summary-grid,
+  .quality-grid {
+    grid-template-columns: 1fr;
   }
 
-  .hero-actions {
-    flex-direction: column;
+  .activity-row {
+    grid-template-columns: 38px minmax(0, 1fr);
   }
 
-  .stack-item,
-  .quick-link {
+  .activity-meta {
+    grid-column: 2;
     align-items: flex-start;
+    flex-direction: row;
   }
 
-  .stack-item-meta {
-    flex-direction: column;
+  .compact-item,
+  .quick-link {
     align-items: flex-start;
   }
 }
 </style>
-
