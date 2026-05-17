@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="top-bar">
-      <RouterLink to="/explore-datasheets" class="back-link">
+      <RouterLink to="/datasheets" class="back-link">
         <IconArrowLeft :size="16" stroke-width="2" /> Back to Datasheets
       </RouterLink>
       <div v-if="auth.isLoggedIn && ds && !store.loading" class="edit-actions">
@@ -27,7 +27,7 @@
     <div class="empty-state" v-else-if="!ds">
       <IconAlertCircle :size="48" stroke-width="1.2" />
       <h3>Datasheet not found</h3>
-      <RouterLink to="/explore-datasheets" class="btn btn-primary">Back to Datasheets</RouterLink>
+      <RouterLink to="/datasheets" class="btn btn-primary">Back to Datasheets</RouterLink>
     </div>
 
     <template v-else>
@@ -281,7 +281,7 @@ async function saveEdit() {
   try {
     const payload = { ...editForm }
     if (!payload.publication_year) delete payload.publication_year
-    await store.updateDatasheet(route.params.id, payload)
+    await store.updateDatasheet(route.params.uuid, payload)
     editing.value = false
     saveSuccess.value = true
     setTimeout(() => {
@@ -322,12 +322,12 @@ const displayPublisher = computed(() => {
 })
 
 function loadDatasheet() {
-  const id = route.params.id
-  if (id) store.fetchDatasheetById(id)
+  const uuid = route.params.uuid
+  if (uuid) store.fetchDatasheetById(uuid)
 }
 
 onMounted(loadDatasheet)
-watch(() => route.params.id, () => {
+watch(() => route.params.uuid, () => {
   editing.value = false
   editError.value = ''
   loadDatasheet()

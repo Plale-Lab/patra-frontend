@@ -1,5 +1,5 @@
 <template>
-  <RouterLink :to="`/explore-datasheets/${ds.id}`" class="ds-card">
+  <RouterLink :to="`/datasheet/${ds.uuid}`" class="ds-card">
     <div class="ds-card-header">
       <span class="badge" :class="ds.is_private ? 'badge-private' : 'badge-public'">
         {{ ds.is_private ? 'Private' : 'Public' }}

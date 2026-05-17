@@ -12,11 +12,11 @@
       </RouterLink>
 
       <div class="sidebar-section-label">Explore</div>
-      <RouterLink to="/explore-model-cards" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-model-cards') }">
+      <RouterLink to="/modelcards" class="sidebar-link" :class="{ active: $route.path.startsWith('/modelcard') }">
         <IconSearch :size="20" stroke-width="1.8" />
         <span>Browse Model Cards</span>
       </RouterLink>
-      <RouterLink to="/explore-datasheets" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-datasheets') }">
+      <RouterLink to="/datasheets" class="sidebar-link" :class="{ active: $route.path.startsWith('/datasheet') }">
         <IconSearch :size="20" stroke-width="1.8" />
         <span>Browse Datasheets</span>
       </RouterLink>
@@ -25,15 +25,17 @@
         <span>MCP Explorer</span>
       </RouterLink>
 
-      <div class="sidebar-section-label">Experiments</div>
-      <RouterLink to="/animal-ecology" class="sidebar-link" :class="{ active: $route.path === '/animal-ecology' }">
-        <IconPaw :size="20" stroke-width="1.8" />
-        <span>Animal Ecology</span>
-      </RouterLink>
-      <RouterLink to="/digital-agriculture" class="sidebar-link" :class="{ active: $route.path === '/digital-agriculture' }">
-        <IconPlant :size="20" stroke-width="1.8" />
-        <span>Digital Agriculture</span>
-      </RouterLink>
+      <template v-if="apiMode.supportsDomainExperiments">
+        <div class="sidebar-section-label">Experiments</div>
+        <RouterLink to="/animal-ecology" class="sidebar-link" :class="{ active: $route.path === '/animal-ecology' }">
+          <IconPaw :size="20" stroke-width="1.8" />
+          <span>Animal Ecology</span>
+        </RouterLink>
+        <RouterLink to="/digital-agriculture" class="sidebar-link" :class="{ active: $route.path === '/digital-agriculture' }">
+          <IconPlant :size="20" stroke-width="1.8" />
+          <span>Digital Agriculture</span>
+        </RouterLink>
+      </template>
 
       <template v-if="auth.isTapisUser || auth.isAdmin">
         <div class="sidebar-section-label">Contribute</div>
@@ -45,10 +47,6 @@
           <IconSparkles :size="20" stroke-width="1.8" />
           <span>Agent Toolkit</span>
         </RouterLink>
-        <RouterLink v-if="apiMode.supportsAutomatedIngestion" to="/automated-ingestion" class="sidebar-link" :class="{ active: $route.path === '/record-scrape' || $route.path === '/automated-ingestion' }">
-          <IconDatabaseSearch :size="20" stroke-width="1.8" />
-          <span>Automated Ingestion</span>
-        </RouterLink>
         <RouterLink v-if="apiMode.supportsEditRecords" to="/edit-records" class="sidebar-link" :class="{ active: $route.path === '/edit-records' }">
           <IconEdit :size="20" stroke-width="1.8" />
           <span>Edit Records</span>
@@ -56,36 +54,6 @@
         <RouterLink to="/submit" class="sidebar-link" :class="{ active: $route.path === '/submit' }">
           <IconUpload :size="20" stroke-width="1.8" />
           <span>Submit Records</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsTickets" to="/tickets" class="sidebar-link" :class="{ active: $route.path === '/tickets' }">
-          <IconMessageCircle :size="20" stroke-width="1.8" />
-          <span>Tickets</span>
-        </RouterLink>
-      </template>
-
-      <template v-if="auth.isAdmin">
-        <div class="sidebar-section-label">Admin</div>
-        <RouterLink to="/models" class="sidebar-link" :class="{ active: $route.path === '/models' }">
-          <IconCube :size="20" stroke-width="1.8" />
-          <span>Models & Data</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsSubmissionQueue" to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
-          <IconClipboardCheck :size="20" stroke-width="1.8" />
-          <span>Review Submissions</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsTickets" to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
-          <IconListDetails :size="20" stroke-width="1.8" />
-          <span>Manage Tickets</span>
-        </RouterLink>
-
-        <div class="sidebar-section-label">System</div>
-        <RouterLink to="/audit-log" class="sidebar-link" :class="{ active: $route.path === '/audit-log' }">
-          <IconFileText :size="20" stroke-width="1.8" />
-          <span>Audit Log</span>
-        </RouterLink>
-        <RouterLink to="/settings" class="sidebar-link" :class="{ active: $route.path === '/settings' }">
-          <IconSettings :size="20" stroke-width="1.8" />
-          <span>Settings</span>
         </RouterLink>
       </template>
     </nav>
@@ -150,7 +118,7 @@
               <span>Remember me for 7 days</span>
             </label>
             <button class="btn-login" @click="handleLogin" :disabled="!loginForm.username || !loginForm.password || auth.loading">
-              {{ auth.loading ? 'Authenticating...' : 'Get JWT Token' }}
+              {{ auth.loading ? 'Authenticating...' : 'Sign In' }}
             </button>
           </div>
         </div>
@@ -165,9 +133,9 @@ import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useApiModeStore } from '../stores/apiMode'
 import {
-  IconLayoutDashboard, IconCube, IconDatabaseSearch, IconFileText, IconSettings, IconSearch,
-  IconUpload, IconMessageCircle, IconClipboardCheck,
-  IconListDetails, IconLogout, IconLogin, IconKey, IconEdit,
+  IconLayoutDashboard, IconSearch,
+  IconUpload,
+  IconLogout, IconLogin, IconKey, IconEdit,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
   IconTerminal2, IconPaw, IconPlant,
 } from '@tabler/icons-vue'

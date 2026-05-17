@@ -13,16 +13,6 @@ export const SHOW_API_MODE = resolveFeatureFlag(
   import.meta.env.VITE_SHOW_API_MODE,
   import.meta.env.DEV,
 )
-export const SUPPORTS_TICKETS = resolveFeatureFlag(
-  runtimeConfig.SUPPORTS_TICKETS,
-  import.meta.env.VITE_SUPPORTS_TICKETS,
-  false,
-)
-export const SUPPORTS_SUBMISSIONS_API = resolveFeatureFlag(
-  runtimeConfig.SUPPORTS_SUBMISSIONS_API,
-  import.meta.env.VITE_SUPPORTS_SUBMISSIONS_API,
-  true,
-)
 export const SUPPORTS_AGENT_TOOLS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_AGENT_TOOLS,
   import.meta.env.VITE_SUPPORTS_AGENT_TOOLS,
@@ -33,11 +23,6 @@ const editResourcesEnvFlag = import.meta.env.VITE_SUPPORTS_EDIT_EXISTING_RESOURC
 export const SUPPORTS_EDIT_RECORDS = resolveFeatureFlag(
   editResourcesRuntimeFlag,
   editResourcesEnvFlag,
-  import.meta.env.DEV,
-)
-export const SUPPORTS_AUTOMATED_INGESTION = resolveFeatureFlag(
-  runtimeConfig.SUPPORTS_AUTOMATED_INGESTION,
-  import.meta.env.VITE_SUPPORTS_AUTOMATED_INGESTION,
   import.meta.env.DEV,
 )
 export const SUPPORTS_ASK_PATRA = resolveFeatureFlag(
@@ -128,11 +113,8 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
       label: 'Test Mode',
       description: 'Use the local mock server for frontend testing.',
       helpText: 'Start the local mock server with `cd frontend/mock-server && npm start`.',
-      supportsTickets: false,
-      supportsSubmissionQueue: true,
       supportsAgentTools: false,
       supportsEditRecords: true,
-      supportsAutomatedIngestion: true,
       supportsAskPatra: true,
       supportsMcpExplorer: true,
       supportsDomainExperiments: true,
@@ -146,11 +128,8 @@ export function getApiModeMeta(mode = getStoredApiMode()) {
     label: 'Normal Mode',
     description: 'Call the real Patra REST API.',
     helpText: 'Ensure the Patra REST server is running on the live API URL.',
-    supportsTickets: SUPPORTS_TICKETS,
-    supportsSubmissionQueue: SUPPORTS_SUBMISSIONS_API,
     supportsAgentTools: SUPPORTS_AGENT_TOOLS,
     supportsEditRecords: SUPPORTS_EDIT_RECORDS,
-    supportsAutomatedIngestion: SUPPORTS_AUTOMATED_INGESTION,
     supportsAskPatra: SUPPORTS_ASK_PATRA,
     supportsMcpExplorer: SUPPORTS_MCP_EXPLORER,
     supportsDomainExperiments: SUPPORTS_DOMAIN_EXPERIMENTS,

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="top-bar">
-      <RouterLink to="/explore-model-cards" class="back-link">
+      <RouterLink to="/modelcards" class="back-link">
         <IconArrowLeft :size="16" stroke-width="2" /> Back to Model Cards
       </RouterLink>
       <div v-if="auth.isLoggedIn && model && !store.loading" class="edit-actions">
@@ -27,7 +27,7 @@
     <div class="empty-state" v-else-if="!model">
       <IconAlertCircle :size="48" stroke-width="1.2" />
       <h3>Model not found</h3>
-      <RouterLink to="/explore-model-cards" class="btn btn-primary">Back to Model Cards</RouterLink>
+      <RouterLink to="/modelcards" class="btn btn-primary">Back to Model Cards</RouterLink>
     </div>
 
     <template v-else>
@@ -41,13 +41,17 @@
                     <input type="checkbox" v-model="editForm.is_private" />
                     {{ editForm.is_private ? 'Private' : 'Public' }}
                   </label>
+                  <label class="toggle-label">
+                    <input type="checkbox" v-model="editForm.is_gated" />
+                    {{ editForm.is_gated ? 'Gated' : 'Open' }}
+                  </label>
                 </template>
                 <template v-else>
                   <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
                     {{ model.is_private ? 'Private' : 'Public' }}
                   </span>
                 </template>
-                <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
+                <span v-if="!editing && model.is_gated" class="badge badge-accent">Gated</span>
                 <span v-if="model.ai_model?.framework" class="badge badge-info">{{ model.ai_model.framework }}</span>
                 <span v-if="!editing" class="badge badge-accent">v{{ model.version }}</span>
               </div>
@@ -473,6 +477,7 @@ function startEdit() {
   editForm.documentation = m.documentation || ''
   editForm.foundational_model = m.foundational_model || ''
   editForm.is_private = Boolean(m.is_private)
+  editForm.is_gated = Boolean(m.is_gated)
   editForm.ai_model_name = ai.name || ''
   editForm.ai_model_version = ai.version || ''
   editForm.ai_model_description = ai.description || ''
@@ -523,7 +528,7 @@ async function saveEdit() {
     }
     if (Object.keys(ai_model).length) payload.ai_model = ai_model
 
-    await store.updateModelCard(route.params.id, payload)
+    await store.updateModelCard(route.params.uuid, payload)
     editing.value = false
     saveSuccess.value = true
     setTimeout(() => {
@@ -556,15 +561,15 @@ function formatPercent(val) {
 }
 
 function loadModel() {
-  const id = route.params.id
-  if (id) {
-    store.fetchModelById(id)
-    store.fetchDeployments(id)
+  const uuid = route.params.uuid
+  if (uuid) {
+    store.fetchModelById(uuid)
+    store.fetchDeployments(uuid)
   }
 }
 
 onMounted(loadModel)
-watch(() => route.params.id, () => {
+watch(() => route.params.uuid, () => {
   editing.value = false
   editError.value = ''
   loadModel()

@@ -26,11 +26,8 @@ export const useApiModeStore = defineStore('apiMode', () => {
   const description = computed(() => meta.value.description)
   const helpText = computed(() => meta.value.helpText)
   const isMockMode = computed(() => mode.value === 'mock')
-  const supportsTickets = computed(() => Boolean(meta.value.supportsTickets))
-  const supportsSubmissionQueue = computed(() => Boolean(meta.value.supportsSubmissionQueue))
   const supportsAgentTools = computed(() => Boolean(meta.value.supportsAgentTools))
   const supportsEditRecords = computed(() => Boolean(meta.value.supportsEditRecords))
-  const supportsAutomatedIngestion = computed(() => Boolean(meta.value.supportsAutomatedIngestion))
   const supportsAskPatra = computed(() => Boolean(meta.value.supportsAskPatra))
   const supportsMcpExplorer = computed(() => Boolean(meta.value.supportsMcpExplorer))
   const supportsDomainExperiments = computed(() => Boolean(meta.value.supportsDomainExperiments))
@@ -51,11 +48,8 @@ export const useApiModeStore = defineStore('apiMode', () => {
     description,
     helpText,
     isMockMode,
-    supportsTickets,
-    supportsSubmissionQueue,
     supportsAgentTools,
     supportsEditRecords,
-    supportsAutomatedIngestion,
     supportsAskPatra,
     supportsMcpExplorer,
     supportsDomainExperiments,

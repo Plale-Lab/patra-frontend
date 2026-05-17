@@ -128,7 +128,7 @@
             <div class="message-stack">
               <div class="message-meta">
                 <span class="message-role">Patra</span>
-                <span class="message-time">Thinking...</span>
+                <span class="message-time">Processing...</span>
               </div>
               <div class="typing-indicator">
                 <span></span>
@@ -157,7 +157,7 @@
             <div class="composer-helper">Enter sends. Shift+Enter for a new line.</div>
             <button class="btn btn-primary" type="button" @click="handleSend" :disabled="sending || isAnimating || !draftMessage.trim()">
               <IconSend :size="16" stroke-width="1.8" />
-              {{ sending ? 'Thinking...' : (isAnimating ? 'Rendering...' : 'Send') }}
+              {{ sending ? 'Processing...' : (isAnimating ? 'Rendering...' : 'Send') }}
             </button>
           </div>
         </div>

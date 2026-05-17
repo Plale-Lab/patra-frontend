@@ -1,5 +1,5 @@
 <template>
-  <RouterLink :to="`/explore-model-cards/${model.id}`" class="model-card">
+  <RouterLink :to="`/modelcard/${model.uuid}`" class="model-card">
     <div class="model-card-header">
       <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
         {{ model.is_private ? 'Private' : 'Public' }}
