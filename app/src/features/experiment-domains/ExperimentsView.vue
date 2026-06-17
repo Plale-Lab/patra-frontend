@@ -64,7 +64,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in store.userSummary" :key="row.experiment_id">
+            <tr v-for="row in paginatedSummary" :key="row.experiment_id">
               <td>{{ row.experiment_id }}</td>
               <td>{{ row.model_id }}</td>
               <td>{{ row.device_id || '—' }}</td>
@@ -77,6 +77,51 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination panel -->
+      <div class="pagination-footer">
+        <div class="pagination-info">
+          Showing <span>{{ paginationStart }}</span> to <span>{{ paginationEnd }}</span> of <span>{{ totalItems }}</span> entries
+        </div>
+        <div class="pagination-controls">
+          <div class="page-size-selector">
+            Show 
+            <select v-model="pageSize" class="page-size-select">
+              <option :value="5">5</option>
+              <option :value="10">10</option>
+              <option :value="20">20</option>
+            </select>
+            entries
+          </div>
+          <div class="page-buttons">
+            <button 
+              class="btn-page" 
+              :disabled="currentPage === 1" 
+              @click="currentPage--"
+              title="Previous Page"
+            >
+              <IconChevronLeft :size="16" />
+            </button>
+            <button 
+              v-for="page in totalPages" 
+              :key="page" 
+              class="btn-page" 
+              :class="{ active: currentPage === page }"
+              @click="currentPage = page"
+            >
+              {{ page }}
+            </button>
+            <button 
+              class="btn-page" 
+              :disabled="currentPage === totalPages" 
+              @click="currentPage++"
+              title="Next Page"
+            >
+              <IconChevronRight :size="16" />
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -241,7 +286,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { IconBrandGithub, IconExternalLink, IconLeaf, IconTractor } from '@tabler/icons-vue'
+import { IconBrandGithub, IconExternalLink, IconLeaf, IconTractor, IconChevronLeft, IconChevronRight } from '@tabler/icons-vue'
 import { useExperimentsStore } from '../../stores/experiments'
 
 const props = defineProps({
@@ -265,6 +310,28 @@ const selectedUser = ref(null)
 const selectedExperiment = ref(null)
 const detail = computed(() => store.experimentDetail)
 
+// Pagination state
+const currentPage = ref(1)
+const pageSize = ref(5)
+
+const totalItems = computed(() => store.userSummary.length)
+const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value))
+
+const paginatedSummary = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return store.userSummary.slice(start, end)
+})
+
+const paginationStart = computed(() => {
+  if (totalItems.value === 0) return 0
+  return (currentPage.value - 1) * pageSize.value + 1
+})
+
+const paginationEnd = computed(() => {
+  return Math.min(currentPage.value * pageSize.value, totalItems.value)
+})
+
 onMounted(() => {
   store.fetchUsers(props.domain)
 })
@@ -274,13 +341,22 @@ watch(
   (nextDomain) => {
     selectedUser.value = null
     selectedExperiment.value = null
+    currentPage.value = 1
     store.reset()
     store.fetchUsers(nextDomain)
   },
 )
 
+watch(
+  pageSize,
+  () => {
+    currentPage.value = 1
+  }
+)
+
 function onUserChange() {
   selectedExperiment.value = null
+  currentPage.value = 1
   store.selectUser(props.domain, selectedUser.value)
 }
 
@@ -507,5 +583,91 @@ function pct(value) {
 .error-bar {
   background: var(--color-danger-bg);
   color: var(--color-danger);
+}
+
+.pagination-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.pagination-info span {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.page-size-selector {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-size-select {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.page-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-page:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-bg);
+}
+
+.btn-page.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.btn-page:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 </style>
