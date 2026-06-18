@@ -59,13 +59,23 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="sidebar-user" v-if="auth.isLoggedIn">
+      <div class="sidebar-auth-status" v-if="auth.isInitializing">
+        <span class="sidebar-auth-spinner" aria-hidden="true"></span>
+        <span>Connecting to portal…</span>
+      </div>
+
+      <div class="sidebar-user" v-else-if="auth.isLoggedIn">
         <div class="sidebar-avatar">{{ auth.initials }}</div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name">{{ auth.displayName }}</div>
-          <div class="sidebar-user-role">{{ auth.isAdmin ? 'Admin' : (auth.isTapisUser ? 'Tapis User' : 'User') }}</div>
+          <div class="sidebar-user-role">
+            {{ auth.isPortalUser ? 'ICICLE/Tapis session' : (auth.isAdmin ? 'Admin' : (auth.isTapisUser ? 'Tapis User' : 'User')) }}
+          </div>
         </div>
-        <button class="sidebar-logout" @click="handleLogout" title="Sign out">
+        <span v-if="auth.isPortalUser" class="sidebar-portal-managed" title="Sign out from the parent ICICLE/Tapis portal">
+          <IconShieldCheck :size="18" stroke-width="1.8" />
+        </span>
+        <button v-else class="sidebar-logout" @click="handleLogout" title="Sign out">
           <IconLogout :size="18" stroke-width="1.8" />
         </button>
       </div>
@@ -137,7 +147,7 @@ import {
   IconUpload,
   IconLogout, IconLogin, IconKey, IconEdit,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
-  IconTerminal2, IconPaw, IconPlant,
+  IconTerminal2, IconPaw, IconPlant, IconShieldCheck,
 } from '@tabler/icons-vue'
 
 const auth = useAuthStore()
@@ -249,6 +259,27 @@ function handleLogout() {
   gap: 10px;
 }
 
+.sidebar-auth-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--color-text-muted);
+  font-size: .82rem;
+}
+
+.sidebar-auth-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: sidebar-auth-spin .8s linear infinite;
+}
+
+@keyframes sidebar-auth-spin {
+  to { transform: rotate(360deg); }
+}
+
 .sidebar-user-info {
   flex: 1;
   min-width: 0;
@@ -299,6 +330,15 @@ function handleLogout() {
 .sidebar-logout:hover {
   color: var(--color-danger);
   background: var(--color-danger-bg);
+}
+
+.sidebar-portal-managed {
+  color: var(--color-primary);
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .sidebar-login-btn {

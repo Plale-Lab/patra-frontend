@@ -45,6 +45,20 @@ export const SUPPORTS_DEV_OPEN_ACCESS = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_DEV_OPEN_ACCESS,
   false,
 )
+export const EMBEDDED_AUTH_ENABLED = resolveFeatureFlag(
+  runtimeConfig.EMBEDDED_AUTH_ENABLED,
+  import.meta.env.VITE_EMBEDDED_AUTH_ENABLED,
+  false,
+)
+export const PORTAL_AUTH_ORIGINS = parseOriginList(
+  runtimeConfig.PORTAL_AUTH_ORIGINS,
+  import.meta.env.VITE_PORTAL_AUTH_ORIGINS,
+)
+export const PORTAL_AUTH_TIMEOUT_MS = parsePositiveInteger(
+  runtimeConfig.PORTAL_AUTH_TIMEOUT_MS,
+  import.meta.env.VITE_PORTAL_AUTH_TIMEOUT_MS,
+  3000,
+)
 export const ADMIN_USERNAMES = parseCsvList(
   runtimeConfig.ADMIN_USERNAMES,
   import.meta.env.VITE_ADMIN_USERNAMES,
@@ -173,4 +187,33 @@ function parseCsvList(runtimeValue, envValue, fallback) {
     .split(',')
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean)
+}
+
+function parseOriginList(runtimeValue, envValue) {
+  const value = runtimeValue === '' || runtimeValue == null ? envValue : runtimeValue
+  return Array.from(new Set(String(value || '')
+    .split(',')
+    .map((item) => normalizeOrigin(item))
+    .filter(Boolean)))
+}
+
+function normalizeOrigin(value) {
+  const candidate = String(value || '').trim()
+  if (!candidate) return ''
+
+  try {
+    const url = new URL(candidate)
+    if (!['http:', 'https:'].includes(url.protocol)) return ''
+    if (url.username || url.password || url.search || url.hash) return ''
+    if (url.pathname && url.pathname !== '/') return ''
+    return url.origin
+  } catch {
+    return ''
+  }
+}
+
+function parsePositiveInteger(runtimeValue, envValue, fallback) {
+  const value = runtimeValue === '' || runtimeValue == null ? envValue : runtimeValue
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }

@@ -25,7 +25,10 @@ The difference between the two pods is runtime configuration only.
   "SUPPORTS_AUTOMATED_INGESTION": "false",
   "SUPPORTS_TICKETS": "true",
   "SUPPORTS_MCP_EXPLORER": "false",
-  "SUPPORTS_DOMAIN_EXPERIMENTS": "false"
+  "SUPPORTS_DOMAIN_EXPERIMENTS": "false",
+  "EMBEDDED_AUTH_ENABLED": "false",
+  "PORTAL_AUTH_ORIGINS": "",
+  "PORTAL_AUTH_TIMEOUT_MS": "3000"
 }
 ```
 
@@ -41,6 +44,9 @@ The difference between the two pods is runtime configuration only.
   "SUPPORTS_TICKETS": "true",
   "SUPPORTS_MCP_EXPLORER": "true",
   "SUPPORTS_DOMAIN_EXPERIMENTS": "true",
+  "EMBEDDED_AUTH_ENABLED": "false",
+  "PORTAL_AUTH_ORIGINS": "",
+  "PORTAL_AUTH_TIMEOUT_MS": "3000",
   "MCP_BASE_URL": "http://<mcp-host>:8050"
 }
 ```
@@ -63,3 +69,8 @@ The frontend now defaults these dev-only features to `false` unless explicitly e
 - `SUPPORTS_AUTOMATED_INGESTION`
 
 This keeps one image safe for both stable and dev deployments.
+
+Enable `EMBEDDED_AUTH_ENABLED` only for a deployment opened by an ICICLE/Tapis
+parent portal, and configure `PORTAL_AUTH_ORIGINS` with that portal's exact
+origin. See [login_redesign.md](./login_redesign.md) for the integration
+contract and verification checklist.

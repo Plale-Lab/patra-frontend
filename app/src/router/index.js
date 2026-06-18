@@ -36,9 +36,10 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
   const apiMode = useApiModeStore()
+  await auth.initialize()
   if (apiMode.supportsDevOpenAccess) return true
   if (to.meta.tapis && !auth.isTapisUser) return { name: 'Dashboard' }
   if (to.meta.feature === 'askPatra' && !apiMode.supportsAskPatra) return { name: 'Dashboard' }
