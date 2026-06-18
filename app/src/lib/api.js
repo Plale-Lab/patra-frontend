@@ -1,4 +1,4 @@
-import { resolveApiUrl, getAssetOrg, getAssetApiKey, SUPPORTS_DEV_OPEN_ACCESS, ADMIN_USERNAMES } from '../config/api'
+import { resolveApiUrl, getAssetOrg, getAssetApiKey, SUPPORTS_DEV_OPEN_ACCESS } from '../config/api'
 
 const LOCAL_USER_KEY = 'patra_user'
 const LOCAL_TOKEN_KEY = 'patra_token'
@@ -69,7 +69,7 @@ function getStoredAuth() {
       user: {
         username: storedUser?.username || 'dev-open-access',
         name: storedUser?.name || storedUser?.username || 'Dev Open Access',
-        role: 'admin',
+        role: 'user',
         auth_type: storedUser?.auth_type || 'tapis',
       },
     }
@@ -87,10 +87,9 @@ function parseStoredUser(rawValue) {
     if (!user || typeof user !== 'object') return user
 
     if (user.auth_type === 'tapis') {
-      const normalizedUsername = String(user.username || '').trim().toLowerCase()
       return {
         ...user,
-        role: ADMIN_USERNAMES.includes(normalizedUsername) ? 'admin' : 'user',
+        role: 'user',
       }
     }
 

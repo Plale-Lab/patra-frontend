@@ -5,7 +5,7 @@
       <p>Select a published record, edit its visible fields, and save the updated record directly.</p>
     </div>
 
-    <div v-if="!(auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess)" class="card">
+    <div v-if="!(auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)" class="card">
       <div class="card-body">
         <div class="empty-state compact">
           <IconLock :size="34" stroke-width="1.5" />
@@ -14,52 +14,45 @@
       </div>
     </div>
 
-    <template v-else>
-      <div class="card">
+    <div v-else class="edit-records-pane">
+      <aside class="search-pane card">
         <div class="card-header">
           <span class="flex items-center gap-8">
             <IconSearch :size="18" stroke-width="1.8" />
-            Record Search
+            Find a record
           </span>
         </div>
         <div class="card-body">
-          <div class="toolbar-row">
-            <div class="search-help">
-              Search across model cards and datasheets by record name, author or creator, description, and related metadata.
-            </div>
-            <div class="session-badge">
-              Signed in as <strong>{{ auth.displayName }}</strong>
-            </div>
-          </div>
-
           <div class="search-row">
             <input
+              ref="searchInput"
               class="form-input"
               v-model="searchQuery"
-              placeholder="Type any metadata, record name, author, creator, title, or keyword"
+              placeholder="Name, author, creator, keyword..."
+              @keyup.enter="runSearchNow"
             />
             <button class="btn btn-primary" @click="runSearchNow" :disabled="searching">
-              {{ searching ? 'Searching...' : 'Search' }}
+              {{ searching ? 'Searching…' : 'Search' }}
             </button>
           </div>
 
-          <div class="helper-row">
-            <span class="helper-pill">Unified search</span>
-            <span class="helper-pill">Model cards + datasheets</span>
-            <span class="helper-text">Suggestions refresh automatically after a short typing pause.</span>
+          <div class="filter-chips type-chips">
+            <button type="button" class="chip" :class="{ active: typeFilter === 'all' }" @click="typeFilter = 'all'">All</button>
+            <button type="button" class="chip" :class="{ active: typeFilter === 'model_card' }" @click="typeFilter = 'model_card'">Model Cards</button>
+            <button type="button" class="chip" :class="{ active: typeFilter === 'datasheet' }" @click="typeFilter = 'datasheet'">Datasheets</button>
           </div>
 
-          <div class="form-error" v-if="searchError">{{ searchError }}</div>
+          <InlineFeedback v-if="searchError" type="error" :message="searchError" class="search-feedback" />
 
           <div class="suggestions-block">
             <div class="section-label">{{ searchQuery.trim() ? 'Matching records' : 'Suggested records' }}</div>
-            <div class="record-grid" v-if="suggestedRecords.length">
+            <div class="record-list stagger" v-if="filteredRecords.length">
               <button
-                v-for="record in suggestedRecords"
+                v-for="record in filteredRecords"
                 :key="recordKey(record)"
                 class="record-card"
                 :class="{ active: isSelected(record) }"
-                @click="selectRecord(record)"
+                @click="trySelectRecord(record)"
               >
                 <div class="record-card-header">
                   <span class="record-kind">{{ record.kindLabel }}</span>
@@ -72,204 +65,99 @@
 
             <div class="empty-state compact" v-else-if="hasSearched && !searching">
               <IconSearchOff :size="32" stroke-width="1.4" />
-              <p>No matching records were found.</p>
+              <p>No matching records.</p>
             </div>
           </div>
         </div>
-      </div>
+      </aside>
 
-      <div class="card" v-if="selectedDetail && selectedRecord">
-        <div class="card-header">
-          <span class="flex items-center gap-8">
-            <IconEdit :size="18" stroke-width="1.8" />
-            Edit Record
-          </span>
+      <section class="edit-pane card">
+        <div v-if="!selectedRecord" class="card-body">
+          <div class="empty-state compact">
+            <IconEdit :size="34" stroke-width="1.5" />
+            <p>Select a record from the list to start editing.</p>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="section-label selected-label">
-            Editing record: {{ selectedAssetName }}
-            <span class="selected-kind">{{ selectedRecord.kindLabel }}</span>
+
+        <div v-else-if="detailLoading" class="card-body">
+          <div class="loading-state">
+            <IconLoader2 :size="30" stroke-width="1.6" class="spin" />
+            <span>Loading record…</span>
           </div>
+        </div>
 
-          <template v-if="selectedRecord.assetType === 'model_card'">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Name</label>
-                <input class="form-input" v-model="editForm.name" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Metadata Version</label>
-                <input class="form-input" v-model="editForm.version" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Short Description</label>
-              <textarea class="form-input form-textarea" rows="2" v-model="editForm.short_description"></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Full Description</label>
-              <textarea class="form-input form-textarea" rows="4" v-model="editForm.full_description"></textarea>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Category</label>
-                <input class="form-input" v-model="editForm.category" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Input Type</label>
-                <input class="form-input" v-model="editForm.input_type" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Framework</label>
-                <input class="form-input" v-model="editForm.framework" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Test Accuracy</label>
-                <input class="form-input" type="number" step="0.01" min="0" max="1" v-model="editForm.test_accuracy" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Input Data URL</label>
-                <input class="form-input" v-model="editForm.input_data" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Output Data URL</label>
-                <input class="form-input" v-model="editForm.output_data" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">License</label>
-                <input class="form-input" v-model="editForm.license" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Keywords</label>
-                <input class="form-input" v-model="editForm.keywords" />
-              </div>
-            </div>
-          </template>
-
-          <template v-else>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Title</label>
-                <input class="form-input" v-model="editForm.name" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Metadata Version</label>
-                <input class="form-input" v-model="editForm.version" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Description</label>
-              <textarea class="form-input form-textarea" rows="4" v-model="editForm.description"></textarea>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Source</label>
-                <input class="form-input" v-model="editForm.source" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Publication Year</label>
-                <input class="form-input" v-model="editForm.publication_year" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Publisher</label>
-                <input class="form-input" v-model="editForm.publisher" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Download URL</label>
-                <input class="form-input" v-model="editForm.download_url" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Creators</label>
-                <input class="form-input" v-model="editForm.creator" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Features</label>
-                <input class="form-input" v-model="editForm.features" />
-              </div>
-            </div>
-          </template>
-
-          <div class="form-group">
-            <label class="form-label">Visibility</label>
-            <div class="filter-chips">
-              <button type="button" class="chip" :class="{ active: !editForm.is_private }" @click="editForm.is_private = false">Public</button>
-              <button type="button" class="chip" :class="{ active: editForm.is_private }" @click="editForm.is_private = true">Private</button>
-            </div>
-          </div>
-
-          <div class="form-error" v-if="submitError">{{ submitError }}</div>
-
-          <div class="action-row">
-            <button class="btn btn-primary" @click="submitEdit" :disabled="submitting">
-              {{ submitting ? 'Saving...' : 'Save' }}
+        <div v-else-if="detailError" class="card-body">
+          <div class="empty-state compact">
+            <IconAlertCircle :size="32" stroke-width="1.5" />
+            <p>{{ detailError }}</p>
+            <button class="btn btn-outline btn-sm" @click="retryLoadDetail">
+              <IconRefresh :size="15" stroke-width="1.8" /> Retry
             </button>
           </div>
+        </div>
 
-          <div class="success-banner inline-success" v-if="saveResult">
-            <IconCircleCheck :size="18" stroke-width="1.8" />
-            <span>Record saved successfully.</span>
+        <div v-else>
+          <div class="card-header edit-pane-header">
+            <div class="edit-title">
+              <span class="record-kind">{{ selectedRecord.kindLabel }}</span>
+              <span class="edit-name">{{ selectedAssetName }}</span>
+              <span v-if="formatVersion(currentVersion)" class="version-badge">{{ formatVersion(currentVersion) }}</span>
+              <span v-if="isDirty" class="dirty-badge" title="Unsaved changes" aria-label="Unsaved changes">●</span>
+            </div>
+            <button class="btn btn-outline btn-sm" @click="tryCancel">Close</button>
           </div>
-        </div>
-      </div>
 
-      <div class="card" v-if="selectedRecord && changeLog.length">
-        <div class="card-header">
-          <span class="flex items-center gap-8">Recent Changes</span>
-        </div>
-        <div class="card-body">
-          <div class="changelog-list">
-            <div class="changelog-item" v-for="entry in changeLog" :key="entry.id">
-              <div class="changelog-meta">
-                <div class="changelog-actor">
-                  <span class="changelog-user">{{ entry.changed_by || 'unknown user' }}</span>
-                  <span class="changelog-dot"></span>
-                  <span class="changelog-time">{{ formatTimestamp(entry.changed_at) }}</span>
-                </div>
-                <span class="changelog-count">{{ changeCountLabel(entry) }}</span>
+          <div class="card-body">
+            <div class="form-section" v-for="section in editSections" :key="section.id">
+              <div class="form-section-label">{{ section.title }}</div>
+              <div class="section-fields">
+                <FormField
+                  v-for="field in section.fields"
+                  :key="field.key"
+                  :field="field"
+                  v-model="editForm[field.key]"
+                  :error="errors[field.key]"
+                  :class="{ 'field-span-2': field.type === 'textarea' || field.type === 'segmented' }"
+                  @blur="validateOnBlur(field)"
+                />
               </div>
-              <div class="changelog-code">
-                <div class="changelog-line" v-for="change in entry.changes" :key="`${entry.id}-${change.field}`">
-                  <span class="changelog-field">{{ formatFieldName(change.field) }}</span>
-                  <span class="changelog-arrow">-></span>
-                  <span class="changelog-values">{{ formatChangeValues(change.before, change.after) }}</span>
-                </div>
-              </div>
+            </div>
+
+            <InlineFeedback v-if="submitError" type="error" :message="submitError" />
+            <InlineFeedback v-else-if="saveResult" type="success">
+              Saved.
+              <RouterLink v-if="savedRecordLink" :to="savedRecordLink" class="success-link">View record →</RouterLink>
+            </InlineFeedback>
+
+            <div class="action-row">
+              <button class="btn btn-outline" @click="tryCancel" :disabled="submitting">Cancel</button>
+              <button class="btn btn-primary" @click="submitEdit" :disabled="submitting || !isDirty">
+                {{ submitting ? 'Saving…' : 'Save changes' }}
+              </button>
+              <span class="save-hint">⌘S</span>
             </div>
           </div>
         </div>
-      </div>
-    </template>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { IconCircleCheck, IconEdit, IconLock, IconSearch, IconSearchOff } from '@tabler/icons-vue'
+import { onBeforeRouteLeave, RouterLink } from 'vue-router'
+import {
+  IconAlertCircle, IconEdit, IconLoader2, IconLock, IconRefresh, IconSearch, IconSearchOff,
+} from '@tabler/icons-vue'
 import { useAuthStore } from '../../stores/auth'
-import { useApiModeStore } from '../../stores/apiMode'
+import { SUPPORTS_DEV_OPEN_ACCESS } from '../../config/api'
+import { sectionsFor } from '../../lib/assetFields'
+import { validateField } from '../../lib/fieldValidation'
+import { formatVersion } from '../../lib/formatVersion'
+import FormField from '../../components/FormField.vue'
+import InlineFeedback from '../../components/InlineFeedback.vue'
 import {
   fetchExistingRecordDetail,
-  fetchRecordChangeLog,
   fetchSuggestedEditableRecords,
   getRecordDisplayName,
   mapRecordDetailToEditForm,
@@ -277,24 +165,38 @@ import {
 } from './api'
 
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
 
 const searchQuery = ref('')
 const searching = ref(false)
 const searchError = ref('')
 const hasSearched = ref(false)
 const suggestedRecords = ref([])
+const typeFilter = ref('all')
 
 const selectedRecord = ref(null)
 const selectedDetail = ref(null)
-const changeLog = ref([])
+const detailLoading = ref(false)
+const detailError = ref('')
 const editForm = reactive({})
+const errors = reactive({})
+const originalFormJson = ref('')
 const submitting = ref(false)
 const submitError = ref('')
 const saveResult = ref(null)
 
 let searchTimer = null
+let detailToken = 0
 const DEBOUNCE_MS = 350
+
+const filteredRecords = computed(() => (
+  typeFilter.value === 'all'
+    ? suggestedRecords.value
+    : suggestedRecords.value.filter((r) => r.assetType === typeFilter.value)
+))
+
+const editSections = computed(() => (
+  selectedRecord.value ? sectionsFor(selectedRecord.value.assetType) : []
+))
 
 const selectedAssetName = computed(() => (
   selectedRecord.value && selectedDetail.value
@@ -302,26 +204,59 @@ const selectedAssetName = computed(() => (
     : ''
 ))
 
+const currentVersion = computed(() => selectedDetail.value?.asset_version || null)
+
+// Dirty = the form differs from the snapshot taken when the record loaded.
+// (Snapshot-based rather than patch-based so that records whose creator/subject
+// names legitimately contain commas — e.g. "Doe, Jane" — are not reported dirty
+// on load by the split/join round-trip, and so an untouched record can't be
+// accidentally saved.)
+function snapshotForm() {
+  originalFormJson.value = JSON.stringify(editForm)
+}
+
+const isDirty = computed(() => (
+  originalFormJson.value !== '' && JSON.stringify(editForm) !== originalFormJson.value
+))
+
+const savedRecordLink = computed(() => {
+  if (!saveResult.value || !selectedDetail.value?.uuid) return null
+  return selectedRecord.value?.assetType === 'model_card'
+    ? { name: 'ModelDetail', params: { uuid: selectedDetail.value.uuid } }
+    : { name: 'DatasheetDetail', params: { uuid: selectedDetail.value.uuid } }
+})
+
+// Dismiss the "Saved." banner as soon as the user starts editing again.
+watch(isDirty, (dirty) => {
+  if (dirty) saveResult.value = null
+})
+
 onMounted(() => {
-  if (auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess) {
+  if (auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS) {
     loadSuggestions()
   }
+  window.addEventListener('keydown', onKeydown)
+  window.addEventListener('beforeunload', onBeforeUnload)
 })
 
 onBeforeUnmount(() => {
-  if (searchTimer) {
-    clearTimeout(searchTimer)
+  if (searchTimer) clearTimeout(searchTimer)
+  window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('beforeunload', onBeforeUnload)
+})
+
+onBeforeRouteLeave((to, from, next) => {
+  if (isDirty.value && !confirm('Discard unsaved changes?')) {
+    next(false)
+  } else {
+    next()
   }
 })
 
 watch(searchQuery, () => {
-  if (!(auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess)) return
-  if (searchTimer) {
-    clearTimeout(searchTimer)
-  }
-  searchTimer = setTimeout(() => {
-    runSearch()
-  }, DEBOUNCE_MS)
+  if (!(auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)) return
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(runSearch, DEBOUNCE_MS)
 })
 
 function recordKey(record) {
@@ -332,40 +267,32 @@ function isSelected(record) {
   return selectedRecord.value && recordKey(selectedRecord.value) === recordKey(record)
 }
 
-function formatTimestamp(value) {
-  try {
-    return new Date(value).toLocaleString([], {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    })
-  } catch {
-    return value
+function onKeydown(event) {
+  if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+    event.preventDefault()
+    if (selectedRecord.value && isDirty.value && !submitting.value) submitEdit()
   }
 }
 
-function formatFieldName(value) {
-  return String(value || '')
-    .replaceAll('_', ' ')
-    .replace(/\b\w/g, (character) => character.toUpperCase())
-}
-
-function formatChangeValues(before, after) {
-  return `${formatValue(before)} -> ${formatValue(after)}`
-}
-
-function formatValue(value) {
-  if (value === null || value === undefined || value === '') {
-    return 'null'
+function onBeforeUnload(event) {
+  if (isDirty.value) {
+    event.preventDefault()
+    event.returnValue = ''
   }
-  return JSON.stringify(value)
 }
 
-function changeCountLabel(entry) {
-  const count = Array.isArray(entry?.changes) ? entry.changes.length : 0
-  return count === 1 ? '1 field updated' : `${count} fields updated`
+function clearErrors() {
+  Object.keys(errors).forEach((key) => delete errors[key])
+}
+
+function clearForm() {
+  Object.keys(editForm).forEach((key) => delete editForm[key])
+}
+
+function validateOnBlur(field) {
+  const msg = validateField(field, editForm[field.key], false)
+  if (msg) errors[field.key] = msg
+  else delete errors[field.key]
 }
 
 async function loadSuggestions(query = '') {
@@ -387,26 +314,55 @@ async function runSearch() {
 }
 
 async function runSearchNow() {
-  if (searchTimer) {
-    clearTimeout(searchTimer)
-  }
+  if (searchTimer) clearTimeout(searchTimer)
   await runSearch()
 }
 
+function trySelectRecord(record) {
+  if (isSelected(record)) return
+  if (isDirty.value && !confirm('Discard unsaved changes?')) return
+  selectRecord(record)
+}
+
 async function selectRecord(record) {
+  const myToken = ++detailToken
   selectedRecord.value = record
   submitError.value = ''
   saveResult.value = null
+  detailError.value = ''
+  clearErrors()
+  clearForm()
+  originalFormJson.value = ''
+  detailLoading.value = true
+  selectedDetail.value = null
   try {
     const detail = await fetchExistingRecordDetail(record)
+    if (myToken !== detailToken) return
     selectedDetail.value = detail
-    changeLog.value = await fetchRecordChangeLog(record)
-    const mapped = mapRecordDetailToEditForm(record, detail)
-    Object.keys(editForm).forEach((key) => delete editForm[key])
-    Object.assign(editForm, mapped)
+    Object.assign(editForm, mapRecordDetailToEditForm(record, detail))
+    snapshotForm()
   } catch (error) {
-    submitError.value = error.message || 'Could not load the selected record.'
+    if (myToken !== detailToken) return
+    detailError.value = error.message || 'Could not load the selected record.'
+  } finally {
+    if (myToken === detailToken) detailLoading.value = false
   }
+}
+
+function retryLoadDetail() {
+  if (selectedRecord.value) selectRecord(selectedRecord.value)
+}
+
+function tryCancel() {
+  if (isDirty.value && !confirm('Discard unsaved changes?')) return
+  selectedRecord.value = null
+  selectedDetail.value = null
+  detailError.value = ''
+  saveResult.value = null
+  submitError.value = ''
+  clearErrors()
+  clearForm()
+  originalFormJson.value = ''
 }
 
 async function submitEdit() {
@@ -415,19 +371,16 @@ async function submitEdit() {
   submitError.value = ''
   saveResult.value = null
   try {
-    saveResult.value = await saveEditedRecord(selectedRecord.value, { ...editForm }, selectedDetail.value, auth.displayName)
-    const newDetail = await fetchExistingRecordDetail({
-      ...selectedRecord.value,
-      assetId: saveResult.value.asset_id,
-    })
+    saveResult.value = await saveEditedRecord(selectedRecord.value, { ...editForm }, selectedDetail.value)
+    const newDetail = await fetchExistingRecordDetail(selectedRecord.value)
     selectedDetail.value = newDetail
     selectedRecord.value = {
       ...selectedRecord.value,
       title: getRecordDisplayName(selectedRecord.value, newDetail),
     }
-    changeLog.value = await fetchRecordChangeLog(selectedRecord.value)
-    Object.keys(editForm).forEach((key) => delete editForm[key])
+    clearForm()
     Object.assign(editForm, mapRecordDetailToEditForm(selectedRecord.value, newDetail))
+    snapshotForm()
     await loadSuggestions(searchQuery.value)
   } catch (error) {
     submitError.value = error.message || 'Save failed.'
@@ -438,77 +391,80 @@ async function submitEdit() {
 </script>
 
 <style scoped>
-.toolbar-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
+.edit-records-pane {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: 16px;
+  align-items: start;
 }
 
-.search-help {
-  font-size: 0.9rem;
-  color: var(--color-text-secondary);
-  max-width: 760px;
-}
-
-.session-badge {
-  font-size: 0.88rem;
-  color: var(--color-text-secondary);
-  background: var(--color-primary-bg);
-  border: 1px solid rgba(88, 108, 255, 0.18);
-  border-radius: 999px;
-  padding: 8px 12px;
+.search-pane,
+.edit-pane {
+  margin: 0;
+  min-width: 0;
 }
 
 .search-row {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
 }
 
-.helper-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+.type-chips {
   margin-top: 12px;
 }
 
-.helper-pill {
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: var(--color-surface-2, #f3f5fb);
-  color: var(--color-text-secondary);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.helper-text {
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
+.search-feedback {
+  margin-top: 12px;
 }
 
 .section-label {
   margin-top: 18px;
   margin-bottom: 10px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-text-muted);
 }
 
-.selected-label {
-  margin-top: 0;
+.edit-pane-header {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.edit-title {
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.selected-kind,
+.edit-name {
+  font-weight: 700;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.version-badge {
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.dirty-badge {
+  color: var(--color-accent);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 .record-kind {
   display: inline-flex;
   align-items: center;
@@ -520,162 +476,84 @@ async function submitEdit() {
   font-weight: 700;
 }
 
-.record-grid {
+.record-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .record-card {
   border: 1px solid var(--color-border);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
-  padding: 14px 16px;
+  padding: 12px 14px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
-  min-height: 138px;
+  min-width: 0;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
 }
 
 .record-card:hover {
-  border-color: rgba(88, 108, 255, 0.4);
+  border-color: rgba(var(--color-primary-rgb), 0.4);
   transform: translateY(-1px);
 }
 
 .record-card.active {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(88, 108, 255, 0.12);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.14);
 }
 
 .record-card-header {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .record-card-title {
   font-weight: 700;
   color: var(--color-text);
-  line-height: 1.35;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .record-card-subtitle {
-  margin-top: 8px;
-  font-size: 0.86rem;
+  margin-top: 6px;
+  font-size: 0.84rem;
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .record-card-description {
-  margin-top: 10px;
-  font-size: 0.82rem;
+  margin-top: 8px;
+  font-size: 0.8rem;
   color: var(--color-text-muted);
-  line-height: 1.45;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.changelog-list {
-  display: grid;
-  gap: 14px;
-}
-
-.changelog-item {
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(246, 248, 252, 0.95), #ffffff);
-}
-
-.changelog-meta {
+.action-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.changelog-actor {
-  display: inline-flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
+  margin-top: 18px;
 }
 
-.changelog-user {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 5px 10px;
-  background: rgba(88, 108, 255, 0.1);
-  color: var(--color-primary);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.changelog-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--color-text-muted);
-  opacity: 0.6;
-}
-
-.changelog-time {
-  font-size: 0.84rem;
-  color: var(--color-text-secondary);
-}
-
-.changelog-count {
-  font-size: 0.76rem;
+.save-hint {
+  font-size: 0.78rem;
   color: var(--color-text-muted);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.changelog-code {
-  display: grid;
-  gap: 8px;
+.success-link {
+  margin-left: 4px;
 }
 
-.changelog-line {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
-  border-radius: 10px;
-  background: rgba(18, 25, 38, 0.03);
-  padding: 9px 10px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.82rem;
-  color: #24324a;
-}
-
-.changelog-field {
-  font-weight: 700;
-  color: #24408e;
-}
-
-.changelog-arrow {
-  color: var(--color-text-muted);
-  font-weight: 700;
-}
-
-.changelog-values {
-  color: var(--color-text);
-}
-
-.inline-success {
-  margin-top: 16px;
-}
-
-@media (max-width: 720px) {
-  .search-row {
-    flex-direction: column;
-    align-items: stretch;
+@media (max-width: 980px) {
+  .edit-records-pane {
+    grid-template-columns: 1fr;
   }
 }
 </style>

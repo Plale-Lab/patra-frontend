@@ -19,6 +19,10 @@ export const useExperimentsStore = defineStore('experiments', () => {
     error.value = null
     try {
       const response = await apiFetch(`/experiments/${domain}/users`)
+      if (response.status === 404) {
+        users.value = []
+        return
+      }
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       users.value = await response.json()
     } catch (err) {
@@ -47,6 +51,9 @@ export const useExperimentsStore = defineStore('experiments', () => {
         apiFetch(`/experiments/${domain}/users/${userId}/summary`),
         apiFetch(`/experiments/${domain}/users/${userId}/list`),
       ])
+      if (summaryResponse.status === 404 && listResponse.status === 404) {
+        return
+      }
       if (!summaryResponse.ok) throw new Error(`HTTP ${summaryResponse.status}`)
       if (!listResponse.ok) throw new Error(`HTTP ${listResponse.status}`)
       userSummary.value = await summaryResponse.json()
@@ -76,6 +83,9 @@ export const useExperimentsStore = defineStore('experiments', () => {
         apiFetch(`/experiments/${domain}/${experimentId}/images?skip=0&limit=100`),
         apiFetch(`/experiments/${domain}/${experimentId}/power`),
       ])
+      if (detailResponse.status === 404) {
+        return
+      }
       if (!detailResponse.ok) throw new Error(`HTTP ${detailResponse.status}`)
       if (!imagesResponse.ok) throw new Error(`HTTP ${imagesResponse.status}`)
       experimentDetail.value = await detailResponse.json()

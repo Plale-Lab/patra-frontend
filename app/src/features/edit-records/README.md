@@ -2,4 +2,4 @@
 
 Files:
 - `EditRecordsView.vue`: unified resource editing UI
-- `api.js`: frontend client for record search, direct patch save, and changelog
+- `api.js`: frontend client for record search and direct patch save

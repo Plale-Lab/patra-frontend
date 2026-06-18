@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { apiFetch } from '../lib/api'
+import { parseErrorMessage } from '../lib/errorParsing'
 
 function asArray(value) {
     if (Array.isArray(value)) return value
@@ -236,7 +237,18 @@ export const useExploreStore = defineStore('explore', () => {
     const visibilityFilter = ref('all') // all | public | private
 
     // Derived
-    const allCategories = computed(() => [...new Set(models.value.map(m => m.category).filter(Boolean))])
+    const allCategories = computed(() => {
+        // Dedupe categories case-insensitively (keep the first-seen casing) so
+        // "Segmentation" and "segmentation" collapse to one filter entry.
+        const seen = new Map()
+        for (const model of models.value) {
+            const category = String(model.category || '').trim()
+            if (!category) continue
+            const key = category.toLowerCase()
+            if (!seen.has(key)) seen.set(key, category)
+        }
+        return [...seen.values()].sort((a, b) => a.localeCompare(b))
+    })
     const allFrameworks = computed(() => [...new Set(models.value.map(m => m.framework).filter(Boolean))])
     const allAuthors = computed(() => [...new Set(models.value.map(m => m.author).filter(Boolean))])
 
@@ -246,7 +258,7 @@ export const useExploreStore = defineStore('explore', () => {
         if (searchQuery.value) {
             const q = searchQuery.value.toLowerCase()
             list = list.filter(m =>
-                m.name.toLowerCase().includes(q) ||
+                (m.name || '').toLowerCase().includes(q) ||
                 (m.short_description || '').toLowerCase().includes(q) ||
                 (m.keywords || '').toLowerCase().includes(q) ||
                 (m.author || '').toLowerCase().includes(q)
@@ -254,7 +266,8 @@ export const useExploreStore = defineStore('explore', () => {
         }
 
         if (selectedCategories.value.length > 0) {
-            list = list.filter(m => selectedCategories.value.includes(m.category))
+            const selected = selectedCategories.value.map(c => String(c).toLowerCase())
+            list = list.filter(m => selected.includes(String(m.category || '').toLowerCase()))
         }
 
         if (selectedFrameworks.value.length > 0) {
@@ -399,21 +412,6 @@ export const useExploreStore = defineStore('explore', () => {
         } finally {
             loading.value = false
         }
-    }
-
-    async function parseErrorMessage(res, fallback) {
-        const contentType = res.headers.get('content-type') || ''
-        if (contentType.includes('application/json')) {
-            const data = await res.json().catch(() => null)
-            if (typeof data?.detail === 'string') return data.detail
-            if (Array.isArray(data?.detail)) {
-                return data.detail.map((item) => item.msg || item.message || String(item)).join('; ')
-            }
-            if (typeof data?.message === 'string') return data.message
-            if (typeof data?.error === 'string') return data.error
-        }
-        const text = await res.text().catch(() => '')
-        return text || fallback
     }
 
     function resetFilters() {

@@ -12,11 +12,11 @@
       </RouterLink>
 
       <div class="sidebar-section-label">Explore</div>
-      <RouterLink to="/explore-model-cards" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-model-cards') }">
+      <RouterLink to="/modelcards" class="sidebar-link" :class="{ active: $route.path.startsWith('/modelcard') }">
         <IconSearch :size="20" stroke-width="1.8" />
         <span>Browse Model Cards</span>
       </RouterLink>
-      <RouterLink to="/explore-datasheets" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-datasheets') }">
+      <RouterLink to="/datasheets" class="sidebar-link" :class="{ active: $route.path.startsWith('/datasheet') }">
         <IconSearch :size="20" stroke-width="1.8" />
         <span>Browse Datasheets</span>
       </RouterLink>
@@ -25,67 +25,35 @@
         <span>MCP Explorer</span>
       </RouterLink>
 
-      <div class="sidebar-section-label">Experiments</div>
-      <RouterLink to="/animal-ecology" class="sidebar-link" :class="{ active: $route.path === '/animal-ecology' }">
-        <IconPaw :size="20" stroke-width="1.8" />
-        <span>Animal Ecology</span>
-      </RouterLink>
-      <RouterLink to="/digital-agriculture" class="sidebar-link" :class="{ active: $route.path === '/digital-agriculture' }">
-        <IconPlant :size="20" stroke-width="1.8" />
-        <span>Digital Agriculture</span>
-      </RouterLink>
+      <template v-if="SUPPORTS_DOMAIN_EXPERIMENTS">
+        <div class="sidebar-section-label">Experiments</div>
+        <RouterLink to="/animal-ecology" class="sidebar-link" :class="{ active: $route.path === '/animal-ecology' }">
+          <IconPaw :size="20" stroke-width="1.8" />
+          <span>Animal Ecology</span>
+        </RouterLink>
+        <RouterLink to="/digital-agriculture" class="sidebar-link" :class="{ active: $route.path === '/digital-agriculture' }">
+          <IconPlant :size="20" stroke-width="1.8" />
+          <span>Digital Agriculture</span>
+        </RouterLink>
+      </template>
 
-      <template v-if="auth.isTapisUser || auth.isAdmin">
+      <template v-if="auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS">
         <div class="sidebar-section-label">Contribute</div>
-        <RouterLink v-if="apiMode.supportsAskPatra" to="/ask-patra" class="sidebar-link" :class="{ active: $route.path === '/ask-patra' }">
+        <RouterLink v-if="SUPPORTS_ASK_PATRA" to="/ask-patra" class="sidebar-link" :class="{ active: $route.path === '/ask-patra' }">
           <IconSparkles :size="20" stroke-width="1.8" />
           <span>Ask Patra</span>
         </RouterLink>
-        <RouterLink v-if="apiMode.supportsAgentTools" to="/agent-tools" class="sidebar-link" :class="{ active: $route.path === '/agent-tools' }">
+        <RouterLink v-if="SUPPORTS_AGENT_TOOLS" to="/agent-tools" class="sidebar-link" :class="{ active: $route.path === '/agent-tools' }">
           <IconSparkles :size="20" stroke-width="1.8" />
           <span>Agent Toolkit</span>
         </RouterLink>
-        <RouterLink v-if="apiMode.supportsAutomatedIngestion" to="/automated-ingestion" class="sidebar-link" :class="{ active: $route.path === '/record-scrape' || $route.path === '/automated-ingestion' }">
-          <IconDatabaseSearch :size="20" stroke-width="1.8" />
-          <span>Automated Ingestion</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsEditRecords" to="/edit-records" class="sidebar-link" :class="{ active: $route.path === '/edit-records' }">
+        <RouterLink v-if="SUPPORTS_EDIT_RECORDS" to="/edit-records" class="sidebar-link" :class="{ active: $route.path === '/edit-records' }">
           <IconEdit :size="20" stroke-width="1.8" />
           <span>Edit Records</span>
         </RouterLink>
         <RouterLink to="/submit" class="sidebar-link" :class="{ active: $route.path === '/submit' }">
           <IconUpload :size="20" stroke-width="1.8" />
           <span>Submit Records</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsTickets" to="/tickets" class="sidebar-link" :class="{ active: $route.path === '/tickets' }">
-          <IconMessageCircle :size="20" stroke-width="1.8" />
-          <span>Tickets</span>
-        </RouterLink>
-      </template>
-
-      <template v-if="auth.isAdmin">
-        <div class="sidebar-section-label">Admin</div>
-        <RouterLink to="/models" class="sidebar-link" :class="{ active: $route.path === '/models' }">
-          <IconCube :size="20" stroke-width="1.8" />
-          <span>Models & Data</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsSubmissionQueue" to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
-          <IconClipboardCheck :size="20" stroke-width="1.8" />
-          <span>Review Submissions</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsTickets" to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
-          <IconListDetails :size="20" stroke-width="1.8" />
-          <span>Manage Tickets</span>
-        </RouterLink>
-
-        <div class="sidebar-section-label">System</div>
-        <RouterLink to="/audit-log" class="sidebar-link" :class="{ active: $route.path === '/audit-log' }">
-          <IconFileText :size="20" stroke-width="1.8" />
-          <span>Audit Log</span>
-        </RouterLink>
-        <RouterLink to="/settings" class="sidebar-link" :class="{ active: $route.path === '/settings' }">
-          <IconSettings :size="20" stroke-width="1.8" />
-          <span>Settings</span>
         </RouterLink>
       </template>
     </nav>
@@ -95,7 +63,7 @@
         <div class="sidebar-avatar">{{ auth.initials }}</div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name">{{ auth.displayName }}</div>
-          <div class="sidebar-user-role">{{ auth.isAdmin ? 'Admin' : (auth.isTapisUser ? 'Tapis User' : 'User') }}</div>
+          <div class="sidebar-user-role">{{ auth.isTapisUser ? 'Tapis User' : 'User' }}</div>
         </div>
         <button class="sidebar-logout" @click="handleLogout" title="Sign out">
           <IconLogout :size="18" stroke-width="1.8" />
@@ -116,7 +84,7 @@
               <IconKey :size="20" stroke-width="2" />
               <span>Tapis Login</span>
             </div>
-            <button class="btn-icon" @click="closeLogin"><IconX :size="18" /></button>
+            <button class="btn-icon" type="button" aria-label="Close" @click="closeLogin"><IconX :size="18" /></button>
           </div>
 
           <div class="login-modal-body">
@@ -150,7 +118,7 @@
               <span>Remember me for 7 days</span>
             </label>
             <button class="btn-login" @click="handleLogin" :disabled="!loginForm.username || !loginForm.password || auth.loading">
-              {{ auth.loading ? 'Authenticating...' : 'Get JWT Token' }}
+              {{ auth.loading ? 'Authenticating...' : 'Sign In' }}
             </button>
           </div>
         </div>
@@ -163,17 +131,22 @@
 import { ref, reactive } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
 import {
-  IconLayoutDashboard, IconCube, IconDatabaseSearch, IconFileText, IconSettings, IconSearch,
-  IconUpload, IconMessageCircle, IconClipboardCheck,
-  IconListDetails, IconLogout, IconLogin, IconKey, IconEdit,
+  SUPPORTS_DOMAIN_EXPERIMENTS,
+  SUPPORTS_ASK_PATRA,
+  SUPPORTS_AGENT_TOOLS,
+  SUPPORTS_EDIT_RECORDS,
+  SUPPORTS_DEV_OPEN_ACCESS,
+} from '../config/api'
+import {
+  IconLayoutDashboard, IconSearch,
+  IconUpload,
+  IconLogout, IconLogin, IconKey, IconEdit,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
   IconTerminal2, IconPaw, IconPlant,
 } from '@tabler/icons-vue'
 
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
 const router = useRouter()
 const showLogin = ref(false)
 const loginForm = reactive({ username: '', password: '', rememberMe: true })
@@ -265,7 +238,8 @@ function handleLogout() {
 .sidebar-link.active {
   background: linear-gradient(180deg, #f4f7ff 0%, var(--color-primary-bg) 100%);
   color: var(--color-primary);
-  border-color: rgba(47, 78, 162, 0.16);
+  font-weight: 600;
+  border-color: rgba(var(--color-primary-rgb), 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 

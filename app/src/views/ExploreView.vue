@@ -8,7 +8,7 @@
     <!-- Connection banner -->
     <div class="connection-banner error" v-if="store.error">
       <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Cannot connect to {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>. {{ apiMode.helpText }}</span>
+      <span>Cannot connect to the Patra API at <code>{{ API_BASE_URL }}</code>.</span>
     </div>
 
     <div class="explore-layout">
@@ -34,33 +34,47 @@
         <!-- Grid -->
         <div class="model-grid" v-else>
           <ModelCard
-            v-for="model in store.filteredModels"
+            v-for="model in pagedModels"
             :key="model.id"
             :model="model"
           />
         </div>
+
+        <PaginationBar
+          v-if="!store.loading && !store.error && total > 0"
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-size-options="pageSizeOptions"
+          item-label="model cards"
+          label="Model cards pagination"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 import { useExploreStore } from '../stores/explore'
-import { useApiModeStore } from '../stores/apiMode'
+import { API_BASE_URL } from '../config/api'
+import { usePagination } from '../composables/usePagination'
 import FilterSidebar from '../components/FilterSidebar.vue'
 import ModelCard from '../components/ModelCard.vue'
+import PaginationBar from '../components/PaginationBar.vue'
 import { IconAlertCircle, IconLoader2, IconDatabaseOff } from '@tabler/icons-vue'
 
 const store = useExploreStore()
-const apiMode = useApiModeStore()
+
+const { page, pageSize, pageSizeOptions, total, pagedItems: pagedModels } = usePagination(
+  () => store.filteredModels,
+)
 
 function loadModels() {
   store.fetchModels()
 }
 
 onMounted(loadModels)
-watch(() => apiMode.mode, loadModels)
 </script>
 
 <style scoped>

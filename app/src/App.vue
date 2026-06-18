@@ -4,7 +4,11 @@
     <div class="admin-main">
       <HeaderBar />
       <div class="admin-content">
-        <RouterView />
+        <RouterView v-slot="{ Component }">
+          <transition name="view" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </RouterView>
       </div>
     </div>
   </div>
@@ -18,4 +22,19 @@ import HeaderBar from './components/HeaderBar.vue'
 
 <style>
 #app { min-height: 100vh; }
+
+/* Routed-view transition (neutralized under prefers-reduced-motion) */
+.view-enter-active {
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+.view-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.view-leave-active {
+  transition: opacity 0.08s linear;
+}
+.view-leave-to {
+  opacity: 0;
+}
 </style>

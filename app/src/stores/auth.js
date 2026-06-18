@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { ADMIN_USERNAMES, SUPPORTS_DEV_OPEN_ACCESS } from '../config/api'
+import { SUPPORTS_DEV_OPEN_ACCESS } from '../config/api'
 
 // Tapis base URL for JWT authentication
 const TAPIS_BASE_URL = 'https://tacc.tapis.io'
@@ -65,12 +65,9 @@ function normalizePersistedUser(user) {
     if (!user || typeof user !== 'object') return user
     if (user.auth_type !== 'tapis') return user
 
-    const normalizedUsername = String(user.username || '').trim().toLowerCase()
-    const isAdmin = normalizedUsername && ADMIN_USERNAMES.includes(normalizedUsername)
-
     return {
         ...user,
-        role: isAdmin ? 'admin' : (user.role || 'user'),
+        role: 'user',
     }
 }
 
@@ -88,14 +85,7 @@ export const useAuthStore = defineStore('auth', () => {
     })
 
     const isLoggedIn = computed(() => !!effectiveUser.value && !!effectiveToken.value)
-    const normalizedUsername = computed(() => String(effectiveUser.value?.username || '').trim().toLowerCase())
     const isTapisUser = computed(() => effectiveUser.value?.auth_type === 'tapis')
-    const isAdmin = computed(() => {
-        if (SUPPORTS_DEV_OPEN_ACCESS) return true
-        if (!effectiveUser.value) return false
-        if (!isTapisUser.value) return false
-        return normalizedUsername.value ? ADMIN_USERNAMES.includes(normalizedUsername.value) : false
-    })
     const displayName = computed(() => effectiveUser.value?.name || effectiveUser.value?.username || 'Guest')
     const initials = computed(() => {
         const name = effectiveUser.value?.name || effectiveUser.value?.username || ''
@@ -151,7 +141,7 @@ export const useAuthStore = defineStore('auth', () => {
             user.value = {
                 username,
                 name: username,
-                role: ADMIN_USERNAMES.includes(String(username).trim().toLowerCase()) ? 'admin' : 'user',
+                role: 'user',
                 auth_type: 'tapis',
             }
             token.value = issuedToken
@@ -179,7 +169,7 @@ export const useAuthStore = defineStore('auth', () => {
     return {
         user, token, loading, error,
         effectiveUser, effectiveToken,
-        isLoggedIn, isAdmin, isTapisUser, displayName, initials,
+        isLoggedIn, isTapisUser, displayName, initials,
         loginTapis, logout, clearError,
     }
 })

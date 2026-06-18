@@ -37,7 +37,10 @@
     <section class="card block-spacing">
       <div class="card-header"><span>Select User</span></div>
       <div class="card-body">
-        <select v-model="selectedUser" class="domain-select" @change="onUserChange">
+        <div v-if="!store.loading && !store.users.length" class="text-muted">
+          No experiment data available for {{ domainLabel }} yet.
+        </div>
+        <select v-else v-model="selectedUser" class="domain-select" @change="onUserChange">
           <option :value="null">Choose a user</option>
           <option v-for="user in store.users" :key="user.user_id" :value="user.user_id">
             {{ user.username || `User ${user.user_id}` }}
@@ -64,7 +67,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in store.userSummary" :key="row.experiment_id">
+            <tr v-for="row in pagedSummary" :key="row.experiment_id">
               <td>{{ row.experiment_id }}</td>
               <td>{{ row.model_id }}</td>
               <td>{{ row.device_id || '—' }}</td>
@@ -77,6 +80,14 @@
             </tr>
           </tbody>
         </table>
+        <PaginationBar
+          v-model:page="summaryPage"
+          v-model:page-size="summaryPageSize"
+          :total="summaryTotal"
+          :page-size-options="summaryPageSizeOptions"
+          item-label="experiments"
+          label="Experiment summary pagination"
+        />
       </div>
     </section>
 
@@ -173,7 +184,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(image, index) in store.experimentImages" :key="`${image.image_name}-${index}`">
+              <tr v-for="(image, index) in pagedImages" :key="`${image.image_name}-${index}`">
                 <td>{{ image.image_name }}</td>
                 <td>{{ image.ground_truth || '—' }}</td>
                 <td>{{ image.label || '—' }}</td>
@@ -188,6 +199,14 @@
               </tr>
             </tbody>
           </table>
+          <PaginationBar
+            v-model:page="imagesPage"
+            v-model:page-size="imagesPageSize"
+            :total="imagesTotal"
+            :page-size-options="imagesPageSizeOptions"
+            item-label="images"
+            label="Raw image data pagination"
+          />
         </div>
       </section>
 
@@ -241,8 +260,10 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { IconBrandGithub, IconExternalLink, IconLeaf, IconTractor } from '@tabler/icons-vue'
+import { IconBrandGithub, IconExternalLink } from '@tabler/icons-vue'
 import { useExperimentsStore } from '../../stores/experiments'
+import { usePagination } from '../../composables/usePagination'
+import PaginationBar from '../../components/PaginationBar.vue'
 
 const props = defineProps({
   domain: {
@@ -258,12 +279,27 @@ const DOMAIN_LABELS = {
 
 const domainLabel = computed(() => DOMAIN_LABELS[props.domain] || props.domain)
 const pageTitle = computed(() => `${domainLabel.value} Experiments`)
-const domainIcon = computed(() => (props.domain === 'animal-ecology' ? IconLeaf : IconTractor))
 
 const store = useExperimentsStore()
 const selectedUser = ref(null)
 const selectedExperiment = ref(null)
 const detail = computed(() => store.experimentDetail)
+
+const {
+  page: summaryPage,
+  pageSize: summaryPageSize,
+  pageSizeOptions: summaryPageSizeOptions,
+  total: summaryTotal,
+  pagedItems: pagedSummary,
+} = usePagination(() => store.userSummary, { initialPageSize: 20, pageSizeOptions: [10, 20, 50] })
+
+const {
+  page: imagesPage,
+  pageSize: imagesPageSize,
+  pageSizeOptions: imagesPageSizeOptions,
+  total: imagesTotal,
+  pagedItems: pagedImages,
+} = usePagination(() => store.experimentImages, { initialPageSize: 20, pageSizeOptions: [10, 20, 50] })
 
 onMounted(() => {
   store.fetchUsers(props.domain)

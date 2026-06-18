@@ -1,17 +1,23 @@
 <template>
   <div>
     <div class="top-bar">
-      <RouterLink to="/explore-model-cards" class="back-link">
+      <RouterLink to="/modelcards" class="back-link">
         <IconArrowLeft :size="16" stroke-width="2" /> Back to Model Cards
       </RouterLink>
-      <div v-if="auth.isLoggedIn && model && !store.loading" class="edit-actions">
-        <template v-if="editing">
-          <button class="btn btn-primary" @click="saveEdit" :disabled="store.loading">Save</button>
-          <button class="btn btn-secondary" @click="cancelEdit">Cancel</button>
-        </template>
-        <button v-else class="btn btn-secondary edit-trigger" @click="startEdit">
-          <IconPencil :size="14" stroke-width="2" /> Edit Model Card
+      <div class="top-bar-actions" v-if="model && !store.loading">
+        <button class="btn btn-secondary" @click="downloadJson" :disabled="downloading">
+          <IconDownload :size="14" stroke-width="2" />
+          {{ downloading ? 'Downloading…' : downloadFailed ? 'Download failed' : 'Download JSON' }}
         </button>
+        <div v-if="auth.isLoggedIn" class="edit-actions">
+          <template v-if="editing">
+            <button class="btn btn-primary" @click="saveEdit" :disabled="store.loading">Save</button>
+            <button class="btn btn-secondary" @click="cancelEdit">Cancel</button>
+          </template>
+          <button v-else class="btn btn-secondary edit-trigger" @click="startEdit">
+            <IconPencil :size="14" stroke-width="2" /> Edit Model Card
+          </button>
+        </div>
       </div>
     </div>
 
@@ -27,7 +33,7 @@
     <div class="empty-state" v-else-if="!model">
       <IconAlertCircle :size="48" stroke-width="1.2" />
       <h3>Model not found</h3>
-      <RouterLink to="/explore-model-cards" class="btn btn-primary">Back to Model Cards</RouterLink>
+      <RouterLink to="/modelcards" class="btn btn-primary">Back to Model Cards</RouterLink>
     </div>
 
     <template v-else>
@@ -41,15 +47,19 @@
                     <input type="checkbox" v-model="editForm.is_private" />
                     {{ editForm.is_private ? 'Private' : 'Public' }}
                   </label>
+                  <label class="toggle-label">
+                    <input type="checkbox" v-model="editForm.is_gated" />
+                    {{ editForm.is_gated ? 'Gated' : 'Open' }}
+                  </label>
                 </template>
                 <template v-else>
                   <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
                     {{ model.is_private ? 'Private' : 'Public' }}
                   </span>
                 </template>
-                <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
+                <span v-if="!editing && model.is_gated" class="badge badge-accent">Gated</span>
                 <span v-if="model.ai_model?.framework" class="badge badge-info">{{ model.ai_model.framework }}</span>
-                <span v-if="!editing" class="badge badge-accent">v{{ model.version }}</span>
+                <span v-if="!editing && formatVersion(model.version)" class="badge badge-accent">{{ formatVersion(model.version) }}</span>
               </div>
 
               <template v-if="editing">
@@ -58,6 +68,16 @@
               </template>
               <template v-else>
                 <h1 class="detail-name">{{ model.name }}</h1>
+                <div class="detail-uuid">
+                  <IconFingerprint :size="14" stroke-width="1.8" />
+                  <code class="uuid-value">{{ recordUuid }}</code>
+                  <button class="uuid-copy-btn" type="button" @click="copyUuid"
+                          :title="uuidCopied ? 'Copied!' : 'Copy UUID'"
+                          :aria-label="uuidCopied ? 'Copied!' : 'Copy UUID'">
+                    <IconCheck v-if="uuidCopied" :size="14" stroke-width="2" />
+                    <IconCopy v-else :size="14" stroke-width="2" />
+                  </button>
+                </div>
                 <p class="detail-desc">{{ model.full_description }}</p>
               </template>
 
@@ -237,7 +257,7 @@
               </div>
               <div class="info-item">
                 <span class="info-label">Location</span>
-                <a v-if="model.ai_model?.location" :href="model.ai_model.location" class="info-link" target="_blank">{{ model.ai_model.location }}</a>
+                <a v-if="model.ai_model?.location" :href="model.ai_model.location" class="info-link" target="_blank" rel="noopener noreferrer">{{ model.ai_model.location }}</a>
                 <span v-else class="info-value">--</span>
               </div>
               <div class="info-item">
@@ -248,25 +268,50 @@
           </div>
         </div>
 
-        <div class="card" v-if="model.ai_model?.metrics && Object.keys(model.ai_model.metrics).length">
+        <div class="card" v-if="hasTrainingMetrics">
           <div class="card-header">
             <span class="flex items-center gap-8"><IconChartBar :size="18" stroke-width="1.8" /> Training Metrics</span>
           </div>
           <div class="card-body" style="padding: 0;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(val, key) in model.ai_model.metrics" :key="key">
-                  <td class="metric-key-cell">{{ formatMetricKey(key) }}</td>
-                  <td>{{ formatMetricValue(val) }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <template v-if="Object.keys(trainingSummary).length">
+              <div class="metric-subhead">Summary</div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(val, key) in trainingSummary" :key="key">
+                    <td class="metric-key-cell">{{ formatMetricKey(key) }}</td>
+                    <td>{{ formatMetricValue(val) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </template>
+
+            <template v-if="trainingHistory.length">
+              <div class="metric-subhead">Per-Epoch History</div>
+              <div class="history-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th v-for="col in trainingHistoryColumns" :key="col">{{ formatMetricKey(col) }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(row, i) in trainingHistory" :key="i">
+                      <td
+                        v-for="col in trainingHistoryColumns"
+                        :key="col"
+                        :class="{ 'metric-key-cell': col === 'epoch' }"
+                      >{{ row[col] == null ? '--' : formatMetricValue(row[col]) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -364,11 +409,11 @@
             <div class="info-grid">
               <div class="info-item" v-if="model.input_data">
                 <span class="info-label">Input Data</span>
-                <a :href="model.input_data" class="info-link" target="_blank">{{ model.input_data }}</a>
+                <a :href="model.input_data" class="info-link" target="_blank" rel="noopener noreferrer">{{ model.input_data }}</a>
               </div>
               <div class="info-item" v-if="model.output_data">
                 <span class="info-label">Output Data</span>
-                <a :href="model.output_data" class="info-link" target="_blank">{{ model.output_data }}</a>
+                <a :href="model.output_data" class="info-link" target="_blank" rel="noopener noreferrer">{{ model.output_data }}</a>
               </div>
             </div>
             <div class="keywords-row" v-if="model.keywords">
@@ -389,21 +434,55 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
 import MetricBar from '../components/MetricBar.vue'
+import { apiFetch } from '../lib/api'
+import { formatVersion } from '../lib/formatVersion'
 import {
   IconArrowLeft, IconLoader2, IconAlertCircle, IconPencil,
   IconUser, IconTag, IconFileText, IconStack2,
   IconBrain, IconChartBar, IconScale, IconSparkles,
-  IconServer, IconLink,
+  IconServer, IconLink, IconFingerprint, IconCopy, IconCheck, IconDownload,
 } from '@tabler/icons-vue'
 
 const route = useRoute()
 const store = useExploreStore()
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
 
 const model = computed(() => store.currentModel)
+const recordUuid = computed(() => route.params.uuid)
+const uuidCopied = ref(false)
+async function copyUuid() {
+  try {
+    await navigator.clipboard.writeText(recordUuid.value)
+    uuidCopied.value = true
+    setTimeout(() => { uuidCopied.value = false }, 1500)
+  } catch (_) { /* clipboard unavailable */ }
+}
+const downloading = ref(false)
+const downloadFailed = ref(false)
+async function downloadJson() {
+  downloading.value = true
+  downloadFailed.value = false
+  try {
+    const res = await apiFetch(`/modelcard/${recordUuid.value}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const href = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = href
+    a.download = `modelcard-${recordUuid.value}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(href)
+  } catch (_) {
+    downloadFailed.value = true
+    setTimeout(() => { downloadFailed.value = false }, 3000)
+  } finally {
+    downloading.value = false
+  }
+}
 const editing = ref(false)
 const editError = ref('')
 const saveSuccess = ref(false)
@@ -455,6 +534,27 @@ const maxXai = computed(() => {
   return vals.length ? Math.max(...vals) : 1
 })
 
+const trainingMetrics = computed(() => model.value?.ai_model?.training_metrics || null)
+const trainingSummary = computed(() => {
+  const summary = trainingMetrics.value?.summary
+  return summary && typeof summary === 'object' ? summary : {}
+})
+const trainingHistory = computed(() => {
+  const history = trainingMetrics.value?.history
+  return Array.isArray(history) ? history : []
+})
+const trainingHistoryColumns = computed(() => {
+  const cols = new Set()
+  for (const row of trainingHistory.value) {
+    if (row && typeof row === 'object') Object.keys(row).forEach((k) => cols.add(k))
+  }
+  // Surface "epoch" first; keep the rest in insertion order.
+  return [...cols].sort((a, b) => (a === 'epoch' ? -1 : b === 'epoch' ? 1 : 0))
+})
+const hasTrainingMetrics = computed(
+  () => Object.keys(trainingSummary.value).length > 0 || trainingHistory.value.length > 0,
+)
+
 function startEdit() {
   if (!model.value) return
   const m = model.value
@@ -473,6 +573,7 @@ function startEdit() {
   editForm.documentation = m.documentation || ''
   editForm.foundational_model = m.foundational_model || ''
   editForm.is_private = Boolean(m.is_private)
+  editForm.is_gated = Boolean(m.is_gated)
   editForm.ai_model_name = ai.name || ''
   editForm.ai_model_version = ai.version || ''
   editForm.ai_model_description = ai.description || ''
@@ -523,7 +624,7 @@ async function saveEdit() {
     }
     if (Object.keys(ai_model).length) payload.ai_model = ai_model
 
-    await store.updateModelCard(route.params.id, payload)
+    await store.updateModelCard(route.params.uuid, payload)
     editing.value = false
     saveSuccess.value = true
     setTimeout(() => {
@@ -556,20 +657,19 @@ function formatPercent(val) {
 }
 
 function loadModel() {
-  const id = route.params.id
-  if (id) {
-    store.fetchModelById(id)
-    store.fetchDeployments(id)
+  const uuid = route.params.uuid
+  if (uuid) {
+    store.fetchModelById(uuid)
+    store.fetchDeployments(uuid)
   }
 }
 
 onMounted(loadModel)
-watch(() => route.params.id, () => {
+watch(() => route.params.uuid, () => {
   editing.value = false
   editError.value = ''
   loadModel()
 })
-watch(() => apiMode.mode, loadModel)
 </script>
 
 <style scoped>
@@ -595,6 +695,12 @@ watch(() => apiMode.mode, loadModel)
 
 .edit-actions {
   display: flex;
+  gap: 8px;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -688,6 +794,11 @@ watch(() => apiMode.mode, loadModel)
 .info-label { font-size: .75rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .5px; }
 .info-value { font-size: .9rem; font-weight: 500; }
 
+.detail-uuid { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 2px; color: var(--color-text-muted); }
+.detail-uuid .uuid-value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; color: var(--color-text-muted); word-break: break-all; }
+.uuid-copy-btn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 3px; border: none; background: transparent; color: var(--color-text-muted); border-radius: 5px; cursor: pointer; transition: color .15s, background .15s; }
+.uuid-copy-btn:hover { color: var(--color-primary); background: var(--color-surface-strong); }
+
 .info-link {
   font-size: .82rem;
   color: var(--color-primary);
@@ -751,6 +862,17 @@ watch(() => apiMode.mode, loadModel)
 }
 
 .metric-key-cell { font-weight: 500; }
+
+.metric-subhead {
+  padding: 10px 16px 6px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--color-text-muted);
+}
+
+.history-scroll { overflow-x: auto; }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }

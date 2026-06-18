@@ -5,8 +5,9 @@ This directory groups patra-dev UI by product feature instead of keeping all fea
 Current feature modules:
 - `ask-patra`: conversational assistant UI and API client
 - `agent-toolkit`: schema search and synthesis tools
-- `automated-ingestion`: isolated CSV ingestion pool UI
 - `edit-records`: unified model-card + datasheet editing UI
+- `experiment-domains`: edge-deployment experiment dashboards (Animal Ecology, Digital Agriculture)
+- `mcp-explorer`: Model Context Protocol server browser and tool runner
 
 Shared app-level concerns remain in:
 - `src/router`

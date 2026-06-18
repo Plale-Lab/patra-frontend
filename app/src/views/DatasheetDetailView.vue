@@ -1,17 +1,23 @@
 <template>
   <div>
     <div class="top-bar">
-      <RouterLink to="/explore-datasheets" class="back-link">
+      <RouterLink to="/datasheets" class="back-link">
         <IconArrowLeft :size="16" stroke-width="2" /> Back to Datasheets
       </RouterLink>
-      <div v-if="auth.isLoggedIn && ds && !store.loading" class="edit-actions">
-        <template v-if="editing">
-          <button class="btn btn-primary" @click="saveEdit" :disabled="store.loading">Save</button>
-          <button class="btn btn-secondary" @click="cancelEdit">Cancel</button>
-        </template>
-        <button v-else class="btn btn-secondary edit-trigger" @click="startEdit">
-          <IconPencil :size="14" stroke-width="2" /> Edit Datasheet
+      <div class="top-bar-actions" v-if="ds && !store.loading">
+        <button class="btn btn-secondary" @click="downloadJson" :disabled="downloading">
+          <IconDownload :size="14" stroke-width="2" />
+          {{ downloading ? 'Downloading…' : downloadFailed ? 'Download failed' : 'Download JSON' }}
         </button>
+        <div v-if="auth.isLoggedIn" class="edit-actions">
+          <template v-if="editing">
+            <button class="btn btn-primary" @click="saveEdit" :disabled="store.loading">Save</button>
+            <button class="btn btn-secondary" @click="cancelEdit">Cancel</button>
+          </template>
+          <button v-else class="btn btn-secondary edit-trigger" @click="startEdit">
+            <IconPencil :size="14" stroke-width="2" /> Edit Datasheet
+          </button>
+        </div>
       </div>
     </div>
 
@@ -27,7 +33,7 @@
     <div class="empty-state" v-else-if="!ds">
       <IconAlertCircle :size="48" stroke-width="1.2" />
       <h3>Datasheet not found</h3>
-      <RouterLink to="/explore-datasheets" class="btn btn-primary">Back to Datasheets</RouterLink>
+      <RouterLink to="/datasheets" class="btn btn-primary">Back to Datasheets</RouterLink>
     </div>
 
     <template v-else>
@@ -48,7 +54,7 @@
                   </span>
                 </template>
                 <span class="badge badge-accent">{{ ds.resource_type?.resourceTypeGeneral || 'Dataset' }}</span>
-                <span class="badge badge-info" v-if="ds.version && !editing">v{{ ds.version }}</span>
+                <span class="badge badge-info" v-if="!editing && formatVersion(ds.version)">{{ formatVersion(ds.version) }}</span>
               </div>
 
               <template v-if="editing">
@@ -57,6 +63,16 @@
               </template>
               <template v-else>
                 <h1 class="detail-name">{{ displayTitle }}</h1>
+                <div class="detail-uuid">
+                  <IconFingerprint :size="14" stroke-width="1.8" />
+                  <code class="uuid-value">{{ recordUuid }}</code>
+                  <button class="uuid-copy-btn" type="button" @click="copyUuid"
+                          :title="uuidCopied ? 'Copied!' : 'Copy UUID'"
+                          :aria-label="uuidCopied ? 'Copied!' : 'Copy UUID'">
+                    <IconCheck v-if="uuidCopied" :size="14" stroke-width="2" />
+                    <IconCopy v-else :size="14" stroke-width="2" />
+                  </button>
+                </div>
                 <p class="detail-desc">{{ displayDescription }}</p>
               </template>
 
@@ -159,7 +175,7 @@
           <div class="card-body">
             <div v-for="(r, i) in ds.rights" :key="i" class="rights-item">
               <div class="info-value">{{ r.rights }}</div>
-              <a v-if="r.rightsURI" :href="r.rightsURI" target="_blank" class="info-link">{{ r.rightsURI }}</a>
+              <a v-if="r.rightsURI" :href="r.rightsURI" target="_blank" rel="noopener noreferrer" class="info-link">{{ r.rightsURI }}</a>
             </div>
           </div>
         </div>
@@ -234,20 +250,54 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
+import { apiFetch } from '../lib/api'
+import { formatVersion } from '../lib/formatVersion'
 import {
   IconArrowLeft, IconLoader2, IconAlertCircle, IconPencil,
   IconUser, IconBuilding, IconCalendar, IconUsers,
   IconInfoCircle, IconLicense, IconCalendarEvent,
-  IconLink, IconFileText, IconMapPin,
+  IconLink, IconFileText, IconMapPin, IconFingerprint, IconCopy, IconCheck, IconDownload,
 } from '@tabler/icons-vue'
 
 const route = useRoute()
 const store = useExploreStore()
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
 
 const ds = computed(() => store.currentDatasheet)
+const recordUuid = computed(() => route.params.uuid)
+const uuidCopied = ref(false)
+async function copyUuid() {
+  try {
+    await navigator.clipboard.writeText(recordUuid.value)
+    uuidCopied.value = true
+    setTimeout(() => { uuidCopied.value = false }, 1500)
+  } catch (_) { /* clipboard unavailable */ }
+}
+const downloading = ref(false)
+const downloadFailed = ref(false)
+async function downloadJson() {
+  downloading.value = true
+  downloadFailed.value = false
+  try {
+    const res = await apiFetch(`/datasheet/${recordUuid.value}`)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json()
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const href = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = href
+    a.download = `datasheet-${recordUuid.value}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(href)
+  } catch (_) {
+    downloadFailed.value = true
+    setTimeout(() => { downloadFailed.value = false }, 3000)
+  } finally {
+    downloading.value = false
+  }
+}
 const editing = ref(false)
 const editError = ref('')
 const saveSuccess = ref(false)
@@ -281,7 +331,7 @@ async function saveEdit() {
   try {
     const payload = { ...editForm }
     if (!payload.publication_year) delete payload.publication_year
-    await store.updateDatasheet(route.params.id, payload)
+    await store.updateDatasheet(route.params.uuid, payload)
     editing.value = false
     saveSuccess.value = true
     setTimeout(() => {
@@ -322,17 +372,16 @@ const displayPublisher = computed(() => {
 })
 
 function loadDatasheet() {
-  const id = route.params.id
-  if (id) store.fetchDatasheetById(id)
+  const uuid = route.params.uuid
+  if (uuid) store.fetchDatasheetById(uuid)
 }
 
 onMounted(loadDatasheet)
-watch(() => route.params.id, () => {
+watch(() => route.params.uuid, () => {
   editing.value = false
   editError.value = ''
   loadDatasheet()
 })
-watch(() => apiMode.mode, loadDatasheet)
 </script>
 
 <style scoped>
@@ -358,6 +407,12 @@ watch(() => apiMode.mode, loadDatasheet)
 
 .edit-actions {
   display: flex;
+  gap: 8px;
+}
+
+.top-bar-actions {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -411,6 +466,11 @@ watch(() => apiMode.mode, loadDatasheet)
 .info-item { display: flex; flex-direction: column; gap: 2px; }
 .info-label { font-size: .75rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .5px; }
 .info-value { font-size: .9rem; font-weight: 500; }
+
+.detail-uuid { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 2px; color: var(--color-text-muted); }
+.detail-uuid .uuid-value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; color: var(--color-text-muted); word-break: break-all; }
+.uuid-copy-btn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 3px; border: none; background: transparent; color: var(--color-text-muted); border-radius: 5px; cursor: pointer; transition: color .15s, background .15s; }
+.uuid-copy-btn:hover { color: var(--color-primary); background: var(--color-surface-strong); }
 
 .info-link {
   font-size: .82rem;
