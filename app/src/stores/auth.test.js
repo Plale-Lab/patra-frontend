@@ -43,7 +43,7 @@ describe('auth store', () => {
     expect(sessionStorage.getItem('patra_session_token')).not.toBe(portalToken)
   })
 
-  it('falls back to standalone auth and then Guest when embedded auth is unavailable', async () => {
+  it('does not expose standalone login state when embedded auth is unavailable', async () => {
     const standaloneToken = makeJwt('standalone-user', Date.now() + 300_000)
     seedStandaloneSession('standalone-user', standaloneToken)
     setActivePinia(createPinia())
@@ -56,8 +56,10 @@ describe('auth store', () => {
       requestPortalAuth: vi.fn().mockRejectedValue(Object.assign(new Error('timeout'), { code: 'timeout' })),
     })
 
-    expect(fallbackAuth.source).toBe('standalone')
-    expect(fallbackAuth.displayName).toBe('standalone-user')
+    expect(fallbackAuth.source).toBe('guest')
+    expect(fallbackAuth.displayName).toBe('Guest')
+    expect(fallbackAuth.portalAuthUnavailable).toBe(true)
+    expect(fallbackAuth.portalAuthErrorCode).toBe('timeout')
 
     localStorage.clear()
     sessionStorage.clear()
@@ -72,6 +74,7 @@ describe('auth store', () => {
 
     expect(guestAuth.source).toBe('guest')
     expect(guestAuth.displayName).toBe('Guest')
+    expect(guestAuth.portalAuthUnavailable).toBe(true)
   })
 
   it('preserves standalone login persistence and logout', async () => {
@@ -124,6 +127,7 @@ describe('auth store', () => {
     await auth.refreshPortalAuth()
     expect(auth.source).toBe('guest')
     expect(auth.isPortalUser).toBe(false)
+    expect(auth.portalAuthUnavailable).toBe(true)
   })
 })
 

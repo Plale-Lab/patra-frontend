@@ -72,9 +72,13 @@ The parent portal must verify the exact Patra origin and iframe window, then
 reply with `event.source.postMessage(response, event.origin)`. Never use `"*"`,
 place tokens in URLs, persist handoff tokens, or log raw tokens.
 
-Standalone login remains the fallback when the handshake is unavailable or
-invalid. API requests prefer `Authorization: Bearer <token>` and do not send
-browser-derived username or role headers as authoritative identity. See
+Top-level Patra deployments retain standalone login. In embedded mode, a
+failed or invalid parent handshake produces a controlled parent-session error
+instead of exposing a second Patra login prompt or reusing a stale standalone
+identity. API requests prefer `Authorization: Bearer <token>` and do not send
+browser-derived username or role headers as authoritative identity. A
+production runtime example for `https://icicleai.tapis.io` is provided in
+[`docs/pod-config.patra-prod.json`](docs/pod-config.patra-prod.json). See
 [docs/login_redesign.md](docs/login_redesign.md) for the complete protocol,
 portal handler, backend requirements, and verification checklist.
 

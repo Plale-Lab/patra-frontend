@@ -129,6 +129,9 @@ export const useAuthStore = defineStore('auth', () => {
     const token = ref('')
     const source = ref('guest')
     const initializationState = ref('idle')
+    const embeddedMode = ref(false)
+    const portalAuthStatus = ref('inactive')
+    const portalAuthErrorCode = ref(null)
     const loading = ref(false)
     const error = ref(null)
 
@@ -141,6 +144,9 @@ export const useAuthStore = defineStore('auth', () => {
     const isLoggedIn = computed(() => !!effectiveUser.value && !!effectiveToken.value)
     const isTapisUser = computed(() => effectiveUser.value?.auth_type === 'tapis')
     const isPortalUser = computed(() => source.value === 'portal' && isTapisUser.value)
+    const portalAuthUnavailable = computed(
+        () => embeddedMode.value && portalAuthStatus.value === 'unavailable',
+    )
     const displayName = computed(() => {
         if (isInitializing.value) return 'Connecting…'
         return effectiveUser.value?.name || effectiveUser.value?.username || 'Guest'
@@ -192,6 +198,9 @@ export const useAuthStore = defineStore('auth', () => {
         const hostWindow = options.hostWindow ?? window
         const parentWindow = options.parentWindow ?? hostWindow.parent
         const isEmbedded = options.isEmbedded ?? parentWindow !== hostWindow
+        embeddedMode.value = Boolean(embeddedAuthEnabled && isEmbedded)
+        portalAuthStatus.value = embeddedMode.value ? 'resolving' : 'inactive'
+        portalAuthErrorCode.value = null
         portalRequest = options.requestPortalAuth ?? requestPortalAuth
         portalRequestOptions = {
             allowedOrigins,
@@ -201,17 +210,23 @@ export const useAuthStore = defineStore('auth', () => {
         }
 
         initializationPromise = (async () => {
-            if (embeddedAuthEnabled && isEmbedded && allowedOrigins.length) {
+            if (embeddedMode.value && allowedOrigins.length) {
                 try {
                     applyPortalSession(await portalRequest(portalRequestOptions))
+                    portalAuthStatus.value = 'authenticated'
                 } catch (reason) {
                     logPortalFallback(reason)
-                    applyStandaloneFallback()
+                    stopPortalRefresh()
+                    setActiveSession(null, 'guest')
+                    portalAuthStatus.value = 'unavailable'
+                    portalAuthErrorCode.value = getPortalErrorCode(reason)
                 }
+            } else if (embeddedMode.value) {
+                console.warn('[Patra auth] Embedded authentication is enabled without an allowed portal origin.')
+                setActiveSession(null, 'guest')
+                portalAuthStatus.value = 'unavailable'
+                portalAuthErrorCode.value = 'missing_origins'
             } else {
-                if (embeddedAuthEnabled && isEmbedded && !allowedOrigins.length) {
-                    console.warn('[Patra auth] Embedded authentication is enabled without an allowed portal origin.')
-                }
                 applyStandaloneFallback()
             }
 
@@ -288,11 +303,15 @@ export const useAuthStore = defineStore('auth', () => {
         if (source.value !== 'portal' || !portalRequestOptions) return false
         try {
             applyPortalSession(await portalRequest(portalRequestOptions))
+            portalAuthStatus.value = 'authenticated'
+            portalAuthErrorCode.value = null
             return true
         } catch (reason) {
             logPortalFallback(reason, 'refresh')
             stopPortalRefresh()
-            applyStandaloneFallback()
+            setActiveSession(null, 'guest')
+            portalAuthStatus.value = 'unavailable'
+            portalAuthErrorCode.value = getPortalErrorCode(reason)
             return false
         }
     }
@@ -331,6 +350,9 @@ export const useAuthStore = defineStore('auth', () => {
         token,
         source,
         initializationState,
+        embeddedMode,
+        portalAuthStatus,
+        portalAuthErrorCode,
         loading,
         error,
         effectiveUser,
@@ -339,6 +361,7 @@ export const useAuthStore = defineStore('auth', () => {
         isLoggedIn,
         isTapisUser,
         isPortalUser,
+        portalAuthUnavailable,
         displayName,
         initials,
         initialize,
@@ -350,6 +373,10 @@ export const useAuthStore = defineStore('auth', () => {
 })
 
 function logPortalFallback(reason, phase = 'initialization') {
-    const code = reason && typeof reason === 'object' && 'code' in reason ? reason.code : 'unavailable'
-    console.info(`[Patra auth] Portal ${phase} unavailable (${code}); using the safe fallback.`)
+    const code = getPortalErrorCode(reason)
+    console.info(`[Patra auth] Portal ${phase} unavailable (${code}); using the controlled embedded state.`)
+}
+
+function getPortalErrorCode(reason) {
+    return reason && typeof reason === 'object' && 'code' in reason ? reason.code : 'unavailable'
 }

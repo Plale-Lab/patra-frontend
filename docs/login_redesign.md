@@ -7,10 +7,11 @@ Patra supports two authentication modes:
 - **Standalone mode:** the existing Patra Tapis username/password login remains
   available and preserves its current remember-me behavior.
 
-Embedded authentication is disabled by default. A failed or invalid portal
-handoff never prevents the public Patra interface from loading; Patra falls
-back to a valid standalone session or Guest mode and keeps the standalone login
-button available.
+Embedded authentication is disabled by default. Top-level Patra deployments
+retain standalone login. When embedded authentication is explicitly enabled,
+a failed or invalid portal handoff never exposes a second Patra login prompt or
+reuses a stale standalone identity. Public content remains available with a
+controlled message directing the user back to the parent ICICLE/Tapis portal.
 
 ## Implementation Status
 
@@ -34,12 +35,12 @@ without rebuilding the frontend image:
 | `PORTAL_AUTH_ORIGINS` | empty | Comma-separated exact portal origins, such as `https://portal.example.org`. Entries with paths, credentials, query strings, fragments, or non-HTTP(S) schemes are rejected. |
 | `PORTAL_AUTH_TIMEOUT_MS` | `3000` | Positive handshake timeout in milliseconds. |
 
-Example:
+Production portal example:
 
 ```json
 {
   "EMBEDDED_AUTH_ENABLED": "true",
-  "PORTAL_AUTH_ORIGINS": "https://portal.icicleai.tapis.io",
+  "PORTAL_AUTH_ORIGINS": "https://icicleai.tapis.io",
   "PORTAL_AUTH_TIMEOUT_MS": "3000"
 }
 ```
@@ -135,8 +136,10 @@ Portal tokens exist only in JavaScript memory. They are never written to
 `localStorage` or `sessionStorage`.
 
 Patra requests a new portal token two minutes before the current token expires.
-If refresh fails, the portal identity and token are cleared immediately and
-Patra falls back to a still-valid standalone session or Guest mode.
+If refresh fails, the portal identity and token are cleared immediately. In
+embedded mode Patra enters the controlled parent-session-unavailable state; it
+does not expose standalone credentials or reuse a persisted standalone user.
+Top-level standalone behavior is unchanged.
 
 While portal authentication is resolving, Patra displays a neutral connection
 screen and does not render user-dependent routes or a `Guest` identity. When
@@ -186,8 +189,9 @@ refresh behavior, standalone persistence/logout, and the no-Guest resolving UI.
 7. Inspect a Patra API request and confirm it uses the current portal token.
 8. Send a response from another origin, window, or request ID and confirm it is
    ignored.
-9. Return a malformed, expired, or near-expiry token and confirm Patra safely
-   offers standalone login.
+9. Return a malformed, expired, or near-expiry token and confirm embedded Patra
+   shows the controlled parent-session-unavailable message without a second
+   login prompt.
 10. Allow the token to approach expiry and confirm a new request is sent.
 11. Fail that refresh and confirm portal identity is cleared without breaking
     the public UI.
