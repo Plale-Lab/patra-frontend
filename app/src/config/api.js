@@ -34,6 +34,20 @@ export const SUPPORTS_DEV_OPEN_ACCESS = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_DEV_OPEN_ACCESS,
   false,
 )
+export const EMBEDDED_AUTH_ENABLED = resolveFeatureFlag(
+  runtimeConfig.EMBEDDED_AUTH_ENABLED,
+  import.meta.env.VITE_EMBEDDED_AUTH_ENABLED,
+  false,
+)
+export const PORTAL_AUTH_ORIGINS = parseOriginList(
+  runtimeConfig.PORTAL_AUTH_ORIGINS,
+  import.meta.env.VITE_PORTAL_AUTH_ORIGINS,
+)
+export const PORTAL_AUTH_TIMEOUT_MS = parsePositiveInteger(
+  runtimeConfig.PORTAL_AUTH_TIMEOUT_MS,
+  import.meta.env.VITE_PORTAL_AUTH_TIMEOUT_MS,
+  3000,
+)
 
 export function getAssetOrg() {
   const v = runtimeConfig.ASSET_ORG ?? import.meta.env.VITE_ASSET_ORG
@@ -87,4 +101,32 @@ function resolveFeatureFlag(runtimeValue, envValue, fallback) {
   }
 
   return String(value).toLowerCase() === 'true'
+}
+
+function parseOriginList(runtimeValue, envValue) {
+  const value = firstSet(runtimeValue, envValue)
+  return Array.from(new Set(String(value || '')
+    .split(',')
+    .map((item) => normalizeOrigin(item))
+    .filter(Boolean)))
+}
+
+function normalizeOrigin(value) {
+  const candidate = String(value || '').trim()
+  if (!candidate) return ''
+
+  try {
+    const url = new URL(candidate)
+    if (!['http:', 'https:'].includes(url.protocol)) return ''
+    if (url.username || url.password || url.search || url.hash) return ''
+    if (url.pathname && url.pathname !== '/') return ''
+    return url.origin
+  } catch {
+    return ''
+  }
+}
+
+function parsePositiveInteger(runtimeValue, envValue, fallback) {
+  const parsed = Number.parseInt(firstSet(runtimeValue, envValue), 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }

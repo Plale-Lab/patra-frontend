@@ -63,9 +63,12 @@
         <div class="sidebar-avatar">{{ auth.initials }}</div>
         <div class="sidebar-user-info">
           <div class="sidebar-user-name">{{ auth.displayName }}</div>
-          <div class="sidebar-user-role">{{ auth.isTapisUser ? 'Tapis User' : 'User' }}</div>
+          <div class="sidebar-user-role">{{ auth.isPortalUser ? 'ICICLE/Tapis session' : (auth.isTapisUser ? 'Tapis User' : 'User') }}</div>
         </div>
-        <button class="sidebar-logout" @click="handleLogout" title="Sign out">
+        <span v-if="auth.isPortalUser" class="sidebar-portal-managed" title="Sign out from the parent ICICLE/Tapis portal">
+          <IconShieldCheck :size="18" stroke-width="1.8" />
+        </span>
+        <button v-else class="sidebar-logout" @click="handleLogout" title="Sign out">
           <IconLogout :size="18" stroke-width="1.8" />
         </button>
       </div>
@@ -143,7 +146,7 @@ import {
   IconUpload,
   IconLogout, IconLogin, IconKey, IconEdit,
   IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
-  IconTerminal2, IconPaw, IconPlant,
+  IconTerminal2, IconPaw, IconPlant, IconShieldCheck,
 } from '@tabler/icons-vue'
 
 const auth = useAuthStore()
@@ -299,6 +302,15 @@ function handleLogout() {
   align-items: center;
   justify-content: center;
   transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.sidebar-portal-managed {
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
   flex-shrink: 0;
 }
 

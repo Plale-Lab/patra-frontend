@@ -1,10 +1,5 @@
 import { resolveApiUrl, getAssetOrg, getAssetApiKey, SUPPORTS_DEV_OPEN_ACCESS } from '../config/api'
-
-const LOCAL_USER_KEY = 'patra_user'
-const LOCAL_TOKEN_KEY = 'patra_token'
-const LOCAL_EXPIRY_KEY = 'patra_auth_expires_at'
-const SESSION_USER_KEY = 'patra_session_user'
-const SESSION_TOKEN_KEY = 'patra_session_token'
+import { getRuntimeAuth } from './runtimeAuth'
 
 export function apiUrl(path) {
   return resolveApiUrl(path)
@@ -12,7 +7,11 @@ export function apiUrl(path) {
 
 export function apiFetch(path, options) {
   const headers = new Headers(options?.headers || {})
-  const { token, user } = getStoredAuth()
+  let { token } = getRuntimeAuth()
+
+  if (!token && SUPPORTS_DEV_OPEN_ACCESS) {
+    token = '__patra_dev_open_access__'
+  }
 
   if (token && !headers.has('Authorization')) {
     headers.set('Authorization', `Bearer ${token}`)
@@ -20,14 +19,6 @@ export function apiFetch(path, options) {
 
   if (token && !headers.has('X-Tapis-Token')) {
     headers.set('X-Tapis-Token', token)
-  }
-
-  if (user?.username && !headers.has('X-Patra-Username')) {
-    headers.set('X-Patra-Username', user.username)
-  }
-
-  if (user?.role && !headers.has('X-Patra-Role')) {
-    headers.set('X-Patra-Role', user.role)
   }
 
   const assetOrg = getAssetOrg()
@@ -44,63 +35,4 @@ export function apiFetch(path, options) {
     ...options,
     headers,
   })
-}
-
-function getStoredAuth() {
-  const expiresAt = Number(localStorage.getItem(LOCAL_EXPIRY_KEY) || 0)
-  let storedToken = ''
-  let storedUser = null
-
-  if (expiresAt && Date.now() < expiresAt) {
-    storedToken = localStorage.getItem(LOCAL_TOKEN_KEY) || ''
-    storedUser = parseStoredUser(localStorage.getItem(LOCAL_USER_KEY))
-  } else {
-    if (expiresAt) {
-      clearLocalAuth()
-    }
-
-    storedToken = sessionStorage.getItem(SESSION_TOKEN_KEY) || ''
-    storedUser = parseStoredUser(sessionStorage.getItem(SESSION_USER_KEY))
-  }
-
-  if (SUPPORTS_DEV_OPEN_ACCESS) {
-    return {
-      token: storedToken || '__patra_dev_open_access__',
-      user: {
-        username: storedUser?.username || 'dev-open-access',
-        name: storedUser?.name || storedUser?.username || 'Dev Open Access',
-        role: 'user',
-        auth_type: storedUser?.auth_type || 'tapis',
-      },
-    }
-  }
-
-  return {
-    token: storedToken,
-    user: storedUser,
-  }
-}
-
-function parseStoredUser(rawValue) {
-  try {
-    const user = JSON.parse(rawValue || 'null')
-    if (!user || typeof user !== 'object') return user
-
-    if (user.auth_type === 'tapis') {
-      return {
-        ...user,
-        role: 'user',
-      }
-    }
-
-    return user
-  } catch {
-    return null
-  }
-}
-
-function clearLocalAuth() {
-  localStorage.removeItem(LOCAL_USER_KEY)
-  localStorage.removeItem(LOCAL_TOKEN_KEY)
-  localStorage.removeItem(LOCAL_EXPIRY_KEY)
 }

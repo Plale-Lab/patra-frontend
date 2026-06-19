@@ -32,6 +32,7 @@ The app opens at `http://localhost:5173`.
 - **Detail views** with model metadata, deployment history, accuracy rings, and DataCite-style datasheet rendering
 - **Inline editing** (logged-in users) — edit all model card fields, AI model metadata, and datasheet properties directly from the detail page
 - **Tapis OAuth2 login** via sidebar — two access tiers: anyone can browse public records; signed-in Tapis users also see private records and the Contribute section (Submit / Edit / Ask Patra)
+- **Embedded ICICLE/Tapis login** through a strict, memory-only parent-portal handshake
 - **Submit** new model cards and datasheets to Patra
 - **Ask Patra** — conversational assistant that answers from the catalog and cites the records it references
 - **Experiments** — browse edge-deployed experiments (Animal Ecology, Digital Agriculture) with per-image scoring data and power metrics
@@ -44,9 +45,38 @@ Create `app/.env` (see `app/.env.example`):
 ```env
 VITE_LIVE_API_BASE_URL=http://localhost:8000
 VITE_MCP_BASE_URL=http://localhost:8050
+VITE_EMBEDDED_AUTH_ENABLED=false
+VITE_PORTAL_AUTH_ORIGINS=
+VITE_PORTAL_AUTH_TIMEOUT_MS=3000
 ```
 
 Feature areas (Ask Patra, Agent Toolkit, MCP Explorer, Domain Experiments) are gated by `VITE_SUPPORTS_*` flags — see `app/.env.example`.
+
+## Embedded login integration
+
+When enabled inside an iframe, Patra requests a short-lived Tapis token from
+the parent portal using protocol-v1 `postMessage`. The response is accepted
+only from `window.parent`, from an exact configured origin, and with the
+matching single-use request ID. The portal token remains memory-only and takes
+precedence over a persisted standalone session.
+
+Configure deployed containers at runtime:
+
+```env
+EMBEDDED_AUTH_ENABLED=true
+PORTAL_AUTH_ORIGINS=https://portal.example.org
+PORTAL_AUTH_TIMEOUT_MS=3000
+```
+
+The parent portal must verify the exact Patra origin and iframe window, then
+reply with `event.source.postMessage(response, event.origin)`. Never use `"*"`,
+place tokens in URLs, persist handoff tokens, or log raw tokens.
+
+Standalone login remains the fallback when the handshake is unavailable or
+invalid. API requests prefer `Authorization: Bearer <token>` and do not send
+browser-derived username or role headers as authoritative identity. See
+[docs/login_redesign.md](docs/login_redesign.md) for the complete protocol,
+portal handler, backend requirements, and verification checklist.
 
 ## License
 
