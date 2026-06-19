@@ -1,6 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
+import {
+  SUPPORTS_DEV_OPEN_ACCESS,
+  SUPPORTS_ASK_PATRA,
+  SUPPORTS_AGENT_TOOLS,
+  SUPPORTS_EDIT_RECORDS,
+  SUPPORTS_DOMAIN_EXPERIMENTS,
+} from '../config/api'
 
 import DashboardView from '../views/DashboardView.vue'
 import ExploreView from '../views/ExploreView.vue'
@@ -25,10 +31,11 @@ const routes = [
   { path: '/mcp-explorer', name: 'McpExplorer', component: McpExplorerView, meta: { feature: 'mcpExplorer' } },
   { path: '/animal-ecology', name: 'AnimalEcology', component: ExperimentsView, props: { domain: 'animal-ecology' }, meta: { feature: 'domainExperiments' } },
   { path: '/digital-agriculture', name: 'DigitalAgriculture', component: ExperimentsView, props: { domain: 'digital-ag' }, meta: { feature: 'domainExperiments' } },
-  { path: '/edit-records', name: 'EditRecords', component: EditRecordsView, meta: { feature: 'editRecords', privileged: true } },
+  { path: '/edit-records', name: 'EditRecords', component: EditRecordsView, meta: { feature: 'editRecords', tapis: true } },
   { path: '/edit-assets', redirect: { name: 'EditRecords' } },
   { path: '/explore', redirect: { name: 'ExploreModelCards' } },
   { path: '/submit', name: 'Submit', component: SubmitView, meta: { tapis: true } },
+  { path: '/:pathMatch(.*)*', redirect: { name: 'Dashboard' } },
 ]
 
 const router = createRouter({
@@ -38,15 +45,13 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
-  const apiMode = useApiModeStore()
   await auth.initialize()
-  if (apiMode.supportsDevOpenAccess) return true
+  if (SUPPORTS_DEV_OPEN_ACCESS) return true
   if (to.meta.tapis && !auth.isTapisUser) return { name: 'Dashboard' }
-  if (to.meta.feature === 'askPatra' && !apiMode.supportsAskPatra) return { name: 'Dashboard' }
-  if (to.meta.feature === 'agentTools' && !apiMode.supportsAgentTools) return { name: 'Dashboard' }
-  if (to.meta.feature === 'editRecords' && !apiMode.supportsEditRecords) return { name: 'Dashboard' }
-  if (to.meta.feature === 'domainExperiments' && !apiMode.supportsDomainExperiments) return { name: 'Dashboard' }
-  if (to.meta.privileged && !(auth.isTapisUser || auth.isAdmin)) return { name: 'Dashboard' }
+  if (to.meta.feature === 'askPatra' && !SUPPORTS_ASK_PATRA) return { name: 'Dashboard' }
+  if (to.meta.feature === 'agentTools' && !SUPPORTS_AGENT_TOOLS) return { name: 'Dashboard' }
+  if (to.meta.feature === 'editRecords' && !SUPPORTS_EDIT_RECORDS) return { name: 'Dashboard' }
+  if (to.meta.feature === 'domainExperiments' && !SUPPORTS_DOMAIN_EXPERIMENTS) return { name: 'Dashboard' }
   return true
 })
 

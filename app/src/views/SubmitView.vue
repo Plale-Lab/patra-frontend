@@ -5,7 +5,7 @@
       <p>Create a new model card or datasheet. Records are published immediately.</p>
     </div>
 
-    <div v-if="!(auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess)" class="card">
+    <div v-if="!(auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)" class="card">
       <div class="card-body">
         <div class="empty-state compact">
           <IconLock :size="34" stroke-width="1.5" />
@@ -14,8 +14,30 @@
       </div>
     </div>
 
+    <div class="card" v-else-if="submitSuccess">
+      <div class="card-body">
+        <InlineFeedback type="success">
+          Record created successfully (UUID: {{ createdUuid || createdId }}).
+        </InlineFeedback>
+
+        <div class="link-report" v-if="displayLinkReport.length">
+          <div class="link-report-title">Link check</div>
+          <div class="link-row" v-for="entry in displayLinkReport" :key="entry.field">
+            <span class="link-field">{{ entry.label }}</span>
+            <a class="link-url" :href="entry.url" target="_blank" rel="noopener">{{ entry.url }}</a>
+            <span class="link-status" :class="`link-${entry.status}`">{{ statusLabel(entry) }}</span>
+          </div>
+        </div>
+
+        <div class="success-cta">
+          <RouterLink :to="detailLink" class="btn btn-primary">View record</RouterLink>
+          <button class="btn btn-outline" @click="resetForm">Submit Another</button>
+        </div>
+      </div>
+    </div>
+
     <template v-else>
-      <div class="card">
+      <div class="card type-card">
         <div class="card-header">
           <span>Record Type</span>
         </div>
@@ -27,192 +49,54 @@
         </div>
       </div>
 
-      <div class="card" v-if="submitSuccess">
+      <div class="card">
         <div class="card-body">
-          <div class="success-block">
-            <IconCheck :size="20" stroke-width="2" />
-            <span>Record created successfully (UUID: {{ createdUuid || createdId }}). <RouterLink :to="detailLink">View record</RouterLink></span>
-          </div>
-          <button class="btn btn-outline" @click="resetForm">Submit Another</button>
-        </div>
-      </div>
+          <SubmitStepper :steps="steps" :current="currentStep" @goto="goToStep" />
 
-      <div class="card" v-else>
-        <div class="card-header">
-          <span>{{ assetType === 'model_card' ? 'Model Card Details' : 'Datasheet Details' }}</span>
-        </div>
-        <div class="card-body">
-          <template v-if="assetType === 'model_card'">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Name <span class="required">*</span></label>
-                <input class="form-input" v-model="mcForm.name" placeholder="e.g. ResNet-50 Image Classifier" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Version</label>
-                <input class="form-input" v-model="mcForm.version" placeholder="e.g. 1.0" />
+          <template v-if="isReviewStep">
+            <SubmitReview :sections="sections" :form="activeForm" />
+
+            <div class="form-section" v-if="assetType === 'model_card'">
+              <div class="form-section-label">Link validation</div>
+              <div class="filter-chips">
+                <button type="button" class="chip" :class="{ active: validateLinks }" @click="validateLinks = true">Validate links on submit</button>
+                <button type="button" class="chip" :class="{ active: !validateLinks }" @click="validateLinks = false">Skip</button>
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Short Description</label>
-              <textarea class="form-input form-textarea" rows="2" v-model="mcForm.short_description" placeholder="Brief summary of the model"></textarea>
-            </div>
+            <InlineFeedback v-if="error" type="error" :message="error" />
 
-            <div class="form-group">
-              <label class="form-label">Full Description</label>
-              <textarea class="form-input form-textarea" rows="4" v-model="mcForm.full_description" placeholder="Detailed description of what the model does"></textarea>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Category</label>
-                <input class="form-input" v-model="mcForm.category" placeholder="e.g. Image Classification" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Input Type</label>
-                <input class="form-input" v-model="mcForm.input_type" placeholder="e.g. Image, Text, Tabular" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Author</label>
-                <input class="form-input" v-model="mcForm.author" :placeholder="auth.displayName" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Keywords</label>
-                <input class="form-input" v-model="mcForm.keywords" placeholder="e.g. computer vision, deep learning" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Framework</label>
-                <input class="form-input" v-model="mcForm.framework" placeholder="e.g. PyTorch, TensorFlow" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">License</label>
-                <input class="form-input" v-model="mcForm.license" placeholder="e.g. Apache 2.0, MIT" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Test Accuracy</label>
-                <input class="form-input" type="number" step="0.01" min="0" max="1" v-model="mcForm.test_accuracy" placeholder="e.g. 0.95" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Foundational Model</label>
-                <input class="form-input" v-model="mcForm.foundational_model" placeholder="e.g. GPT-4, BERT" />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Input Data URL</label>
-                <input class="form-input" v-model="mcForm.input_data" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Output Data URL</label>
-                <input class="form-input" v-model="mcForm.output_data" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Citation</label>
-              <textarea class="form-input form-textarea" rows="2" v-model="mcForm.citation" placeholder="BibTeX or plain-text citation"></textarea>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Documentation URL</label>
-              <input class="form-input" v-model="mcForm.documentation" />
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Visibility</label>
-                <div class="filter-chips">
-                  <button type="button" class="chip" :class="{ active: !mcForm.is_private }" @click="mcForm.is_private = false">Public</button>
-                  <button type="button" class="chip" :class="{ active: mcForm.is_private }" @click="mcForm.is_private = true">Private</button>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Access</label>
-                <div class="filter-chips">
-                  <button type="button" class="chip" :class="{ active: !mcForm.is_gated }" @click="mcForm.is_gated = false">Open</button>
-                  <button type="button" class="chip" :class="{ active: mcForm.is_gated }" @click="mcForm.is_gated = true">Gated</button>
-                </div>
-              </div>
+            <div class="stepper-actions">
+              <button class="btn btn-outline back-btn" @click="prevStep">Back</button>
+              <button class="btn btn-primary" :disabled="loading" @click="handleSubmit">
+                {{ loading ? 'Creating…' : 'Create Record' }}
+              </button>
             </div>
           </template>
 
           <template v-else>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Title <span class="required">*</span></label>
-                <input class="form-input" v-model="dsForm.title" placeholder="e.g. CIFAR-10 Dataset" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Version</label>
-                <input class="form-input" v-model="dsForm.version" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Description</label>
-              <textarea class="form-input form-textarea" rows="3" v-model="dsForm.description" placeholder="What this dataset contains and how it was collected"></textarea>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Creator</label>
-                <input class="form-input" v-model="dsForm.creator" :placeholder="auth.displayName" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Publisher</label>
-                <input class="form-input" v-model="dsForm.publisher" />
+            <div class="form-section">
+              <div class="form-section-label">{{ currentSection.title }}</div>
+              <div class="section-fields">
+                <FormField
+                  v-for="field in currentSection.fields"
+                  :key="field.key"
+                  :field="field"
+                  v-model="activeForm[field.key]"
+                  :error="errors[field.key]"
+                  :class="{ 'field-span-2': field.type === 'textarea' || field.type === 'segmented' }"
+                  @blur="validateOnBlur(field)"
+                />
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Resource Type</label>
-                <input class="form-input" v-model="dsForm.resource_type" placeholder="e.g. Dataset" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Publication Year</label>
-                <input class="form-input" type="number" v-model="dsForm.publication_year" placeholder="e.g. 2025" />
-              </div>
-            </div>
+            <InlineFeedback v-if="currentStepHasErrors" type="error" message="Please fix the highlighted fields." />
 
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Features / Subjects</label>
-                <input class="form-input" v-model="dsForm.subjects" placeholder="Comma-separated keywords" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Download URL</label>
-                <input class="form-input" v-model="dsForm.download_url" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Visibility</label>
-              <div class="filter-chips">
-                <button type="button" class="chip" :class="{ active: !dsForm.is_private }" @click="dsForm.is_private = false">Public</button>
-                <button type="button" class="chip" :class="{ active: dsForm.is_private }" @click="dsForm.is_private = true">Private</button>
-              </div>
+            <div class="stepper-actions">
+              <button v-if="currentStep > 0" class="btn btn-outline back-btn" @click="prevStep">Back</button>
+              <button class="btn btn-primary" @click="nextStep">Continue</button>
             </div>
           </template>
-
-          <div class="form-error" v-if="error">{{ error }}</div>
-
-          <div class="form-actions">
-            <button class="btn btn-primary" :disabled="!canSubmit || loading" @click="handleSubmit">
-              {{ loading ? 'Creating...' : 'Create Record' }}
-            </button>
-          </div>
         </div>
       </div>
     </template>
@@ -222,27 +106,38 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { IconLock, IconCheck } from '@tabler/icons-vue'
+import { IconLock } from '@tabler/icons-vue'
 import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
+import { SUPPORTS_DEV_OPEN_ACCESS } from '../config/api'
 import { apiFetch } from '../lib/api'
 import { parseErrorMessage } from '../lib/errorParsing'
+import { sectionsFor, fieldsFor } from '../lib/assetFields'
+import { buildModelCardPayload, buildDatasheetPayload } from '../lib/assetPayloads'
+import { validateForm, validateField } from '../lib/fieldValidation'
+import FormField from '../components/FormField.vue'
+import InlineFeedback from '../components/InlineFeedback.vue'
+import SubmitStepper from './submit/SubmitStepper.vue'
+import SubmitReview from './submit/SubmitReview.vue'
 
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
 
 const assetType = ref('model_card')
+const currentStep = ref(0)
+const errors = reactive({})
 const loading = ref(false)
 const error = ref('')
 const submitSuccess = ref(false)
 const createdId = ref(null)
 const createdUuid = ref(null)
+const validateLinks = ref(true)
+const linkReport = ref(null)
 
 const mcForm = reactive({
   name: '', version: '', short_description: '', full_description: '',
   category: '', input_type: '', author: '', keywords: '',
   framework: '', license: '', test_accuracy: '', foundational_model: '',
   input_data: '', output_data: '', citation: '', documentation: '',
+  location: '',
   is_private: false, is_gated: false,
 })
 
@@ -252,10 +147,24 @@ const dsForm = reactive({
   download_url: '', is_private: false,
 })
 
-const canSubmit = computed(() => {
-  if (assetType.value === 'model_card') return mcForm.name.trim().length > 0
-  return dsForm.title.trim().length > 0
-})
+// Human labels for the validated pointer fields. `citation` is intentionally
+// omitted — it's a BibTeX/plain-text field, so it would always read "malformed".
+const LINK_FIELD_LABELS = {
+  input_data: 'Input Data URL',
+  output_data: 'Output Data URL',
+  documentation: 'Documentation URL',
+  location: 'Model Location',
+}
+
+const activeForm = computed(() => (assetType.value === 'model_card' ? mcForm : dsForm))
+const sections = computed(() => sectionsFor(assetType.value))
+const steps = computed(() => [...sections.value, { id: 'review', title: 'Review' }])
+const isReviewStep = computed(() => currentStep.value === sections.value.length)
+const currentSection = computed(() => sections.value[currentStep.value] || null)
+
+const currentStepHasErrors = computed(() => (
+  currentSection.value ? currentSection.value.fields.some((f) => errors[f.key]) : false
+))
 
 const detailLink = computed(() => {
   if (!createdUuid.value) return '/'
@@ -264,21 +173,76 @@ const detailLink = computed(() => {
     : `/datasheet/${createdUuid.value}`
 })
 
+const displayLinkReport = computed(() => {
+  if (!Array.isArray(linkReport.value)) return []
+  return linkReport.value
+    .filter((entry) => entry && LINK_FIELD_LABELS[entry.field])
+    .map((entry) => ({ ...entry, label: LINK_FIELD_LABELS[entry.field] }))
+})
+
+function statusLabel(entry) {
+  if (entry.status === 'broken' && entry.http_code) return `broken (${entry.http_code})`
+  return entry.status
+}
+
+function clearErrors() {
+  Object.keys(errors).forEach((key) => delete errors[key])
+}
+
 function switchType(type) {
+  if (assetType.value === type) return
   assetType.value = type
+  currentStep.value = 0
   error.value = ''
+  clearErrors()
+}
+
+function validateOnBlur(field) {
+  const msg = validateField(field, activeForm.value[field.key], true)
+  if (msg) errors[field.key] = msg
+  else delete errors[field.key]
+}
+
+function nextStep() {
+  const fields = currentSection.value.fields
+  const stepErrors = validateForm(fields, activeForm.value, true)
+  fields.forEach((f) => delete errors[f.key])
+  Object.assign(errors, stepErrors)
+  if (Object.keys(stepErrors).length) return
+  if (currentStep.value < steps.value.length - 1) currentStep.value += 1
+}
+
+function prevStep() {
+  error.value = ''
+  if (currentStep.value > 0) currentStep.value -= 1
+}
+
+function goToStep(index) {
+  if (index <= currentStep.value) {
+    error.value = ''
+    currentStep.value = index
+  }
+}
+
+function goToFirstError() {
+  const idx = sections.value.findIndex((s) => s.fields.some((f) => errors[f.key]))
+  if (idx >= 0) currentStep.value = idx
 }
 
 function resetForm() {
   submitSuccess.value = false
   createdId.value = null
   createdUuid.value = null
+  linkReport.value = null
   error.value = ''
+  currentStep.value = 0
+  clearErrors()
   Object.assign(mcForm, {
     name: '', version: '', short_description: '', full_description: '',
     category: '', input_type: '', author: '', keywords: '',
     framework: '', license: '', test_accuracy: '', foundational_model: '',
     input_data: '', output_data: '', citation: '', documentation: '',
+    location: '',
     is_private: false, is_gated: false,
   })
   Object.assign(dsForm, {
@@ -288,72 +252,28 @@ function resetForm() {
   })
 }
 
-function buildModelCardPayload() {
-  const authorName = mcForm.author.trim() || auth.displayName
-  const payload = {
-    name: mcForm.name.trim(),
-    version: mcForm.version.trim() || null,
-    short_description: mcForm.short_description.trim() || null,
-    full_description: mcForm.full_description.trim() || null,
-    category: mcForm.category.trim() || null,
-    input_type: mcForm.input_type.trim() || null,
-    author: authorName,
-    keywords: mcForm.keywords.trim() || null,
-    foundational_model: mcForm.foundational_model.trim() || null,
-    input_data: mcForm.input_data.trim() || null,
-    output_data: mcForm.output_data.trim() || null,
-    citation: mcForm.citation.trim() || null,
-    documentation: mcForm.documentation.trim() || null,
-    is_private: mcForm.is_private,
-    is_gated: mcForm.is_gated,
-  }
-  const hasAiModel = mcForm.framework.trim() || mcForm.license.trim() || mcForm.test_accuracy
-  if (hasAiModel) {
-    payload.ai_model = {
-      name: mcForm.name.trim(),
-      framework: mcForm.framework.trim() || null,
-      license: mcForm.license.trim() || null,
-      test_accuracy: mcForm.test_accuracy ? parseFloat(mcForm.test_accuracy) : null,
-      owner: authorName,
-    }
-  }
-  return payload
-}
-
-function buildDatasheetPayload() {
-  const creatorName = dsForm.creator.trim() || auth.displayName
-  const subjects = dsForm.subjects.split(',').map((s) => s.trim()).filter(Boolean)
-  const payload = {
-    version: dsForm.version.trim() || null,
-    resource_type: dsForm.resource_type.trim() || null,
-    publication_year: dsForm.publication_year ? parseInt(dsForm.publication_year) : null,
-    is_private: dsForm.is_private,
-    titles: [{ title: dsForm.title.trim() }],
-    creators: [{ creator_name: creatorName }],
-    subjects: subjects.map((s) => ({ subject: s })),
-    descriptions: dsForm.description.trim()
-      ? [{ description: dsForm.description.trim(), description_type: 'Abstract' }]
-      : [],
-  }
-  if (dsForm.publisher.trim()) {
-    payload.publisher = { name: dsForm.publisher.trim() }
-  }
-  if (dsForm.download_url.trim()) {
-    payload.related_identifiers = [{
-      related_identifier: dsForm.download_url.trim(),
-      related_identifier_type: 'URL',
-      relation_type: 'IsDescribedBy',
-    }]
-  }
-  return payload
-}
-
 async function handleSubmit() {
+  const allErrors = validateForm(fieldsFor(assetType.value), activeForm.value, true)
+  clearErrors()
+  Object.assign(errors, allErrors)
+  if (Object.keys(allErrors).length) {
+    error.value = 'Please fix the highlighted fields.'
+    goToFirstError()
+    return
+  }
+
   error.value = ''
+  linkReport.value = null
   loading.value = true
   try {
-    const endpoint = assetType.value === 'model_card' ? '/v1/assets/model-cards' : '/v1/assets/datasheets'
-    const payload = assetType.value === 'model_card' ? buildModelCardPayload() : buildDatasheetPayload()
+    const isModelCard = assetType.value === 'model_card'
+    let endpoint = isModelCard ? '/v1/assets/model-cards' : '/v1/assets/datasheets'
+    if (isModelCard && validateLinks.value) {
+      endpoint += '?validate_links=true'
+    }
+    const payload = isModelCard
+      ? buildModelCardPayload(mcForm, { authorName: auth.displayName })
+      : buildDatasheetPayload(dsForm, { creatorName: auth.displayName })
     const res = await apiFetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -366,6 +286,7 @@ async function handleSubmit() {
     const result = await res.json()
     createdId.value = result.asset_id ?? result.identifier ?? result.id
     createdUuid.value = result.asset_uuid ?? result.uuid ?? null
+    linkReport.value = result.link_report ?? null
     submitSuccess.value = true
   } catch (e) {
     error.value = e.message || 'Failed to create record'
@@ -376,39 +297,75 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.page-header { margin-bottom: 24px; }
-.page-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 4px; }
-.page-header p { color: var(--color-text-secondary); margin: 0; font-size: .9rem; }
-
-.form-row { display: flex; gap: 16px; }
-.form-row > .form-group { flex: 1; }
-.form-group { margin-bottom: 14px; }
-.form-label { display: block; font-size: .82rem; font-weight: 600; margin-bottom: 4px; color: var(--color-text-secondary); }
-.form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: .88rem; background: var(--color-bg); }
-.form-textarea { resize: vertical; font-family: inherit; }
-.form-actions { margin-top: 16px; }
-.form-error { color: var(--color-danger, #d32f2f); font-size: .86rem; margin-top: 8px; }
-.required { color: var(--color-danger, #d32f2f); }
-
-.filter-chips { display: flex; gap: 6px; }
-.chip {
-  padding: 5px 14px; border-radius: 20px; border: 1px solid var(--color-border);
-  background: transparent; font-size: .82rem; cursor: pointer; transition: all .15s;
+.type-card {
+  margin-bottom: 16px;
 }
-.chip.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 
-.success-block {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 16px; border-radius: 10px;
-  background: var(--color-success-bg, #e8f5e9); color: var(--color-success, #2e7d32);
-  margin-bottom: 12px; font-size: .9rem;
+.stepper-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  justify-content: flex-end;
 }
-.success-block a { color: inherit; font-weight: 600; text-decoration: underline; }
 
-.empty-state { text-align: center; padding: 32px 16px; color: var(--color-text-muted); }
-.empty-state.compact { padding: 20px 16px; }
-
-@media (max-width: 640px) {
-  .form-row { flex-direction: column; gap: 0; }
+.back-btn {
+  margin-right: auto;
 }
+
+.success-cta {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.link-report {
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
+.link-report-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.84rem;
+}
+
+.link-field {
+  flex: 0 0 130px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.link-url {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-primary);
+}
+
+.link-status {
+  flex: 0 0 auto;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.link-ok { background: var(--color-success-bg); color: var(--color-success); }
+.link-gated { background: var(--color-accent-bg); color: #a8701f; }
+.link-broken { background: var(--color-danger-bg); color: var(--color-danger); }
+.link-malformed { background: var(--color-bg-elevated); color: var(--color-text-muted); }
 </style>

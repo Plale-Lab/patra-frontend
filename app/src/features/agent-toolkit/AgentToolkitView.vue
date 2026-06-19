@@ -2,7 +2,7 @@
   <div>
     <div class="page-header">
       <h1>Agent Toolkit</h1>
-      <p>Run code-first schema extraction, public dataset-schema search, and strict missing-attribute feasibility analysis for PATRA substitution workflows across domains.</p>
+      <p>Run code-first schema extraction, public dataset-schema search, and strict missing-attribute feasibility analysis for Patra substitution workflows across domains.</p>
     </div>
 
     <div class="connection-banner error" v-if="errorMessage">
@@ -213,7 +213,7 @@
             </div>
             <div class="card-body">
               <div class="form-helper block-helper">
-                This tool does not hallucinate values. It classifies each target attribute as directly available, derivable with provenance, or not safely derivable under the current deterministic rules (see PATRA V1 derivation boundary).
+                This tool does not hallucinate values. It classifies each target attribute as directly available, derivable with provenance, or not safely derivable under the current deterministic rules (see Patra V1 derivation boundary).
               </div>
 
               <div class="form-group">
@@ -303,7 +303,7 @@
                   </div>
                   <div class="form-group">
                     <label class="form-label">Admin Review Notes</label>
-                    <input class="form-input" v-model="synthesisForm.reviewNotes" placeholder="Optional note for PATRA reviewers" />
+                    <input class="form-input" v-model="synthesisForm.reviewNotes" placeholder="Optional note for Patra reviewers" />
                   </div>
                 </div>
 
@@ -424,7 +424,7 @@
             <ul class="simple-list">
               <li>Schema search ranks dataset-backed schemas for any domain: the pool lists both public defaults and optional traces (e.g. parallel workloads) when the backend is configured with those datasets.</li>
               <li>Feasibility analysis only allows directly supported or auditable deterministic derivations; other attributes stay rejected until rules exist.</li>
-              <li>Generation is limited to derivable fields, and PATRA requires admin review before a synthesized dataset-schema is admitted into the shared pool.</li>
+              <li>Generation is limited to derivable fields, and Patra requires admin review before a synthesized dataset-schema is admitted into the shared pool.</li>
               <li>Fields with no safe rule stay rejected instead of being hallucinated.</li>
             </ul>
           </div>

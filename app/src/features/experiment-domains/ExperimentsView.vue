@@ -37,7 +37,10 @@
     <section class="card block-spacing">
       <div class="card-header"><span>Select User</span></div>
       <div class="card-body">
-        <select v-model="selectedUser" class="domain-select" @change="onUserChange">
+        <div v-if="!store.loading && !store.users.length" class="text-muted">
+          No experiment data available for {{ domainLabel }} yet.
+        </div>
+        <select v-else v-model="selectedUser" class="domain-select" @change="onUserChange">
           <option :value="null">Choose a user</option>
           <option v-for="user in store.users" :key="user.user_id" :value="user.user_id">
             {{ user.username || `User ${user.user_id}` }}
@@ -64,7 +67,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in paginatedSummary" :key="row.experiment_id">
+            <tr v-for="row in pagedSummary" :key="row.experiment_id">
               <td>{{ row.experiment_id }}</td>
               <td>{{ row.model_id }}</td>
               <td>{{ row.device_id || '—' }}</td>
@@ -77,51 +80,14 @@
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <!-- Pagination panel -->
-      <div class="pagination-footer">
-        <div class="pagination-info">
-          Showing <span>{{ paginationStart }}</span> to <span>{{ paginationEnd }}</span> of <span>{{ totalItems }}</span> entries
-        </div>
-        <div class="pagination-controls">
-          <div class="page-size-selector">
-            Show 
-            <select v-model="pageSize" class="page-size-select">
-              <option :value="5">5</option>
-              <option :value="10">10</option>
-              <option :value="20">20</option>
-            </select>
-            entries
-          </div>
-          <div class="page-buttons">
-            <button 
-              class="btn-page" 
-              :disabled="currentPage === 1" 
-              @click="currentPage--"
-              title="Previous Page"
-            >
-              <IconChevronLeft :size="16" />
-            </button>
-            <button 
-              v-for="page in totalPages" 
-              :key="page" 
-              class="btn-page" 
-              :class="{ active: currentPage === page }"
-              @click="currentPage = page"
-            >
-              {{ page }}
-            </button>
-            <button 
-              class="btn-page" 
-              :disabled="currentPage === totalPages" 
-              @click="currentPage++"
-              title="Next Page"
-            >
-              <IconChevronRight :size="16" />
-            </button>
-          </div>
-        </div>
+        <PaginationBar
+          v-model:page="summaryPage"
+          v-model:page-size="summaryPageSize"
+          :total="summaryTotal"
+          :page-size-options="summaryPageSizeOptions"
+          item-label="experiments"
+          label="Experiment summary pagination"
+        />
       </div>
     </section>
 
@@ -218,7 +184,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(image, index) in store.experimentImages" :key="`${image.image_name}-${index}`">
+              <tr v-for="(image, index) in pagedImages" :key="`${image.image_name}-${index}`">
                 <td>{{ image.image_name }}</td>
                 <td>{{ image.ground_truth || '—' }}</td>
                 <td>{{ image.label || '—' }}</td>
@@ -233,6 +199,14 @@
               </tr>
             </tbody>
           </table>
+          <PaginationBar
+            v-model:page="imagesPage"
+            v-model:page-size="imagesPageSize"
+            :total="imagesTotal"
+            :page-size-options="imagesPageSizeOptions"
+            item-label="images"
+            label="Raw image data pagination"
+          />
         </div>
       </section>
 
@@ -286,8 +260,10 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { IconBrandGithub, IconExternalLink, IconLeaf, IconTractor, IconChevronLeft, IconChevronRight } from '@tabler/icons-vue'
+import { IconBrandGithub, IconExternalLink } from '@tabler/icons-vue'
 import { useExperimentsStore } from '../../stores/experiments'
+import { usePagination } from '../../composables/usePagination'
+import PaginationBar from '../../components/PaginationBar.vue'
 
 const props = defineProps({
   domain: {
@@ -303,34 +279,27 @@ const DOMAIN_LABELS = {
 
 const domainLabel = computed(() => DOMAIN_LABELS[props.domain] || props.domain)
 const pageTitle = computed(() => `${domainLabel.value} Experiments`)
-const domainIcon = computed(() => (props.domain === 'animal-ecology' ? IconLeaf : IconTractor))
 
 const store = useExperimentsStore()
 const selectedUser = ref(null)
 const selectedExperiment = ref(null)
 const detail = computed(() => store.experimentDetail)
 
-// Pagination state
-const currentPage = ref(1)
-const pageSize = ref(5)
+const {
+  page: summaryPage,
+  pageSize: summaryPageSize,
+  pageSizeOptions: summaryPageSizeOptions,
+  total: summaryTotal,
+  pagedItems: pagedSummary,
+} = usePagination(() => store.userSummary, { initialPageSize: 20, pageSizeOptions: [10, 20, 50] })
 
-const totalItems = computed(() => store.userSummary.length)
-const totalPages = computed(() => Math.ceil(totalItems.value / pageSize.value))
-
-const paginatedSummary = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return store.userSummary.slice(start, end)
-})
-
-const paginationStart = computed(() => {
-  if (totalItems.value === 0) return 0
-  return (currentPage.value - 1) * pageSize.value + 1
-})
-
-const paginationEnd = computed(() => {
-  return Math.min(currentPage.value * pageSize.value, totalItems.value)
-})
+const {
+  page: imagesPage,
+  pageSize: imagesPageSize,
+  pageSizeOptions: imagesPageSizeOptions,
+  total: imagesTotal,
+  pagedItems: pagedImages,
+} = usePagination(() => store.experimentImages, { initialPageSize: 20, pageSizeOptions: [10, 20, 50] })
 
 onMounted(() => {
   store.fetchUsers(props.domain)
@@ -341,22 +310,13 @@ watch(
   (nextDomain) => {
     selectedUser.value = null
     selectedExperiment.value = null
-    currentPage.value = 1
     store.reset()
     store.fetchUsers(nextDomain)
   },
 )
 
-watch(
-  pageSize,
-  () => {
-    currentPage.value = 1
-  }
-)
-
 function onUserChange() {
   selectedExperiment.value = null
-  currentPage.value = 1
   store.selectUser(props.domain, selectedUser.value)
 }
 
@@ -583,91 +543,5 @@ function pct(value) {
 .error-bar {
   background: var(--color-danger-bg);
   color: var(--color-danger);
-}
-
-.pagination-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 22px;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.pagination-info {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-}
-
-.pagination-info span {
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.page-size-selector {
-  font-size: 0.85rem;
-  color: var(--color-text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.page-size-select {
-  padding: 4px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.page-buttons {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-page {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 6px;
-  border-radius: var(--radius-xs);
-  border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.55);
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.btn-page:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-primary-bg);
-}
-
-.btn-page.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
-}
-
-.btn-page:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 </style>

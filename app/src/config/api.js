@@ -1,25 +1,14 @@
-export const API_MODES = ['live', 'mock']
-export const API_MODE_STORAGE_KEY = 'patra_api_mode'
-
 const runtimeConfig = typeof window !== 'undefined' ? window.__PATRA_CONFIG__ || {} : {}
 
-const DEFAULT_LIVE_API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:8002' : 'http://localhost:8000'
-const DEFAULT_MOCK_API_BASE_URL = 'http://localhost:5003'
+const DEFAULT_API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:8002' : 'http://localhost:8000'
 
-export const DEFAULT_API_MODE =
-  resolveApiMode(runtimeConfig.DEFAULT_API_MODE || import.meta.env.VITE_DEFAULT_API_MODE)
-export const SHOW_API_MODE = resolveFeatureFlag(
-  runtimeConfig.SHOW_API_MODE,
-  import.meta.env.VITE_SHOW_API_MODE,
-  import.meta.env.DEV,
-)
 export const SUPPORTS_AGENT_TOOLS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_AGENT_TOOLS,
   import.meta.env.VITE_SUPPORTS_AGENT_TOOLS,
   false,
 )
-const editResourcesRuntimeFlag = runtimeConfig.SUPPORTS_EDIT_EXISTING_RESOURCES ?? runtimeConfig.SUPPORTS_EDIT_RECORDS
-const editResourcesEnvFlag = import.meta.env.VITE_SUPPORTS_EDIT_EXISTING_RESOURCES ?? import.meta.env.VITE_SUPPORTS_EDIT_RECORDS
+const editResourcesRuntimeFlag = firstSet(runtimeConfig.SUPPORTS_EDIT_EXISTING_RESOURCES, runtimeConfig.SUPPORTS_EDIT_RECORDS)
+const editResourcesEnvFlag = firstSet(import.meta.env.VITE_SUPPORTS_EDIT_EXISTING_RESOURCES, import.meta.env.VITE_SUPPORTS_EDIT_RECORDS)
 export const SUPPORTS_EDIT_RECORDS = resolveFeatureFlag(
   editResourcesRuntimeFlag,
   editResourcesEnvFlag,
@@ -59,17 +48,6 @@ export const PORTAL_AUTH_TIMEOUT_MS = parsePositiveInteger(
   import.meta.env.VITE_PORTAL_AUTH_TIMEOUT_MS,
   3000,
 )
-export const ADMIN_USERNAMES = parseCsvList(
-  runtimeConfig.ADMIN_USERNAMES,
-  import.meta.env.VITE_ADMIN_USERNAMES,
-  'williamq96,neelk',
-)
-
-export const USE_V1_ASSET_CREATE = resolveFeatureFlag(
-  runtimeConfig.USE_V1_ASSET_CREATE,
-  import.meta.env.VITE_USE_V1_ASSET_CREATE,
-  true,
-)
 
 export function getAssetOrg() {
   const v = runtimeConfig.ASSET_ORG ?? import.meta.env.VITE_ASSET_ORG
@@ -81,79 +59,17 @@ export function getAssetApiKey() {
   return v != null && String(v).length > 0 ? String(v) : ''
 }
 
-const LIVE_API_BASE_URL = normalizeBaseUrl(
-  runtimeConfig.API_BASE_URL || import.meta.env.VITE_LIVE_API_BASE_URL || DEFAULT_LIVE_API_BASE_URL,
-)
-
-const MOCK_API_BASE_URL = normalizeBaseUrl(
-  runtimeConfig.MOCK_API_BASE_URL || import.meta.env.VITE_MOCK_API_BASE_URL || DEFAULT_MOCK_API_BASE_URL,
+export const API_BASE_URL = normalizeBaseUrl(
+  runtimeConfig.API_BASE_URL || import.meta.env.VITE_LIVE_API_BASE_URL || DEFAULT_API_BASE_URL,
 )
 
 export const MCP_BASE_URL = normalizeBaseUrl(
   runtimeConfig.MCP_BASE_URL || import.meta.env.VITE_MCP_BASE_URL || 'http://localhost:8050',
 )
 
-export function isApiMode(value) {
-  return API_MODES.includes(value)
-}
-
-export function getStoredApiMode() {
-  if (!SHOW_API_MODE) {
-    return DEFAULT_API_MODE
-  }
-
-  const stored = localStorage.getItem(API_MODE_STORAGE_KEY)
-  return isApiMode(stored) ? stored : DEFAULT_API_MODE
-}
-
-export function setStoredApiMode(mode) {
-  if (!SHOW_API_MODE) {
-    localStorage.removeItem(API_MODE_STORAGE_KEY)
-    return
-  }
-
-  localStorage.setItem(API_MODE_STORAGE_KEY, isApiMode(mode) ? mode : DEFAULT_API_MODE)
-}
-
-export function getApiBaseUrl(mode = getStoredApiMode()) {
-  return mode === 'mock' ? MOCK_API_BASE_URL : LIVE_API_BASE_URL
-}
-
-export function getApiModeMeta(mode = getStoredApiMode()) {
-  if (mode === 'mock') {
-    return {
-      key: 'mock',
-      shortLabel: 'Test',
-      label: 'Test Mode',
-      description: 'Use the local mock server for frontend testing.',
-      helpText: 'Start the local mock server with `cd frontend/mock-server && npm start`.',
-      supportsAgentTools: false,
-      supportsEditRecords: true,
-      supportsAskPatra: true,
-      supportsMcpExplorer: true,
-      supportsDomainExperiments: true,
-      supportsDevOpenAccess: false,
-    }
-  }
-
-  return {
-    key: 'live',
-    shortLabel: 'Normal',
-    label: 'Normal Mode',
-    description: 'Call the real Patra REST API.',
-    helpText: 'Ensure the Patra REST server is running on the live API URL.',
-    supportsAgentTools: SUPPORTS_AGENT_TOOLS,
-    supportsEditRecords: SUPPORTS_EDIT_RECORDS,
-    supportsAskPatra: SUPPORTS_ASK_PATRA,
-    supportsMcpExplorer: SUPPORTS_MCP_EXPLORER,
-    supportsDomainExperiments: SUPPORTS_DOMAIN_EXPERIMENTS,
-    supportsDevOpenAccess: SUPPORTS_DEV_OPEN_ACCESS,
-  }
-}
-
-export function resolveApiUrl(path, mode = getStoredApiMode()) {
+export function resolveApiUrl(path) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
-  return `${getApiBaseUrl(mode)}${normalizedPath}`
+  return `${API_BASE_URL}${normalizedPath}`
 }
 
 export function resolveMcpUrl(path = '') {
@@ -166,31 +82,29 @@ function normalizeBaseUrl(value) {
   return String(value || '').replace(/\/+$/, '')
 }
 
-function resolveApiMode(value) {
-  return value === 'mock' ? 'mock' : 'live'
+// Return the first value that is actually set, treating '' (the placeholder
+// public/env.js ships in dev) and null/undefined as "not set".
+function firstSet(...values) {
+  for (const value of values) {
+    if (value !== '' && value != null) return value
+  }
+  return null
 }
 
 function resolveFeatureFlag(runtimeValue, envValue, fallback) {
-  const value = runtimeValue ?? envValue
-  if (value === '' || value == null) {
+  // Each flag resolves independently: runtime config > build-time env > fallback.
+  // Empty strings fall through (window.__PATRA_CONFIG__ ships '' placeholders in
+  // dev), so an unset runtime value lets the .env value drive the flag.
+  const value = firstSet(runtimeValue, envValue)
+  if (value == null) {
     return Boolean(fallback)
   }
 
   return String(value).toLowerCase() === 'true'
 }
 
-function parseCsvList(runtimeValue, envValue, fallback) {
-  const runtimeResolved = runtimeValue === '' || runtimeValue == null ? null : runtimeValue
-  const envResolved = envValue === '' || envValue == null ? null : envValue
-  const value = runtimeResolved ?? envResolved ?? fallback
-  return String(value || '')
-    .split(',')
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean)
-}
-
 function parseOriginList(runtimeValue, envValue) {
-  const value = runtimeValue === '' || runtimeValue == null ? envValue : runtimeValue
+  const value = firstSet(runtimeValue, envValue)
   return Array.from(new Set(String(value || '')
     .split(',')
     .map((item) => normalizeOrigin(item))
@@ -213,7 +127,6 @@ function normalizeOrigin(value) {
 }
 
 function parsePositiveInteger(runtimeValue, envValue, fallback) {
-  const value = runtimeValue === '' || runtimeValue == null ? envValue : runtimeValue
-  const parsed = Number.parseInt(value, 10)
+  const parsed = Number.parseInt(firstSet(runtimeValue, envValue), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }

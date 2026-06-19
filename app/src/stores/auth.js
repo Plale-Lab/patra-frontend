@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
-    ADMIN_USERNAMES,
     EMBEDDED_AUTH_ENABLED,
     PORTAL_AUTH_ORIGINS,
     PORTAL_AUTH_TIMEOUT_MS,
@@ -82,18 +81,15 @@ function migratePersistedAuth() {
 }
 
 function normalizePersistedUser(user) {
-    if (!user || typeof user !== 'object') return null
-    if (user.auth_type !== 'tapis') return null
+    if (!user || typeof user !== 'object' || user.auth_type !== 'tapis') return null
 
     const username = String(user.username || '').trim()
     if (!username) return null
-    const normalizedUsername = username.toLowerCase()
-
     return {
         ...user,
         username,
         name: user.name || username,
-        role: ADMIN_USERNAMES.includes(normalizedUsername) ? 'admin' : 'user',
+        role: 'user',
         auth_type: 'tapis',
     }
 }
@@ -116,7 +112,7 @@ function makeTapisUser(username, authSource) {
     return {
         username: normalizedUsername,
         name: normalizedUsername,
-        role: ADMIN_USERNAMES.includes(normalizedUsername.toLowerCase()) ? 'admin' : 'user',
+        role: 'user',
         auth_type: 'tapis',
         auth_source: authSource,
     }
@@ -141,17 +137,10 @@ export const useAuthStore = defineStore('auth', () => {
         if (token.value) return token.value
         return SUPPORTS_DEV_OPEN_ACCESS ? '__patra_dev_open_access__' : ''
     })
-
     const isInitializing = computed(() => initializationState.value !== 'ready')
     const isLoggedIn = computed(() => !!effectiveUser.value && !!effectiveToken.value)
-    const normalizedUsername = computed(() => String(effectiveUser.value?.username || '').trim().toLowerCase())
     const isTapisUser = computed(() => effectiveUser.value?.auth_type === 'tapis')
     const isPortalUser = computed(() => source.value === 'portal' && isTapisUser.value)
-    const isAdmin = computed(() => {
-        if (SUPPORTS_DEV_OPEN_ACCESS) return true
-        if (!effectiveUser.value || !isTapisUser.value) return false
-        return normalizedUsername.value ? ADMIN_USERNAMES.includes(normalizedUsername.value) : false
-    })
     const displayName = computed(() => {
         if (isInitializing.value) return 'Connecting…'
         return effectiveUser.value?.name || effectiveUser.value?.username || 'Guest'
@@ -214,8 +203,7 @@ export const useAuthStore = defineStore('auth', () => {
         initializationPromise = (async () => {
             if (embeddedAuthEnabled && isEmbedded && allowedOrigins.length) {
                 try {
-                    const portalSession = await portalRequest(portalRequestOptions)
-                    applyPortalSession(portalSession)
+                    applyPortalSession(await portalRequest(portalRequestOptions))
                 } catch (reason) {
                     logPortalFallback(reason)
                     applyStandaloneFallback()
@@ -259,7 +247,6 @@ export const useAuthStore = defineStore('auth', () => {
                 username,
                 password,
             })
-
             const response = await fetch(TAPIS_TOKEN_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -276,7 +263,6 @@ export const useAuthStore = defineStore('auth', () => {
                 data?.result?.access_token ||
                 data?.access_token ||
                 data?.token
-
             if (!issuedToken) {
                 throw new Error('Tapis authentication succeeded but no access token was returned')
             }
@@ -301,8 +287,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function refreshPortalAuth() {
         if (source.value !== 'portal' || !portalRequestOptions) return false
         try {
-            const portalSession = await portalRequest(portalRequestOptions)
-            applyPortalSession(portalSession)
+            applyPortalSession(await portalRequest(portalRequestOptions))
             return true
         } catch (reason) {
             logPortalFallback(reason, 'refresh')
@@ -352,7 +337,6 @@ export const useAuthStore = defineStore('auth', () => {
         effectiveToken,
         isInitializing,
         isLoggedIn,
-        isAdmin,
         isTapisUser,
         isPortalUser,
         displayName,

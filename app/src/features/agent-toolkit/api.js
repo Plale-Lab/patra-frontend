@@ -50,7 +50,7 @@ export async function createDatasheetFromArtifact(artifact, submittedBy, notes) 
   const title = artifact.title || artifact.source_dataset_id
   const description =
     `Synthesized dataset derived from ${artifact.source_dataset_id}. ` +
-    'Generated through the PATRA Agent Toolkit workflow.'
+    'Generated through the Patra Agent Toolkit workflow.'
   const fullDescription = notes ? `${description}\n\nNotes: ${notes}` : description
 
   const payload = {
@@ -59,7 +59,7 @@ export async function createDatasheetFromArtifact(artifact, submittedBy, notes) 
     format: 'text/csv',
     version: 'patra-synth-v1',
     is_private: false,
-    publisher: { name: 'PATRA Agent Toolkit' },
+    publisher: { name: 'Patra Agent Toolkit' },
     titles: [{ title }],
     creators: [{ creator_name: submittedBy }],
     subjects: [

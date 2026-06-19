@@ -8,7 +8,7 @@
     <!-- Connection banner -->
     <div class="connection-banner error" v-if="store.error">
       <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Cannot connect to {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>. {{ apiMode.helpText }}</span>
+      <span>Cannot connect to the Patra API at <code>{{ API_BASE_URL }}</code>.</span>
     </div>
 
     <div class="explore-layout">
@@ -39,23 +39,34 @@
 
         <!-- Grid -->
         <div class="ds-grid" v-else>
-          <DatasheetCard v-for="ds in filteredDatasheets" :key="ds.id" :ds="ds" />
+          <DatasheetCard v-for="ds in pagedDatasheets" :key="ds.id" :ds="ds" />
         </div>
+
+        <PaginationBar
+          v-if="!store.loading && !store.error && total > 0"
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-size-options="pageSizeOptions"
+          item-label="datasheets"
+          label="Datasheets pagination"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useExploreStore } from '../stores/explore'
-import { useApiModeStore } from '../stores/apiMode'
+import { API_BASE_URL } from '../config/api'
+import { usePagination } from '../composables/usePagination'
 import DatasheetCard from '../components/DatasheetCard.vue'
 import DatasheetFilterSidebar from '../components/DatasheetFilterSidebar.vue'
+import PaginationBar from '../components/PaginationBar.vue'
 import { IconAlertCircle, IconLoader2, IconDatabaseOff } from '@tabler/icons-vue'
 
 const store = useExploreStore()
-const apiMode = useApiModeStore()
 const filters = ref({ search: '', resourceType: '', publisher: '', visibility: 'all' })
 
 function loadDatasheets() {
@@ -63,7 +74,6 @@ function loadDatasheets() {
 }
 
 onMounted(loadDatasheets)
-watch(() => apiMode.mode, loadDatasheets)
 
 function getTitle(ds) {
   if (Array.isArray(ds.title) && ds.title.length) {
@@ -120,6 +130,10 @@ const filteredDatasheets = computed(() => {
 
   return list
 })
+
+const { page, pageSize, pageSizeOptions, total, pagedItems: pagedDatasheets } = usePagination(
+  () => filteredDatasheets.value,
+)
 </script>
 
 <style scoped>

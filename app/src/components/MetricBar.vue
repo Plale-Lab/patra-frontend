@@ -21,7 +21,7 @@ const props = defineProps({
   color: { type: String, default: '' },
 })
 
-const barWidth = computed(() => Math.min((props.value / props.max) * 100, 100))
+const barWidth = computed(() => (props.max ? Math.min((props.value / props.max) * 100, 100) : 0))
 
 const barColor = computed(() => {
   if (props.color) return props.color

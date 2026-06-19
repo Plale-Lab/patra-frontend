@@ -2,14 +2,9 @@
 // Empty strings let app/config/api.js fall back to build-time Vite env values.
 window.__PATRA_CONFIG__ = window.__PATRA_CONFIG__ || {
   API_BASE_URL: '',
-  MOCK_API_BASE_URL: '',
-  DEFAULT_API_MODE: '',
-  SHOW_API_MODE: '',
-  SUPPORTS_TICKETS: '',
   SUPPORTS_AGENT_TOOLS: '',
   SUPPORTS_EDIT_RECORDS: '',
   SUPPORTS_EDIT_EXISTING_RESOURCES: '',
-  SUPPORTS_AUTOMATED_INGESTION: '',
   SUPPORTS_ASK_PATRA: '',
   SUPPORTS_MCP_EXPLORER: '',
   SUPPORTS_DOMAIN_EXPERIMENTS: '',
@@ -17,8 +12,6 @@ window.__PATRA_CONFIG__ = window.__PATRA_CONFIG__ || {
   EMBEDDED_AUTH_ENABLED: '',
   PORTAL_AUTH_ORIGINS: '',
   PORTAL_AUTH_TIMEOUT_MS: '',
-  ADMIN_USERNAMES: '',
-  USE_V1_ASSET_CREATE: '',
   ASSET_ORG: '',
   ASSET_API_KEY: '',
   MCP_BASE_URL: '',

@@ -1,7 +1,6 @@
 <template>
   <div v-if="auth.isInitializing" class="auth-resolving" role="status" aria-live="polite">
-    <div class="auth-resolving-mark" aria-hidden="true"></div>
-    <strong>Connecting to ICICLE/Tapis…</strong>
+    <strong>Connecting to ICICLE/Tapis...</strong>
     <span>Checking for an existing portal session.</span>
   </div>
   <div v-else class="admin-layout">
@@ -9,7 +8,11 @@
     <div class="admin-main">
       <HeaderBar />
       <div class="admin-content">
-        <RouterView />
+        <RouterView v-slot="{ Component }">
+          <transition name="view" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </RouterView>
       </div>
     </div>
   </div>
@@ -26,6 +29,7 @@ const auth = useAuthStore()
 
 <style>
 #app { min-height: 100vh; }
+
 .auth-resolving {
   min-height: 100vh;
   display: flex;
@@ -38,19 +42,24 @@ const auth = useAuthStore()
   background: var(--color-bg);
   text-align: center;
 }
+
 .auth-resolving span {
   color: var(--color-text-muted);
   font-size: .9rem;
 }
-.auth-resolving-mark {
-  width: 30px;
-  height: 30px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: patra-auth-spin .8s linear infinite;
+
+/* Routed-view transition (neutralized under prefers-reduced-motion) */
+.view-enter-active {
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
 }
-@keyframes patra-auth-spin {
-  to { transform: rotate(360deg); }
+.view-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.view-leave-active {
+  transition: opacity 0.08s linear;
+}
+.view-leave-to {
+  opacity: 0;
 }
 </style>

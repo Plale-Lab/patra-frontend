@@ -7,16 +7,10 @@ export function apiUrl(path) {
 
 export function apiFetch(path, options) {
   const headers = new Headers(options?.headers || {})
-  let { token, user } = getRuntimeAuth()
+  let { token } = getRuntimeAuth()
 
   if (!token && SUPPORTS_DEV_OPEN_ACCESS) {
     token = '__patra_dev_open_access__'
-    user = {
-      username: 'dev-open-access',
-      name: 'Dev Open Access',
-      role: 'admin',
-      auth_type: 'tapis',
-    }
   }
 
   if (token && !headers.has('Authorization')) {

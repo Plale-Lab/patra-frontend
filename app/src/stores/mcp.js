@@ -16,6 +16,10 @@ export const useMcpStore = defineStore('mcp', () => {
     error.value = null
     loading.value = true
     try {
+      if (client) {
+        client.disconnect()
+        client = null
+      }
       client = createMcpClient(MCP_BASE_URL)
       await client.connect()
       await client.initialize()

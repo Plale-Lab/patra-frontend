@@ -1,16 +1,10 @@
 <template>
   <div>
-    <div class="page-header" v-if="!isGuest">
-      <h1>Welcome back, {{ auth.displayName }}</h1>
-      <p>Your workspace snapshot for authored records and support activity.</p>
-    </div>
-
     <div class="connection-banner error" v-if="dashboardError">
       <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Some dashboard data could not be loaded from {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>.</span>
+      <span>Some dashboard data could not be loaded from the Patra API at <code>{{ API_BASE_URL }}</code>.</span>
     </div>
 
-    <template v-if="isGuest">
       <section class="hero-panel">
         <div class="hero-copy">
           <div class="hero-eyebrow">ICICLE Knowledge Base</div>
@@ -154,8 +148,10 @@
                   <div class="stack-item-subtitle">{{ model.author || 'Unknown author' }}</div>
                 </div>
                 <div class="stack-item-meta">
-                  <span class="badge badge-info">{{ model.framework || 'n/a' }}</span>
-                  <span class="stack-item-arrow">View</span>
+                  <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
+                    {{ model.is_private ? 'Private' : 'Public' }}
+                  </span>
+                  <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
                 </div>
               </RouterLink>
             </div>
@@ -186,66 +182,13 @@
                   <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
                     {{ model.is_private ? 'Private' : 'Public' }}
                   </span>
+                  <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
                 </div>
               </RouterLink>
             </div>
           </div>
         </div>
       </div>
-    </template>
-
-    <template v-else>
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-            <IconCube :size="24" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="stat-value">{{ myModelCount }}</div>
-            <div class="stat-label">My Catalog Models</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: var(--color-accent-bg); color: #c68200;">
-            <IconLock :size="24" stroke-width="1.8" />
-          </div>
-          <div>
-            <div class="stat-value">{{ privateModelCount }}</div>
-            <div class="stat-label">Private Catalog Models</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-          <div class="card-header">
-            <span>My Models</span>
-            <RouterLink to="/modelcards" class="btn btn-sm btn-outline">Explore</RouterLink>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="myModels.length === 0">
-              No catalog models are currently associated with your profile.
-            </div>
-            <div v-else class="stack-list">
-              <RouterLink
-                v-for="model in myModels"
-                :key="model.uuid"
-                :to="`/modelcard/${model.uuid}`"
-                class="stack-item"
-              >
-                <div class="stack-item-main">
-                  <div class="stack-item-title">{{ model.name }}</div>
-                  <div class="stack-item-subtitle">{{ model.category || 'Uncategorized' }}</div>
-                </div>
-                <div class="stack-item-meta">
-                  <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
-                    {{ model.is_private ? 'Private' : 'Public' }}
-                  </span>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
-        </div>
-    </template>
   </div>
 </template>
 
@@ -254,13 +197,12 @@ import { computed, onMounted, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
+import { API_BASE_URL } from '../config/api'
 import {
   IconAlertCircle,
   IconBolt,
   IconCube,
   IconGitBranch,
-  IconLock,
   IconSearch,
   IconTable,
   IconUpload,
@@ -268,23 +210,30 @@ import {
 
 const exploreStore = useExploreStore()
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
-
-const isGuest = computed(() => !auth.isLoggedIn)
 
 const dashboardError = computed(() => (
   exploreStore.error || ''
 ))
 
 const totalModels = computed(() => exploreStore.models.length)
-const privateModelCount = computed(() => exploreStore.models.filter(model => model.is_private).length)
 const totalDatasheets = computed(() => exploreStore.datasheets.length)
-const featuredModels = computed(() => exploreStore.models.filter(model => !model.is_private).slice(0, 4))
 
-const recentModels = computed(() => {
-  const numericId = (m) => Number(m.id ?? m.external_id ?? m.mc_id ?? 0) || 0
-  return [...exploreStore.models].sort((a, b) => numericId(b) - numericId(a)).slice(0, 4)
-})
+function compareUpdatedDesc(a, b) {
+  return String(b.updated_at || '').localeCompare(String(a.updated_at || ''))
+}
+
+const featuredModels = computed(() => (
+  [...exploreStore.models]
+    .filter(model => !model.is_private)
+    .sort(compareUpdatedDesc)
+    .slice(0, 4)
+))
+
+const recentModels = computed(() => (
+  [...exploreStore.models]
+    .sort(compareUpdatedDesc)
+    .slice(0, 4)
+))
 
 const topCategories = computed(() => {
   const counts = new Map()
@@ -309,51 +258,21 @@ const authorCount = computed(() => {
     if (name) authors.add(name)
   }
   for (const datasheet of exploreStore.datasheets) {
-    const name = normalizeIdentity(datasheet.author)
+    const name = normalizeIdentity(primaryCreatorName(datasheet))
     if (name) authors.add(name)
   }
   return authors.size
 })
 
-const identityKeys = computed(() => {
-  if (!auth.user) return []
-
-  const baseKeys = [
-    auth.displayName,
-    auth.user.name,
-    auth.user.username,
-    auth.user.email,
-    auth.user.email?.split('@')[0],
-  ]
-
-  if (auth.user.name) {
-    baseKeys.push(...auth.user.name.split(' '))
-  }
-
-  return [...new Set(baseKeys.map(normalizeIdentity).filter(Boolean))]
-})
-
-const myModelsAll = computed(() => exploreStore.models.filter(model => matchesCurrentUser(model.author)))
-
-const myModels = computed(() => myModelsAll.value.slice(0, 5))
-
-const myModelCount = computed(() => myModelsAll.value.length)
-
 function normalizeIdentity(value) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
-function matchesCurrentUser(value) {
-  if (!auth.isLoggedIn) return false
-
-  const candidate = normalizeIdentity(value)
-  if (!candidate) return false
-
-  return identityKeys.value.some(key => (
-    candidate === key ||
-    candidate.startsWith(`${key} `) ||
-    candidate.endsWith(` ${key}`)
-  ))
+function primaryCreatorName(datasheet) {
+  const c = datasheet?.creator?.[0] ?? datasheet?.creators?.[0]
+  if (!c) return ''
+  if (typeof c === 'string') return c
+  return c.creatorName?.name || c.creator_name || c.givenName || c.given_name || ''
 }
 
 async function loadDashboard() {
@@ -366,7 +285,6 @@ async function loadDashboard() {
 }
 
 onMounted(loadDashboard)
-watch(() => apiMode.mode, loadDashboard)
 watch(() => auth.isLoggedIn, loadDashboard)
 </script>
 

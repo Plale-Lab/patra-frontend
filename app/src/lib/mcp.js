@@ -40,6 +40,13 @@ export function createMcpClient(baseUrl) {
       eventSource.onerror = () => {
         if (!connected) {
           reject(new Error('SSE connection failed'))
+        } else {
+          // Stream dropped after connecting: fail any in-flight requests
+          // so callers don't hang forever waiting on a response.
+          for (const { reject: rejectPending } of pending.values()) {
+            rejectPending(new Error('SSE connection lost'))
+          }
+          pending.clear()
         }
       }
     })

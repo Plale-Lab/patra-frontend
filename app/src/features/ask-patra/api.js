@@ -1,9 +1,10 @@
 import { apiFetch } from '../../lib/api'
+import { parseErrorMessage } from '../../lib/errorParsing'
 
 export async function fetchAskPatraBootstrap() {
   const response = await apiFetch('/api/ask-patra/bootstrap')
   if (!response.ok) {
-    throw new Error(await parseError(response, `HTTP ${response.status}`))
+    throw new Error(await parseErrorMessage(response, `HTTP ${response.status}`))
   }
   return response.json()
 }
@@ -15,16 +16,7 @@ export async function sendAskPatraMessage(payload) {
     body: JSON.stringify(payload),
   })
   if (!response.ok) {
-    throw new Error(await parseError(response, `HTTP ${response.status}`))
+    throw new Error(await parseErrorMessage(response, `HTTP ${response.status}`))
   }
   return response.json()
-}
-
-async function parseError(response, fallback) {
-  try {
-    const payload = await response.json()
-    return payload.detail || payload.message || fallback
-  } catch {
-    return fallback
-  }
 }

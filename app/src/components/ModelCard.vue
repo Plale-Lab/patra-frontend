@@ -10,17 +10,17 @@
     <h3 class="model-card-name">{{ model.name }}</h3>
     <p class="model-card-desc">{{ model.short_description }}</p>
     <div class="model-card-meta">
-      <div class="meta-row">
+      <div class="meta-row" v-if="model.author">
         <IconUser :size="14" stroke-width="1.8" />
         <span>{{ model.author }}</span>
       </div>
-      <div class="meta-row">
+      <div class="meta-row" v-if="model.category">
         <IconTag :size="14" stroke-width="1.8" />
         <span>{{ model.category }}</span>
       </div>
-      <div class="meta-row">
+      <div class="meta-row" v-if="formatVersion(model.version)">
         <IconGitBranch :size="14" stroke-width="1.8" />
-        <span>v{{ model.version }}</span>
+        <span>{{ formatVersion(model.version) }}</span>
       </div>
     </div>
     <div class="model-card-accuracy" v-if="model.test_accuracy">
@@ -42,6 +42,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { IconUser, IconTag, IconGitBranch, IconChevronRight } from '@tabler/icons-vue'
+import { formatVersion } from '../lib/formatVersion'
 
 defineProps({
   model: { type: Object, required: true },
@@ -57,6 +58,7 @@ defineProps({
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
   text-decoration: none;
   transition: all var(--transition);
   cursor: pointer;
@@ -78,12 +80,14 @@ defineProps({
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .model-card-desc {
   font-size: .84rem;
   color: var(--color-text-secondary);
   line-height: 1.55;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -104,7 +108,6 @@ defineProps({
   color: var(--color-text-muted);
 }
 
-.model-card-accuracy { margin-top: auto; }
 .accuracy-header {
   display: flex;
   justify-content: space-between;
@@ -132,7 +135,7 @@ defineProps({
   align-items: center;
   padding-top: 10px;
   border-top: 1px solid var(--color-border);
-  margin-top: 4px;
+  margin-top: auto;
 }
 .model-type-badge {
   font-size: .72rem;

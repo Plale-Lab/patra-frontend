@@ -1,10 +1,10 @@
 <template>
   <Teleport to="body">
     <div class="modal-overlay" @click.self="$emit('close')">
-      <div class="modal-content">
+      <div class="modal-content" role="dialog" aria-modal="true" :aria-label="title || 'Dialog'">
         <div class="modal-header">
           <span>{{ title }}</span>
-          <button class="btn-icon" @click="$emit('close')">
+          <button class="btn-icon" type="button" aria-label="Close" @click="$emit('close')">
             <IconX :size="18" stroke-width="2" />
           </button>
         </div>
@@ -20,7 +20,16 @@
 </template>
 
 <script setup>
+import { onMounted, onBeforeUnmount } from 'vue'
 import { IconX } from '@tabler/icons-vue'
+
 defineProps({ title: { type: String, default: '' } })
-defineEmits(['close'])
+const emit = defineEmits(['close'])
+
+function onKeydown(e) {
+  if (e.key === 'Escape') emit('close')
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>

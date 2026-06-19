@@ -5,7 +5,7 @@
       <p>Select a published record, edit its visible fields, and save the updated record directly.</p>
     </div>
 
-    <div v-if="!(auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess)" class="card">
+    <div v-if="!(auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)" class="card">
       <div class="card-body">
         <div class="empty-state compact">
           <IconLock :size="34" stroke-width="1.5" />
@@ -32,7 +32,7 @@
               @keyup.enter="runSearchNow"
             />
             <button class="btn btn-primary" @click="runSearchNow" :disabled="searching">
-              {{ searching ? 'Searching' : 'Search' }}
+              {{ searching ? 'Searching…' : 'Search' }}
             </button>
           </div>
 
@@ -42,11 +42,11 @@
             <button type="button" class="chip" :class="{ active: typeFilter === 'datasheet' }" @click="typeFilter = 'datasheet'">Datasheets</button>
           </div>
 
-          <div class="form-error" v-if="searchError">{{ searchError }}</div>
+          <InlineFeedback v-if="searchError" type="error" :message="searchError" class="search-feedback" />
 
           <div class="suggestions-block">
             <div class="section-label">{{ searchQuery.trim() ? 'Matching records' : 'Suggested records' }}</div>
-            <div class="record-list" v-if="filteredRecords.length">
+            <div class="record-list stagger" v-if="filteredRecords.length">
               <button
                 v-for="record in filteredRecords"
                 :key="recordKey(record)"
@@ -79,194 +79,62 @@
           </div>
         </div>
 
+        <div v-else-if="detailLoading" class="card-body">
+          <div class="loading-state">
+            <IconLoader2 :size="30" stroke-width="1.6" class="spin" />
+            <span>Loading record…</span>
+          </div>
+        </div>
+
+        <div v-else-if="detailError" class="card-body">
+          <div class="empty-state compact">
+            <IconAlertCircle :size="32" stroke-width="1.5" />
+            <p>{{ detailError }}</p>
+            <button class="btn btn-outline btn-sm" @click="retryLoadDetail">
+              <IconRefresh :size="15" stroke-width="1.8" /> Retry
+            </button>
+          </div>
+        </div>
+
         <div v-else>
           <div class="card-header edit-pane-header">
             <div class="edit-title">
               <span class="record-kind">{{ selectedRecord.kindLabel }}</span>
               <span class="edit-name">{{ selectedAssetName }}</span>
-              <span v-if="currentVersion" class="version-badge">v{{ currentVersion }}</span>
-              <span v-if="isDirty" class="dirty-badge" title="Unsaved changes">●</span>
+              <span v-if="formatVersion(currentVersion)" class="version-badge">{{ formatVersion(currentVersion) }}</span>
+              <span v-if="isDirty" class="dirty-badge" title="Unsaved changes" aria-label="Unsaved changes">●</span>
             </div>
-            <button class="btn btn-link" @click="tryCancel">Cancel</button>
+            <button class="btn btn-outline btn-sm" @click="tryCancel">Close</button>
           </div>
 
           <div class="card-body">
-            <template v-if="selectedRecord.assetType === 'model_card'">
-              <div class="form-section">
-                <div class="form-section-label">Identity</div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Name</label>
-                    <input class="form-input" v-model="editForm.name" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Metadata Version</label>
-                    <input class="form-input" v-model="editForm.version" />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Author</label>
-                    <input class="form-input" v-model="editForm.author" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Category</label>
-                    <input class="form-input" v-model="editForm.category" />
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-section">
-                <div class="form-section-label">Description</div>
-                <div class="form-group">
-                  <label class="form-label">Short Description</label>
-                  <textarea class="form-input form-textarea" rows="2" v-model="editForm.short_description"></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Full Description</label>
-                  <textarea class="form-input form-textarea" rows="4" v-model="editForm.full_description"></textarea>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Keywords</label>
-                  <input class="form-input" v-model="editForm.keywords" />
-                </div>
-              </div>
-
-              <div class="form-section">
-                <div class="form-section-label">AI Model</div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Framework</label>
-                    <input class="form-input" v-model="editForm.framework" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Test Accuracy</label>
-                    <input class="form-input" type="number" step="0.01" min="0" max="1" v-model="editForm.test_accuracy" />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">License</label>
-                    <input class="form-input" v-model="editForm.license" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Input Type</label>
-                    <input class="form-input" v-model="editForm.input_type" />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Input Data URL</label>
-                    <input class="form-input" v-model="editForm.input_data" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Output Data URL</label>
-                    <input class="form-input" v-model="editForm.output_data" />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Foundational Model</label>
-                    <input class="form-input" v-model="editForm.foundational_model" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Documentation URL</label>
-                    <input class="form-input" v-model="editForm.documentation" />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Citation</label>
-                  <textarea class="form-input form-textarea" rows="2" v-model="editForm.citation"></textarea>
-                </div>
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="form-section">
-                <div class="form-section-label">Identity</div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Title</label>
-                    <input class="form-input" v-model="editForm.name" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Metadata Version</label>
-                    <input class="form-input" v-model="editForm.version" />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Description</label>
-                  <textarea class="form-input form-textarea" rows="4" v-model="editForm.description"></textarea>
-                </div>
-              </div>
-
-              <div class="form-section">
-                <div class="form-section-label">DataCite</div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Resource Type</label>
-                    <input class="form-input" v-model="editForm.source" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Publication Year</label>
-                    <input class="form-input" v-model="editForm.publication_year" />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Publisher</label>
-                    <input class="form-input" v-model="editForm.publisher" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Download URL</label>
-                    <input class="form-input" v-model="editForm.download_url" />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Creators</label>
-                    <input class="form-input" v-model="editForm.creator" placeholder="Comma-separated names" />
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Subjects</label>
-                    <input class="form-input" v-model="editForm.features" placeholder="Comma-separated tags" />
-                  </div>
-                </div>
-              </div>
-            </template>
-
-            <div class="form-section">
-              <div class="form-section-label">Visibility</div>
-              <div class="form-group">
-                <label class="form-label">Visibility</label>
-                <div class="filter-chips">
-                  <button type="button" class="chip" :class="{ active: !editForm.is_private }" @click="editForm.is_private = false">Public</button>
-                  <button type="button" class="chip" :class="{ active: editForm.is_private }" @click="editForm.is_private = true">Private</button>
-                </div>
-              </div>
-              <div class="form-group" v-if="selectedRecord.assetType === 'model_card'">
-                <label class="form-label">Access</label>
-                <div class="filter-chips">
-                  <button type="button" class="chip" :class="{ active: !editForm.is_gated }" @click="editForm.is_gated = false">Open</button>
-                  <button type="button" class="chip" :class="{ active: editForm.is_gated }" @click="editForm.is_gated = true">Gated</button>
-                </div>
+            <div class="form-section" v-for="section in editSections" :key="section.id">
+              <div class="form-section-label">{{ section.title }}</div>
+              <div class="section-fields">
+                <FormField
+                  v-for="field in section.fields"
+                  :key="field.key"
+                  :field="field"
+                  v-model="editForm[field.key]"
+                  :error="errors[field.key]"
+                  :class="{ 'field-span-2': field.type === 'textarea' || field.type === 'segmented' }"
+                  @blur="validateOnBlur(field)"
+                />
               </div>
             </div>
 
-            <div class="form-error" v-if="submitError">{{ submitError }}</div>
+            <InlineFeedback v-if="submitError" type="error" :message="submitError" />
+            <InlineFeedback v-else-if="saveResult" type="success">
+              Saved.
+              <RouterLink v-if="savedRecordLink" :to="savedRecordLink" class="success-link">View record →</RouterLink>
+            </InlineFeedback>
 
             <div class="action-row">
-              <button class="btn btn-ghost" @click="tryCancel" :disabled="submitting">Cancel</button>
+              <button class="btn btn-outline" @click="tryCancel" :disabled="submitting">Cancel</button>
               <button class="btn btn-primary" @click="submitEdit" :disabled="submitting || !isDirty">
-                {{ submitting ? 'Saving' : 'Save' }}
+                {{ submitting ? 'Saving…' : 'Save changes' }}
               </button>
-              <span class="save-hint">⌘ S</span>
-            </div>
-
-            <div class="success-banner inline-success" v-if="saveResult">
-              <IconCircleCheck :size="18" stroke-width="1.8" />
-              <span>Saved.</span>
-              <RouterLink v-if="savedRecordLink" :to="savedRecordLink" class="success-link">View record →</RouterLink>
+              <span class="save-hint">⌘S</span>
             </div>
           </div>
         </div>
@@ -277,10 +145,17 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { onBeforeRouteLeave } from 'vue-router'
-import { IconCircleCheck, IconEdit, IconLock, IconSearch, IconSearchOff } from '@tabler/icons-vue'
+import { onBeforeRouteLeave, RouterLink } from 'vue-router'
+import {
+  IconAlertCircle, IconEdit, IconLoader2, IconLock, IconRefresh, IconSearch, IconSearchOff,
+} from '@tabler/icons-vue'
 import { useAuthStore } from '../../stores/auth'
-import { useApiModeStore } from '../../stores/apiMode'
+import { SUPPORTS_DEV_OPEN_ACCESS } from '../../config/api'
+import { sectionsFor } from '../../lib/assetFields'
+import { validateField } from '../../lib/fieldValidation'
+import { formatVersion } from '../../lib/formatVersion'
+import FormField from '../../components/FormField.vue'
+import InlineFeedback from '../../components/InlineFeedback.vue'
 import {
   fetchExistingRecordDetail,
   fetchSuggestedEditableRecords,
@@ -290,7 +165,6 @@ import {
 } from './api'
 
 const auth = useAuthStore()
-const apiMode = useApiModeStore()
 
 const searchQuery = ref('')
 const searching = ref(false)
@@ -301,19 +175,27 @@ const typeFilter = ref('all')
 
 const selectedRecord = ref(null)
 const selectedDetail = ref(null)
+const detailLoading = ref(false)
+const detailError = ref('')
 const editForm = reactive({})
+const errors = reactive({})
 const originalFormJson = ref('')
 const submitting = ref(false)
 const submitError = ref('')
 const saveResult = ref(null)
 
 let searchTimer = null
+let detailToken = 0
 const DEBOUNCE_MS = 350
 
 const filteredRecords = computed(() => (
   typeFilter.value === 'all'
     ? suggestedRecords.value
     : suggestedRecords.value.filter((r) => r.assetType === typeFilter.value)
+))
+
+const editSections = computed(() => (
+  selectedRecord.value ? sectionsFor(selectedRecord.value.assetType) : []
 ))
 
 const selectedAssetName = computed(() => (
@@ -324,7 +206,18 @@ const selectedAssetName = computed(() => (
 
 const currentVersion = computed(() => selectedDetail.value?.asset_version || null)
 
-const isDirty = computed(() => JSON.stringify(editForm) !== originalFormJson.value)
+// Dirty = the form differs from the snapshot taken when the record loaded.
+// (Snapshot-based rather than patch-based so that records whose creator/subject
+// names legitimately contain commas — e.g. "Doe, Jane" — are not reported dirty
+// on load by the split/join round-trip, and so an untouched record can't be
+// accidentally saved.)
+function snapshotForm() {
+  originalFormJson.value = JSON.stringify(editForm)
+}
+
+const isDirty = computed(() => (
+  originalFormJson.value !== '' && JSON.stringify(editForm) !== originalFormJson.value
+))
 
 const savedRecordLink = computed(() => {
   if (!saveResult.value || !selectedDetail.value?.uuid) return null
@@ -333,8 +226,13 @@ const savedRecordLink = computed(() => {
     : { name: 'DatasheetDetail', params: { uuid: selectedDetail.value.uuid } }
 })
 
+// Dismiss the "Saved." banner as soon as the user starts editing again.
+watch(isDirty, (dirty) => {
+  if (dirty) saveResult.value = null
+})
+
 onMounted(() => {
-  if (auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess) {
+  if (auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS) {
     loadSuggestions()
   }
   window.addEventListener('keydown', onKeydown)
@@ -356,7 +254,7 @@ onBeforeRouteLeave((to, from, next) => {
 })
 
 watch(searchQuery, () => {
-  if (!(auth.isTapisUser || auth.isAdmin || apiMode.supportsDevOpenAccess)) return
+  if (!(auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)) return
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(runSearch, DEBOUNCE_MS)
 })
@@ -383,8 +281,18 @@ function onBeforeUnload(event) {
   }
 }
 
-function snapshotForm() {
-  originalFormJson.value = JSON.stringify(editForm)
+function clearErrors() {
+  Object.keys(errors).forEach((key) => delete errors[key])
+}
+
+function clearForm() {
+  Object.keys(editForm).forEach((key) => delete editForm[key])
+}
+
+function validateOnBlur(field) {
+  const msg = validateField(field, editForm[field.key], false)
+  if (msg) errors[field.key] = msg
+  else delete errors[field.key]
 }
 
 async function loadSuggestions(query = '') {
@@ -417,28 +325,43 @@ function trySelectRecord(record) {
 }
 
 async function selectRecord(record) {
+  const myToken = ++detailToken
   selectedRecord.value = record
   submitError.value = ''
   saveResult.value = null
+  detailError.value = ''
+  clearErrors()
+  clearForm()
+  originalFormJson.value = ''
+  detailLoading.value = true
+  selectedDetail.value = null
   try {
     const detail = await fetchExistingRecordDetail(record)
+    if (myToken !== detailToken) return
     selectedDetail.value = detail
-    const mapped = mapRecordDetailToEditForm(record, detail)
-    Object.keys(editForm).forEach((key) => delete editForm[key])
-    Object.assign(editForm, mapped)
+    Object.assign(editForm, mapRecordDetailToEditForm(record, detail))
     snapshotForm()
   } catch (error) {
-    submitError.value = error.message || 'Could not load the selected record.'
+    if (myToken !== detailToken) return
+    detailError.value = error.message || 'Could not load the selected record.'
+  } finally {
+    if (myToken === detailToken) detailLoading.value = false
   }
+}
+
+function retryLoadDetail() {
+  if (selectedRecord.value) selectRecord(selectedRecord.value)
 }
 
 function tryCancel() {
   if (isDirty.value && !confirm('Discard unsaved changes?')) return
   selectedRecord.value = null
   selectedDetail.value = null
+  detailError.value = ''
   saveResult.value = null
   submitError.value = ''
-  Object.keys(editForm).forEach((key) => delete editForm[key])
+  clearErrors()
+  clearForm()
   originalFormJson.value = ''
 }
 
@@ -448,17 +371,14 @@ async function submitEdit() {
   submitError.value = ''
   saveResult.value = null
   try {
-    saveResult.value = await saveEditedRecord(selectedRecord.value, { ...editForm }, selectedDetail.value, auth.displayName)
-    const newDetail = await fetchExistingRecordDetail({
-      ...selectedRecord.value,
-      assetId: saveResult.value.asset_id,
-    })
+    saveResult.value = await saveEditedRecord(selectedRecord.value, { ...editForm }, selectedDetail.value)
+    const newDetail = await fetchExistingRecordDetail(selectedRecord.value)
     selectedDetail.value = newDetail
     selectedRecord.value = {
       ...selectedRecord.value,
       title: getRecordDisplayName(selectedRecord.value, newDetail),
     }
-    Object.keys(editForm).forEach((key) => delete editForm[key])
+    clearForm()
     Object.assign(editForm, mapRecordDetailToEditForm(selectedRecord.value, newDetail))
     snapshotForm()
     await loadSuggestions(searchQuery.value)
@@ -481,6 +401,7 @@ async function submitEdit() {
 .search-pane,
 .edit-pane {
   margin: 0;
+  min-width: 0;
 }
 
 .search-row {
@@ -493,6 +414,10 @@ async function submitEdit() {
   margin-top: 12px;
 }
 
+.search-feedback {
+  margin-top: 12px;
+}
+
 .section-label {
   margin-top: 18px;
   margin-bottom: 10px;
@@ -501,26 +426,6 @@ async function submitEdit() {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-text-muted);
-}
-
-.form-section {
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 14px;
-}
-
-.form-section:last-of-type {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-
-.form-section-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
-  margin-bottom: 10px;
 }
 
 .edit-pane-header {
@@ -541,19 +446,21 @@ async function submitEdit() {
 .edit-name {
   font-weight: 700;
   color: var(--color-text);
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 
 .version-badge {
   border-radius: 999px;
   padding: 2px 8px;
-  background: var(--color-surface-2, #f3f5fb);
+  background: var(--color-bg-elevated);
   color: var(--color-text-secondary);
   font-size: 0.74rem;
   font-weight: 700;
 }
 
 .dirty-badge {
-  color: var(--color-warning, #d97706);
+  color: var(--color-accent);
   font-size: 1.1rem;
   line-height: 1;
 }
@@ -576,22 +483,23 @@ async function submitEdit() {
 
 .record-card {
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   padding: 12px 14px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  min-width: 0;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
 }
 
 .record-card:hover {
-  border-color: rgba(88, 108, 255, 0.4);
+  border-color: rgba(var(--color-primary-rgb), 0.4);
   transform: translateY(-1px);
 }
 
 .record-card.active {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(88, 108, 255, 0.12);
+  box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.14);
 }
 
 .record-card-header {
@@ -604,12 +512,14 @@ async function submitEdit() {
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .record-card-subtitle {
   margin-top: 6px;
   font-size: 0.84rem;
   color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .record-card-description {
@@ -617,6 +527,7 @@ async function submitEdit() {
   font-size: 0.8rem;
   color: var(--color-text-muted);
   line-height: 1.4;
+  overflow-wrap: anywhere;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -627,7 +538,7 @@ async function submitEdit() {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 .save-hint {
@@ -636,16 +547,8 @@ async function submitEdit() {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-.inline-success {
-  margin-top: 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .success-link {
-  margin-left: 6px;
-  font-weight: 600;
+  margin-left: 4px;
 }
 
 @media (max-width: 980px) {
