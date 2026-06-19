@@ -19,13 +19,15 @@ function normalizeAffiliations(value) {
     return []
 }
 
-function normalizeModel(model = {}) {
+export function normalizeModel(model = {}) {
     const aiModel = model.ai_model && typeof model.ai_model === 'object' ? model.ai_model : null
+    const id = model.id ?? model.mc_id ?? model.external_id ?? model.uuid ?? null
 
     return {
         ...model,
-        id: model.id ?? model.mc_id ?? model.external_id ?? null,
-        external_id: model.external_id ?? model.id ?? model.mc_id ?? null,
+        id,
+        uuid: model.uuid ?? id,
+        external_id: model.external_id ?? id,
         category: model.category ?? model.categories ?? '',
         categories: model.categories ?? model.category ?? '',
         framework: model.framework ?? aiModel?.framework ?? '',
@@ -169,7 +171,8 @@ function normalizeDatasheetGeoLocation(item) {
     }
 }
 
-function normalizeDatasheet(ds = {}) {
+export function normalizeDatasheet(ds = {}) {
+    const id = ds.id ?? ds.identifier ?? ds.uuid ?? null
     const titles = asArray(ds.title ?? ds.titles)
         .map(normalizeDatasheetTitle)
         .filter(Boolean)
@@ -194,8 +197,9 @@ function normalizeDatasheet(ds = {}) {
 
     return {
         ...ds,
-        id: ds.id ?? ds.identifier ?? null,
-        identifier: ds.identifier ?? ds.id ?? null,
+        id,
+        uuid: ds.uuid ?? id,
+        identifier: ds.identifier ?? id,
         title: titles,
         titles,
         description: descriptions,
