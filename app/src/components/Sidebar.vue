@@ -73,6 +73,14 @@
         </button>
       </div>
 
+      <div v-else-if="auth.portalAuthUnavailable" class="sidebar-portal-error" role="status">
+        <IconAlertTriangle :size="18" stroke-width="1.8" />
+        <div>
+          <strong>Portal session unavailable</strong>
+          <span>Refresh or sign in through the parent ICICLE/Tapis portal.</span>
+        </div>
+      </div>
+
       <button class="sidebar-login-btn" v-else @click="showLogin = true">
         <IconLogin :size="18" stroke-width="1.8" />
         <span>Tapis Login</span>
@@ -250,6 +258,29 @@ function handleLogout() {
   padding: 18px;
   border-top: 1px solid var(--color-border);
   background: rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-portal-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  border-radius: 10px;
+  color: #92400e;
+  background: #fff7ed;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.sidebar-portal-error strong,
+.sidebar-portal-error span {
+  display: block;
+}
+
+.sidebar-portal-error span {
+  margin-top: 2px;
+  color: #9a5b22;
 }
 
 .sidebar-user {
