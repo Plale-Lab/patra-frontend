@@ -1,0 +1,450 @@
+{
+  "pod_id": "patradev-frontend",
+  "image": "plalelab/patra-frontend:latest",
+  "template": "",
+  "description": "Development frontend for Patra pre-release features",
+  "environment_variables": {
+    "API_BASE_URL": "https://patradev-backend.pods.icicleai.tapis.io",
+    "SUPPORTS_AGENT_TOOLS": "true",
+    "SUPPORTS_EDIT_EXISTING_ASSETS": "true",
+    "SUPPORTS_EDIT_EXISTING_RESOURCES": "true",
+    "SUPPORTS_EDIT_RECORDS": "true",
+    "SUPPORTS_AUTOMATED_INGESTION": "true",
+    "SUPPORTS_ASK_PATRA": "true",
+    "SUPPORTS_TICKETS": "true",
+    "SUPPORTS_REVIEW_SUBMISSIONS": "true",
+    "SUPPORTS_MANAGE_TICKETS": "true",
+    "SUPPORTS_AUDIT_LOG": "true",
+    "SUPPORTS_MCP_EXPLORER": "true",
+    "SUPPORTS_DOMAIN_EXPERIMENTS": "true",
+    "MCP_BASE_URL": "http://<mcp-host>:8050"
+  },
+  "secret_map": {},
+  "status_requested": "ON",
+  "volume_mounts": {},
+  "time_to_stop_default": -1,
+  "networking": {
+    "default": {
+      "protocol": "http",
+      "port": 80,
+      "url": "patradev-frontend.pods.icicleai.tapis.io",
+      "ip_allow_list": [],
+      "tapis_auth": false,
+      "tapis_auth_response_headers": {},
+      "tapis_auth_allowed_users": [
+        "AUTHORIZED_USERS"
+      ],
+      "tapis_auth_return_path": "/",
+      "tapis_auth_excluded_paths": [],
+      "tapis_auth_excluded_path_regex": [],
+      "cors_allow_origins": [],
+      "cors_allow_methods": [],
+      "cors_allow_headers": [],
+      "cors_allow_credentials": false,
+      "cors_max_age": 100,
+      "tapis_ui_uri": "",
+      "tapis_ui_uri_redirect": false,
+      "tapis_ui_uri_description": "",
+      "proxy_compression": true,
+      "proxy_compression_encodings": [
+        "zstd",
+        "br",
+        "gzip"
+      ],
+      "proxy_compression_excluded_content_types": [],
+      "proxy_compression_min_response_body_bytes": 1024
+    }
+  },
+  "resources": {
+    "cpu_request": 250,
+    "cpu_limit": 2000,
+    "mem_request": 256,
+    "mem_limit": 3072,
+    "ephemeral_storage_request": -1,
+    "ephemeral_storage_limit": -1,
+    "gpus": 0
+  },
+  "compute_queue": "default",
+  "status": "AVAILABLE",
+  "status_container": {
+    "phase": "Running",
+    "start_time": "2026-03-30T19:32:16.000000",
+    "message": "Pod is running."
+  },
+  "creation_ts": "2026-03-30T19:33:27.401931",
+  "update_ts": "2026-03-30T19:33:27.402100",
+  "start_instance_ts": "2026-03-30T19:33:21.329311"
+}
+
+
+{
+  "pod_id": "patraservermonitor",
+  "image": "plalelab/patra-server-monitor:latest",
+  "template": "",
+  "description": "PATRA 5-pod monitor with Telegram alerting",
+  "environment_variables": {
+    "TELEGRAM_BOT_TOKEN": "8731809281:AAEEiTlC6kvqeUcD5Q084Ui3G4E7q2VhGUU",
+    "MONITOR_DB_PATH": "/data/patra-monitor.db",
+    "MONITOR_INTERVAL_SECONDS": "30",
+    "MONITOR_REQUEST_TIMEOUT_SECONDS": "10",
+    "MONITOR_FAILURE_THRESHOLD": "2",
+    "MONITOR_RECOVERY_THRESHOLD": "1",
+    "MONITOR_REMINDER_INTERVAL_MINUTES": "30"
+  },
+  "secret_map": {},
+  "status_requested": "ON",
+  "volume_mounts": {
+    "/data": {
+      "type": "tapisvolume",
+      "source_id": "patraservermonitor",
+      "mounted_by": "cgarcia",
+      "sub_path": "",
+      "read_only": false,
+      "config_permissions": "0644",
+      "config_update_mode": "always"
+    }
+  },
+  "time_to_stop_default": -1,
+  "networking": {
+    "default": {
+      "protocol": "http",
+      "port": 8080,
+      "url": "patraservermonitor.pods.icicleai.tapis.io",
+      "ip_allow_list": [],
+      "tapis_auth": false,
+      "tapis_auth_response_headers": {},
+      "tapis_auth_allowed_users": [
+        "AUTHORIZED_USERS"
+      ],
+      "tapis_auth_return_path": "/",
+      "tapis_auth_excluded_paths": [],
+      "tapis_auth_excluded_path_regex": [],
+      "cors_allow_origins": [],
+      "cors_allow_methods": [],
+      "cors_allow_headers": [],
+      "cors_allow_credentials": false,
+      "cors_max_age": 100,
+      "tapis_ui_uri": "",
+      "tapis_ui_uri_redirect": false,
+      "tapis_ui_uri_description": "",
+      "proxy_compression": true,
+      "proxy_compression_encodings": [
+        "zstd",
+        "br",
+        "gzip"
+      ],
+      "proxy_compression_excluded_content_types": [],
+      "proxy_compression_min_response_body_bytes": 1024
+    }
+  },
+  "resources": {
+    "cpu_request": 250,
+    "cpu_limit": 1000,
+    "mem_request": 256,
+    "mem_limit": 1024,
+    "ephemeral_storage_request": -1,
+    "ephemeral_storage_limit": -1,
+    "gpus": 0
+  },
+  "compute_queue": "default",
+  "status": "AVAILABLE",
+  "status_container": {
+    "phase": "Running",
+    "start_time": "2026-03-30T20:01:23.000000",
+    "message": "Pod is running."
+  },
+  "creation_ts": "2026-03-30T20:02:33.482432",
+  "update_ts": "2026-03-30T20:02:33.482531",
+  "start_instance_ts": "2026-03-30T20:02:21.090124"
+}
+
+{
+  "pod_id": "patradb",
+  "image": "postgres:18.2",
+  "template": "postgres:18.2@2026-02-19-21:51:35",
+  "description": "Postgres 18 template",
+  "command": [
+    "docker-entrypoint.sh"
+  ],
+  "arguments": [
+    "-c",
+    "ssl=on",
+    "-c",
+    "ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem",
+    "-c",
+    "ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key"
+  ],
+  "environment_variables": {
+    "POSTGRES_USER": "patradb",
+    "POSTGRES_PASSWORD": "zBQDRU23BVwoXh8zGh77eumDWOVR7c"
+  },
+  "secret_map": {},
+  "status_requested": "ON",
+  "volume_mounts": {
+    "/var/lib/postgresql": {
+      "type": "tapisvolume",
+      "source_id": "patradbpostgres",
+      "mounted_by": "neelk",
+      "sub_path": "/postgresql",
+      "read_only": false,
+      "config_permissions": "0644",
+      "config_update_mode": "always"
+    }
+  },
+  "time_to_stop_default": -1,
+  "networking": {
+    "default": {
+      "protocol": "postgres",
+      "port": 5432,
+      "url": "patradb.pods.icicleai.tapis.io",
+      "ip_allow_list": [],
+      "tapis_auth": false,
+      "tapis_auth_response_headers": {},
+      "tapis_auth_allowed_users": [
+        "AUTHORIZED_USERS"
+      ],
+      "tapis_auth_return_path": "/",
+      "tapis_auth_excluded_paths": [],
+      "tapis_auth_excluded_path_regex": [],
+      "cors_allow_origins": [],
+      "cors_allow_methods": [],
+      "cors_allow_headers": [],
+      "cors_allow_credentials": false,
+      "cors_max_age": 100,
+      "tapis_ui_uri": "",
+      "tapis_ui_uri_redirect": false,
+      "tapis_ui_uri_description": "",
+      "proxy_compression": false,
+      "proxy_compression_encodings": [
+        "zstd",
+        "br",
+        "gzip"
+      ],
+      "proxy_compression_excluded_content_types": [],
+      "proxy_compression_min_response_body_bytes": 1024
+    }
+  },
+  "resources": {
+    "cpu_request": 250,
+    "cpu_limit": 2000,
+    "mem_request": 256,
+    "mem_limit": 3072,
+    "ephemeral_storage_request": -1,
+    "ephemeral_storage_limit": -1,
+    "gpus": 0
+  },
+  "compute_queue": "default",
+  "status": "AVAILABLE",
+  "status_container": {
+    "phase": "Running",
+    "start_time": "2026-03-30T16:55:48.000000",
+    "message": "Pod is running."
+  },
+  "creation_ts": "2026-03-06T20:17:05.490789",
+  "update_ts": "2026-03-06T20:17:05.490977",
+  "start_instance_ts": "2026-03-30T16:56:06.758168"
+}
+
+{
+  "pod_id": "patradbeaver",
+  "image": "dbeaver/cloudbeaver:latest",
+  "template": "",
+  "description": "CloudBeaver web database client",
+  "environment_variables": {},
+  "secret_map": {},
+  "status_requested": "ON",
+  "volume_mounts": {
+    "/opt/cloudbeaver/workspace": {
+      "type": "tapisvolume",
+      "source_id": "patradb",
+      "mounted_by": "neelk",
+      "sub_path": "",
+      "read_only": false,
+      "config_permissions": "0644",
+      "config_update_mode": "always"
+    }
+  },
+  "time_to_stop_default": -1,
+  "networking": {
+    "default": {
+      "protocol": "http",
+      "port": 8978,
+      "url": "patradbeaver.pods.icicleai.tapis.io",
+      "ip_allow_list": [],
+      "tapis_auth": true,
+      "tapis_auth_response_headers": {},
+      "tapis_auth_allowed_users": [
+        "AUTHORIZED_USERS"
+      ],
+      "tapis_auth_return_path": "/",
+      "tapis_auth_excluded_paths": [],
+      "tapis_auth_excluded_path_regex": [],
+      "cors_allow_origins": [],
+      "cors_allow_methods": [],
+      "cors_allow_headers": [],
+      "cors_allow_credentials": false,
+      "cors_max_age": 100,
+      "tapis_ui_uri": "",
+      "tapis_ui_uri_redirect": false,
+      "tapis_ui_uri_description": "",
+      "proxy_compression": true,
+      "proxy_compression_encodings": [
+        "zstd",
+        "br",
+        "gzip"
+      ],
+      "proxy_compression_excluded_content_types": [],
+      "proxy_compression_min_response_body_bytes": 1024
+    }
+  },
+  "resources": {
+    "cpu_request": 250,
+    "cpu_limit": 1000,
+    "mem_request": 512,
+    "mem_limit": 2048,
+    "ephemeral_storage_request": -1,
+    "ephemeral_storage_limit": -1,
+    "gpus": 0
+  },
+  "compute_queue": "default",
+  "status": "AVAILABLE",
+  "status_container": {
+    "phase": "Running",
+    "start_time": "2026-03-30T16:58:03.000000",
+    "message": "Pod is running."
+  },
+  "creation_ts": "2026-03-06T20:27:00.369571",
+  "update_ts": "2026-03-06T20:27:00.369846",
+  "start_instance_ts": "2026-03-30T16:58:39.846767"
+}
+
+{
+  "pod_id": "patra",
+  "image": "plalelab/patra-frontend:latest",
+  "template": "",
+  "description": "Frontend for Patra Model Cards project",
+  "environment_variables": {
+    "API_BASE_URL": "https://patrabackend.pods.icicleai.tapis.io"
+  },
+  "secret_map": {},
+  "status_requested": "ON",
+  "volume_mounts": {},
+  "time_to_stop_default": -1,
+  "networking": {
+    "default": {
+      "protocol": "http",
+      "port": 80,
+      "url": "patra.pods.icicleai.tapis.io",
+      "ip_allow_list": [],
+      "tapis_auth": false,
+      "tapis_auth_response_headers": {},
+      "tapis_auth_allowed_users": [
+        "AUTHORIZED_USERS"
+      ],
+      "tapis_auth_return_path": "/",
+      "tapis_auth_excluded_paths": [],
+      "tapis_auth_excluded_path_regex": [],
+      "cors_allow_origins": [],
+      "cors_allow_methods": [],
+      "cors_allow_headers": [],
+      "cors_allow_credentials": false,
+      "cors_max_age": 100,
+      "tapis_ui_uri": "",
+      "tapis_ui_uri_redirect": false,
+      "tapis_ui_uri_description": "",
+      "proxy_compression": true,
+      "proxy_compression_encodings": [
+        "zstd",
+        "br",
+        "gzip"
+      ],
+      "proxy_compression_excluded_content_types": [],
+      "proxy_compression_min_response_body_bytes": 1024
+    }
+  },
+  "resources": {
+    "cpu_request": 250,
+    "cpu_limit": 2000,
+    "mem_request": 256,
+    "mem_limit": 3072,
+    "ephemeral_storage_request": -1,
+    "ephemeral_storage_limit": -1,
+    "gpus": 0
+  },
+  "compute_queue": "default",
+  "status": "AVAILABLE",
+  "status_container": {
+    "phase": "Running",
+    "start_time": "2026-03-30T17:45:11.000000",
+    "message": "Pod is running."
+  },
+  "creation_ts": "2026-03-07T00:34:52.301475",
+  "update_ts": "2026-03-07T00:34:52.301749",
+  "start_instance_ts": "2026-03-30T17:45:26.267606"
+}
+
+{
+  "pod_id": "patrabackend",
+  "image": "plalelab/patra-backend:latest",
+  "template": "",
+  "description": "Patra API for model cards and datasheets",
+  "environment_variables": {
+    "DATABASE_URL": "postgresql://patradb:zBQDRU23BVwoXh8zGh77eumDWOVR7c@patradb.pods.icicleai.tapis.io:5432/patradb?sslmode=require",
+    "JWT_SECRET": "change-me-in-production"
+  },
+  "secret_map": {},
+  "status_requested": "ON",
+  "volume_mounts": {},
+  "time_to_stop_default": -1,
+  "networking": {
+    "default": {
+      "protocol": "http",
+      "port": 8000,
+      "url": "patrabackend.pods.icicleai.tapis.io",
+      "ip_allow_list": [],
+      "tapis_auth": false,
+      "tapis_auth_response_headers": {},
+      "tapis_auth_allowed_users": [
+        "AUTHORIZED_USERS"
+      ],
+      "tapis_auth_return_path": "/",
+      "tapis_auth_excluded_paths": [],
+      "tapis_auth_excluded_path_regex": [],
+      "cors_allow_origins": [],
+      "cors_allow_methods": [],
+      "cors_allow_headers": [],
+      "cors_allow_credentials": false,
+      "cors_max_age": 100,
+      "tapis_ui_uri": "",
+      "tapis_ui_uri_redirect": false,
+      "tapis_ui_uri_description": "",
+      "proxy_compression": true,
+      "proxy_compression_encodings": [
+        "zstd",
+        "br",
+        "gzip"
+      ],
+      "proxy_compression_excluded_content_types": [],
+      "proxy_compression_min_response_body_bytes": 1024
+    }
+  },
+  "resources": {
+    "cpu_request": 250,
+    "cpu_limit": 2000,
+    "mem_request": 256,
+    "mem_limit": 3072,
+    "ephemeral_storage_request": -1,
+    "ephemeral_storage_limit": -1,
+    "gpus": 0
+  },
+  "compute_queue": "default",
+  "status": "AVAILABLE",
+  "status_container": {
+    "phase": "Running",
+    "start_time": "2026-03-30T17:09:24.000000",
+    "message": "Pod is running."
+  },
+  "creation_ts": "2026-03-07T00:36:50.844874",
+  "update_ts": "2026-03-07T00:36:50.845091",
+  "start_instance_ts": "2026-03-30T17:09:29.057465"
+}
