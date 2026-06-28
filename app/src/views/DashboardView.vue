@@ -1,784 +1,393 @@
 <template>
-  <div>
-    <div class="page-header">
-      <h1>{{ isGuest ? 'Patra Knowledge Base' : `Welcome back, ${auth.displayName}` }}</h1>
-      <p>
-        {{ isGuest
-          ? 'Browse the public catalog and inspect the current coverage of model cards and datasheets.'
-          : 'Catalog status, record quality, and the work surfaces available in this deployment.' }}
-      </p>
-    </div>
+  <main class="catalog-home">
+    <section class="catalog-hero">
+      <img
+        class="hero-image"
+        src="/img/catalog/hero-field.jpg"
+        alt="Rows of crops extending across a sunlit agricultural landscape"
+      />
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <div class="hero-brand">ICICLE AI Resource Catalog</div>
+        <h1>Discover connected AI resources.</h1>
+        <p>Search models, datasets, workflows, devices, evaluations, and provenance across the ICICLE ecosystem.</p>
 
-    <div class="connection-banner error" v-if="dashboardError">
-      <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Some dashboard data could not be loaded from {{ apiMode.displayLabel.toLowerCase() }} at <code>{{ apiMode.apiBaseUrl }}</code>.</span>
-    </div>
-
-    <section class="summary-grid">
-      <RouterLink to="/explore-model-cards" class="summary-tile">
-        <div class="summary-icon primary"><IconCube :size="22" stroke-width="1.8" /></div>
-        <div>
-          <div class="summary-value">{{ totalModels }}</div>
-          <div class="summary-label">Model Cards</div>
-          <div class="summary-note">{{ publicModelCount }} public, {{ privateModelCount }} private</div>
-        </div>
-      </RouterLink>
-      <RouterLink to="/explore-datasheets" class="summary-tile">
-        <div class="summary-icon info"><IconTable :size="22" stroke-width="1.8" /></div>
-        <div>
-          <div class="summary-value">{{ totalDatasheets }}</div>
-          <div class="summary-label">Datasheets</div>
-          <div class="summary-note">{{ publicDatasheetCount }} public, {{ privateDatasheetCount }} private</div>
-        </div>
-      </RouterLink>
-      <RouterLink to="/explore-model-cards" class="summary-tile">
-        <div class="summary-icon accent"><IconShieldLock :size="22" stroke-width="1.8" /></div>
-        <div>
-          <div class="summary-value">{{ gatedModelCount }}</div>
-          <div class="summary-label">Gated Models</div>
-          <div class="summary-note">{{ visibilityReviewItems.length }} visibility items to inspect</div>
-        </div>
-      </RouterLink>
-      <div class="summary-tile">
-        <div class="summary-icon success"><IconChecks :size="22" stroke-width="1.8" /></div>
-        <div>
-          <div class="summary-value">{{ qualityScore }}%</div>
-          <div class="summary-label">Completeness</div>
-          <div class="summary-note">{{ qualityIssueCount }} quality gaps detected</div>
-        </div>
+        <form class="hero-search" role="search" @submit.prevent="searchCatalog">
+          <IconSearch :size="22" aria-hidden="true" />
+          <label class="sr-only" for="catalog-home-search">Search the public resource catalog</label>
+          <input
+            id="catalog-home-search"
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search models, datasets, workflows, devices, or identifiers"
+          />
+          <button type="submit">
+            Search
+            <IconArrowRight :size="17" aria-hidden="true" />
+          </button>
+        </form>
       </div>
+      <a class="hero-credit" href="https://images.unsplash.com/photo-1560493676-04071c5f467b" target="_blank" rel="noreferrer">
+        Dan Meyers / Unsplash
+      </a>
     </section>
 
-    <section class="dashboard-layout">
-      <div class="dashboard-main">
-        <div class="card">
-          <div class="card-header">
-            <span>Recent Activity</span>
-            <span class="panel-meta">{{ recentActivity.length }} records</span>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="recentActivity.length === 0">
-              No recent records are available from the current API mode.
-            </div>
-            <div v-else class="activity-list">
-              <RouterLink
-                v-for="item in recentActivity"
-                :key="`${item.type}-${item.id}`"
-                :to="item.route"
-                class="activity-row"
-              >
-                <div class="activity-mark" :class="item.type">
-                  <component :is="item.icon" :size="17" stroke-width="1.8" />
-                </div>
-                <div class="activity-main">
-                  <div class="activity-title">{{ item.title }}</div>
-                  <div class="activity-subtitle">{{ item.subtitle }}</div>
-                </div>
-                <div class="activity-meta">
-                  <span class="badge" :class="item.private ? 'badge-private' : 'badge-public'">
-                    {{ item.private ? 'Private' : 'Public' }}
-                  </span>
-                  <span>{{ item.timeLabel }}</span>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span>Data Quality</span>
-            <span class="panel-meta">{{ qualityIssueCount }} gaps</span>
-          </div>
-          <div class="card-body">
-            <div class="quality-grid">
-              <RouterLink
-                v-for="item in qualityChecks"
-                :key="item.key"
-                :to="item.route"
-                class="quality-item"
-              >
-                <div class="quality-count">{{ item.count }}</div>
-                <div>
-                  <div class="quality-label">{{ item.label }}</div>
-                  <div class="quality-desc">{{ item.description }}</div>
-                </div>
-                <IconChevronRight :size="17" class="quality-arrow" />
-              </RouterLink>
-            </div>
-          </div>
-        </div>
+    <div class="catalog-body">
+      <div v-if="catalogError" class="catalog-notice" role="status">
+        <IconAlertCircle :size="18" aria-hidden="true" />
+        <span>Live catalog records are unavailable. Public navigation and documented development mappings remain available.</span>
       </div>
 
-      <aside class="dashboard-side">
-        <div class="card">
-          <div class="card-header">
-            <span>Quick Actions</span>
+      <section id="resource-stories" class="stories-section" aria-labelledby="featured-stories">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">Featured connections</span>
+            <h2 id="featured-stories">Resource stories</h2>
           </div>
-          <div class="card-body">
-            <div class="action-list">
-              <RouterLink
-                v-for="action in quickActions"
-                :key="action.route"
-                :to="action.route"
-                class="quick-link"
-              >
-                <div class="quick-link-icon" :class="action.tone">
-                  <component :is="action.icon" :size="20" stroke-width="1.8" />
-                </div>
-                <div>
-                  <div class="quick-link-title">{{ action.label }}</div>
-                  <div class="quick-link-desc">{{ action.description }}</div>
-                </div>
-                <IconChevronRight :size="18" class="quick-link-arrow" />
-              </RouterLink>
-            </div>
-          </div>
+          <p>Follow a use case from its documented model and data through compute, run type, and result.</p>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span>Visibility Review</span>
-            <RouterLink to="/explore-model-cards" class="btn btn-sm btn-outline">Open</RouterLink>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="visibilityReviewItems.length === 0">
-              No gated or private records are visible in the current catalog snapshot.
+        <div class="stories-layout">
+          <article v-for="story in stories" :key="story.id" class="story-card">
+            <RouterLink :to="story.route" class="story-media" :aria-label="`Explore ${story.title}`">
+              <img
+                :src="story.image"
+                :alt="story.imageAlt"
+                :style="{ objectPosition: story.imagePosition }"
+                loading="lazy"
+              />
+              <div class="story-media-shade" aria-hidden="true"></div>
+              <span class="story-domain">{{ story.domain }}</span>
+              <span class="story-open"><IconArrowUpRight :size="18" aria-hidden="true" /></span>
+            </RouterLink>
+
+            <div class="story-content">
+              <h3><RouterLink :to="story.route">{{ story.title }}</RouterLink></h3>
+              <p>{{ story.description }}</p>
+
+              <ol class="resource-chain" :aria-label="`${story.title} connected resource chain`">
+                <li v-for="(node, index) in story.chain" :key="node.type">
+                  <RouterLink :to="node.route" :title="`${node.type}: ${node.label}`">
+                    <span class="chain-icon">
+                      <component :is="chainIcons[node.icon]" :size="17" aria-hidden="true" />
+                    </span>
+                    <span class="chain-copy">
+                      <small>{{ node.type }}</small>
+                      <strong>{{ node.label }}</strong>
+                    </span>
+                  </RouterLink>
+                  <IconArrowRight v-if="index < story.chain.length - 1" class="chain-arrow" :size="14" aria-hidden="true" />
+                </li>
+              </ol>
+
+              <div class="linked-records">
+                <span>Linked records</span>
+                <RouterLink :to="story.modelRoute" :title="story.modelLabel">{{ story.modelLabel }}</RouterLink>
+                <RouterLink :to="story.datasetRoute" :title="story.datasetLabel">{{ story.datasetLabel }}</RouterLink>
+              </div>
+
+              <div class="story-footer">
+                <span><i aria-hidden="true"></i>{{ story.dataStatus }}</span>
+                <RouterLink :to="story.route">View story <IconArrowRight :size="15" aria-hidden="true" /></RouterLink>
+              </div>
             </div>
-            <div v-else class="compact-list">
-              <RouterLink
-                v-for="item in visibilityReviewItems"
-                :key="`${item.type}-${item.id}`"
-                :to="item.route"
-                class="compact-item"
-              >
-                <div>
-                  <div class="compact-title">{{ item.title }}</div>
-                  <div class="compact-subtitle">{{ item.subtitle }}</div>
-                </div>
-                <span class="badge" :class="item.badgeClass">{{ item.badge }}</span>
-              </RouterLink>
-            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="browse-catalog" class="browse-section" aria-labelledby="browse-heading">
+        <div class="section-heading browse-heading">
+          <div>
+            <span class="section-kicker">Browse the repository</span>
+            <h2 id="browse-heading">Explore by resource type</h2>
           </div>
+          <RouterLink to="/search" class="section-link">Search everything <IconArrowRight :size="17" aria-hidden="true" /></RouterLink>
         </div>
 
-        <div class="card" v-if="!isGuest">
-          <div class="card-header">
-            <span>My Records</span>
-            <RouterLink to="/explore-model-cards" class="btn btn-sm btn-outline">Explore</RouterLink>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="myRecords.length === 0">
-              No records currently match your signed-in identity.
-            </div>
-            <div v-else class="compact-list">
-              <RouterLink
-                v-for="item in myRecords"
-                :key="`${item.type}-${item.id}`"
-                :to="item.route"
-                class="compact-item"
-              >
-                <div>
-                  <div class="compact-title">{{ item.title }}</div>
-                  <div class="compact-subtitle">{{ item.subtitle }}</div>
-                </div>
-                <span class="badge" :class="item.private ? 'badge-private' : 'badge-public'">
-                  {{ item.private ? 'Private' : 'Public' }}
-                </span>
-              </RouterLink>
-            </div>
-          </div>
+        <nav class="browse-list" aria-label="Catalog resource types">
+          <RouterLink to="/explore-model-cards">
+            <span class="browse-number">01</span>
+            <span><strong>Models</strong><small>Documentation, versions, metrics, and deployment context</small></span>
+            <IconArrowUpRight :size="20" aria-hidden="true" />
+          </RouterLink>
+          <RouterLink to="/explore-datasheets">
+            <span class="browse-number">02</span>
+            <span><strong>Datasets</strong><small>Datasheets, creators, identifiers, rights, and provenance</small></span>
+            <IconArrowUpRight :size="20" aria-hidden="true" />
+          </RouterLink>
+          <RouterLink v-if="SUPPORTS_DOMAIN_EXPERIMENTS" to="/animal-ecology">
+            <span class="browse-number">03</span>
+            <span><strong>Workflows and runs</strong><small>Operational inference, evaluations, devices, images, and power</small></span>
+            <IconArrowUpRight :size="20" aria-hidden="true" />
+          </RouterLink>
+          <RouterLink v-if="SUPPORTS_MCP_EXPLORER" to="/mcp-explorer">
+            <span class="browse-number">04</span>
+            <span><strong>Tools and agents</strong><small>Agent-facing integrations and catalog capabilities</small></span>
+            <IconArrowUpRight :size="20" aria-hidden="true" />
+          </RouterLink>
+        </nav>
+      </section>
+
+      <footer id="catalog-about" class="catalog-about">
+        <div>
+          <strong>About this catalog</strong>
+          <p>Public browsing does not require a Tapis account. Sign in only for personal collections and contributor tools.</p>
         </div>
-      </aside>
-    </section>
-  </div>
+        <div class="image-credits">
+          <span>Photography:</span>
+          <a href="https://unsplash.com/photos/jaguar-yawning-with-mouth-wide-open-ghxjsVpmzP4" target="_blank" rel="noreferrer">Carla Redhead Alvarado</a>
+          <a href="https://images.unsplash.com/photo-1508175688576-0c076b47b5b5" target="_blank" rel="noreferrer">Yulian Alexeyev</a>
+          <a href="https://commons.wikimedia.org/wiki/File:Wikimedia_Foundation_Servers-8055_17.jpg" target="_blank" rel="noreferrer">Victor Grigas, CC BY-SA 3.0</a>
+        </div>
+      </footer>
+    </div>
+  </main>
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import { useExploreStore } from '../stores/explore'
-import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
+import { computed, onMounted, ref } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
 import {
+  IconActivity,
   IconAlertCircle,
-  IconChecks,
-  IconChevronRight,
+  IconArrowRight,
+  IconArrowUpRight,
+  IconChartLine,
+  IconCpu,
   IconCube,
-  IconEdit,
-  IconMessageCircle,
+  IconDatabase,
   IconSearch,
-  IconShieldLock,
-  IconSparkles,
-  IconTable,
-  IconUpload,
 } from '@tabler/icons-vue'
+import { SUPPORTS_DOMAIN_EXPERIMENTS, SUPPORTS_MCP_EXPLORER } from '../config/api'
+import { buildResourceStories } from '../lib/resourceStories'
+import { useExploreStore } from '../stores/explore'
 
+const router = useRouter()
 const exploreStore = useExploreStore()
-const auth = useAuthStore()
-const apiMode = useApiModeStore()
-
-const isGuest = computed(() => !auth.isLoggedIn)
-const dashboardError = computed(() => exploreStore.error || '')
-
-const totalModels = computed(() => exploreStore.models.length)
-const totalDatasheets = computed(() => exploreStore.datasheets.length)
-const publicModelCount = computed(() => exploreStore.models.filter((model) => !model.is_private).length)
-const privateModelCount = computed(() => exploreStore.models.filter((model) => model.is_private).length)
-const publicDatasheetCount = computed(() => exploreStore.datasheets.filter((ds) => !ds.is_private).length)
-const privateDatasheetCount = computed(() => exploreStore.datasheets.filter((ds) => ds.is_private).length)
-const gatedModelCount = computed(() => exploreStore.models.filter((model) => model.is_gated).length)
-
-const modelRecords = computed(() => exploreStore.models.map((model) => ({
-  id: model.id,
-  type: 'model',
-  icon: IconCube,
-  title: model.name || 'Untitled model card',
-  subtitle: [model.author || 'Unknown author', model.framework || model.category || 'Model card'].filter(Boolean).join(' | '),
-  private: Boolean(model.is_private),
-  gated: Boolean(model.is_gated),
-  route: `/explore-model-cards/${model.id}`,
-  date: recordDate(model),
-  raw: model,
-})))
-
-const datasheetRecords = computed(() => exploreStore.datasheets.map((ds) => ({
-  id: ds.id,
-  type: 'datasheet',
-  icon: IconTable,
-  title: getDatasheetTitle(ds),
-  subtitle: [getDatasheetCreator(ds) || getDatasheetPublisher(ds) || 'Unknown creator', getResourceType(ds)].filter(Boolean).join(' | '),
-  private: Boolean(ds.is_private),
-  gated: false,
-  route: `/explore-datasheets/${ds.id}`,
-  date: recordDate(ds),
-  raw: ds,
-})))
-
-const allRecords = computed(() => [...modelRecords.value, ...datasheetRecords.value])
-
-const recentActivity = computed(() => allRecords.value
-  .slice()
-  .sort((a, b) => b.date.getTime() - a.date.getTime())
-  .slice(0, 8)
-  .map((item) => ({
-    ...item,
-    timeLabel: formatTime(item.date),
-  })))
-
-const visibilityReviewItems = computed(() => allRecords.value
-  .filter((item) => item.private || item.gated)
-  .slice(0, 6)
-  .map((item) => ({
-    ...item,
-    badge: item.gated ? 'Gated' : 'Private',
-    badgeClass: item.gated ? 'badge-accent' : 'badge-private',
-  })))
-
-const identityKeys = computed(() => {
-  if (!auth.user) return []
-  const baseKeys = [
-    auth.displayName,
-    auth.user.name,
-    auth.user.username,
-    auth.user.email,
-    auth.user.email?.split('@')[0],
-  ]
-  if (auth.user.name) baseKeys.push(...auth.user.name.split(' '))
-  return [...new Set(baseKeys.map(normalizeIdentity).filter(Boolean))]
-})
-
-const myRecords = computed(() => allRecords.value
-  .filter((record) => matchesCurrentUser(record.raw.author || getDatasheetCreator(record.raw)))
-  .slice(0, 5))
-
-const missingModelAuthorCount = computed(() => exploreStore.models.filter((model) => !model.author).length)
-const missingModelLicenseCount = computed(() => exploreStore.models.filter((model) => !model.ai_model?.license && !model.license).length)
-const missingModelDocumentationCount = computed(() => exploreStore.models.filter((model) => !model.documentation && !model.citation).length)
-const missingDatasheetCreatorCount = computed(() => exploreStore.datasheets.filter((ds) => !getDatasheetCreator(ds)).length)
-
-const qualityChecks = computed(() => [
-  {
-    key: 'model-author',
-    label: 'Model cards without author',
-    description: 'Add owner context for attribution and support routing.',
-    count: missingModelAuthorCount.value,
-    route: '/explore-model-cards',
-  },
-  {
-    key: 'model-license',
-    label: 'Model cards without license',
-    description: 'Clarify reuse terms for public catalog consumers.',
-    count: missingModelLicenseCount.value,
-    route: '/explore-model-cards',
-  },
-  {
-    key: 'model-docs',
-    label: 'Model cards missing citation/docs',
-    description: 'Improve traceability with citation or documentation links.',
-    count: missingModelDocumentationCount.value,
-    route: '/explore-model-cards',
-  },
-  {
-    key: 'datasheet-creator',
-    label: 'Datasheets without creator',
-    description: 'Add creator metadata for discovery and provenance.',
-    count: missingDatasheetCreatorCount.value,
-    route: '/explore-datasheets',
-  },
-])
-
-const qualityIssueCount = computed(() => qualityChecks.value.reduce((sum, item) => sum + item.count, 0))
-const qualityScore = computed(() => {
-  const possible = Math.max((totalModels.value * 3) + totalDatasheets.value, 1)
-  return Math.max(0, Math.round(((possible - qualityIssueCount.value) / possible) * 100))
-})
-
-const quickActions = computed(() => {
-  const actions = [
-    {
-      label: 'Browse model cards',
-      description: 'Search public and private model metadata.',
-      route: '/explore-model-cards',
-      icon: IconSearch,
-      tone: 'primary',
-    },
-    {
-      label: 'Browse datasheets',
-      description: 'Inspect dataset records and provenance metadata.',
-      route: '/explore-datasheets',
-      icon: IconTable,
-      tone: 'info',
-    },
-  ]
-
-  if (auth.isTapisUser || auth.isAdmin) {
-    actions.push({
-      label: 'Submit records',
-      description: 'Create a model card or datasheet.',
-      route: '/submit',
-      icon: IconUpload,
-      tone: 'success',
-    })
-  }
-  if (apiMode.supportsEditRecords && (auth.isTapisUser || auth.isAdmin)) {
-    actions.push({
-      label: 'Edit records',
-      description: 'Update metadata, visibility, and gated flags.',
-      route: '/edit-records',
-      icon: IconEdit,
-      tone: 'accent',
-    })
-  }
-  if (apiMode.supportsAskPatra && (auth.isTapisUser || auth.isAdmin)) {
-    actions.push({
-      label: 'Ask Patra',
-      description: 'Route work through the assistant surface.',
-      route: '/ask-patra',
-      icon: IconSparkles,
-      tone: 'primary',
-    })
-  }
-  if (apiMode.supportsTickets && (auth.isTapisUser || auth.isAdmin)) {
-    actions.push({
-      label: 'Support tickets',
-      description: 'Submit or review service requests.',
-      route: '/tickets',
-      icon: IconMessageCircle,
-      tone: 'info',
-    })
-  }
-
-  return actions
-})
-
-function getDatasheetTitle(ds) {
-  if (Array.isArray(ds.title) && ds.title.length) {
-    const title = ds.title[0]
-    return typeof title === 'object' ? title.title || 'Untitled datasheet' : title
-  }
-  if (Array.isArray(ds.titles) && ds.titles.length) {
-    const title = ds.titles[0]
-    return typeof title === 'object' ? title.title || 'Untitled datasheet' : title
-  }
-  return ds.title || ds.name || 'Untitled datasheet'
+const searchQuery = ref('')
+const chainIcons = {
+  model: IconCube,
+  dataset: IconDatabase,
+  compute: IconCpu,
+  run: IconActivity,
+  result: IconChartLine,
 }
 
-function getDatasheetCreator(ds) {
-  const creators = ds.creator || ds.creators
-  if (Array.isArray(creators) && creators.length) {
-    const creator = creators[0]
-    return creator.creatorName?.name || creator.creator_name || creator.name || ''
-  }
-  return typeof creators === 'string' ? creators : ''
+const catalogError = computed(() => exploreStore.error)
+const stories = computed(() => buildResourceStories(
+  exploreStore.models,
+  exploreStore.datasheets,
+  { supportsDomainRuns: SUPPORTS_DOMAIN_EXPERIMENTS },
+))
+
+function searchCatalog() {
+  const query = searchQuery.value.trim()
+  router.push({ name: 'CatalogSearch', query: query ? { q: query } : {} })
 }
 
-function getDatasheetPublisher(ds) {
-  if (ds.publisher && typeof ds.publisher === 'object') return ds.publisher.name || ''
-  return ds.publisher || ''
-}
-
-function getResourceType(ds) {
-  return ds.resource_type?.resourceType || ds.resource_type?.resource_type || 'Dataset'
-}
-
-function recordDate(record) {
-  const value = record.updated_at || record.created_at || record.submitted_at || record.created || record.date
-  const parsed = value ? new Date(value) : null
-  if (parsed && !Number.isNaN(parsed.getTime())) return parsed
-
-  const year = Number(record.publication_year)
-  if (year > 1900) return new Date(`${year}-01-01T00:00:00Z`)
-
-  return new Date(0)
-}
-
-function normalizeIdentity(value) {
-  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
-function matchesCurrentUser(value) {
-  if (!auth.isLoggedIn) return false
-  const candidate = normalizeIdentity(value)
-  if (!candidate) return false
-  return identityKeys.value.some((key) => (
-    candidate === key ||
-    candidate.startsWith(`${key} `) ||
-    candidate.endsWith(` ${key}`)
-  ))
-}
-
-function formatTime(date) {
-  if (!date || date.getTime() === 0) return 'No date'
-  const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-async function loadDashboard() {
-  await Promise.allSettled([
+onMounted(() => {
+  void Promise.allSettled([
     exploreStore.fetchModels(),
     exploreStore.fetchDatasheets(),
   ])
-}
-
-onMounted(loadDashboard)
-watch(() => apiMode.mode, loadDashboard)
-watch(() => auth.isLoggedIn, loadDashboard)
+})
 </script>
 
 <style scoped>
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 22px;
+.catalog-home {
+  margin: -32px -36px 0;
+  color: #171918;
 }
 
-.summary-tile {
-  min-height: 112px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(255,255,255,.92), var(--color-surface));
-  text-decoration: none;
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
-  min-width: 0;
-}
-
-.summary-tile:hover {
-  border-color: rgba(47, 78, 162, .28);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.summary-icon,
-.quick-link-icon,
-.activity-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.summary-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-}
-
-.summary-icon.primary,
-.quick-link-icon.primary,
-.activity-mark.model { background: var(--color-primary-bg); color: var(--color-primary); }
-.summary-icon.info,
-.quick-link-icon.info,
-.activity-mark.datasheet { background: var(--color-info-bg); color: var(--color-info); }
-.summary-icon.success,
-.quick-link-icon.success { background: var(--color-success-bg); color: var(--color-success); }
-.summary-icon.accent,
-.quick-link-icon.accent { background: var(--color-accent-bg); color: #a8701f; }
-
-.summary-value {
-  font-size: 1.75rem;
-  font-weight: 800;
-  line-height: 1;
-  color: var(--color-text);
-}
-
-.summary-label {
-  margin-top: 5px;
-  font-size: .86rem;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.summary-note {
-  margin-top: 3px;
-  font-size: .76rem;
-  color: var(--color-text-muted);
-}
-
-.dashboard-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, .8fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.dashboard-main,
-.dashboard-side {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 0;
-}
-
-.panel-meta {
-  color: var(--color-text-muted);
-  font-size: .78rem;
-  font-weight: 600;
-}
-
-.activity-list,
-.compact-list,
-.action-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.activity-row,
-.compact-item,
-.quick-link,
-.quality-item {
-  text-decoration: none;
-}
-
-.activity-row {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: rgba(255,255,255,.48);
-  transition: border-color var(--transition), transform var(--transition);
-}
-
-.activity-row:hover,
-.compact-item:hover,
-.quality-item:hover,
-.quick-link:hover {
-  border-color: rgba(47, 78, 162, .32);
-  transform: translateY(-1px);
-}
-
-.activity-mark {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-}
-
-.activity-main,
-.compact-item > div {
-  min-width: 0;
-}
-
-.activity-title,
-.compact-title,
-.quick-link-title,
-.quality-label {
-  font-size: .9rem;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.activity-subtitle,
-.compact-subtitle,
-.quick-link-desc,
-.quality-desc {
-  margin-top: 2px;
-  font-size: .78rem;
-  color: var(--color-text-muted);
+.catalog-hero {
+  position: relative;
+  min-height: 455px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  background: #17211a;
+  color: #fff;
+  isolation: isolate;
 }
 
-.activity-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 5px;
-  font-size: .75rem;
-  color: var(--color-text-muted);
+.hero-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 58%;
+  animation: hero-settle 900ms var(--ease-out) both;
+  z-index: -3;
 }
 
-.quality-grid {
+.hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(9, 18, 12, .9) 0%, rgba(9, 18, 12, .66) 42%, rgba(9, 18, 12, .12) 78%),
+    linear-gradient(0deg, rgba(8, 13, 9, .38), transparent 55%);
+  z-index: -2;
+}
+
+.hero-inner {
+  width: min(1440px, calc(100% - 80px));
+  margin: 0 auto;
+  padding: 52px 0 44px;
+  animation: hero-copy-in 650ms 80ms var(--ease-out) both;
+}
+
+.hero-brand {
+  margin-bottom: 18px;
+  font-size: .74rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.catalog-hero h1 {
+  max-width: 760px;
+  font-size: clamp(3rem, 5vw, 5.4rem);
+  font-weight: 700;
+  line-height: .94;
+  letter-spacing: -.06em;
+}
+
+.catalog-hero p {
+  max-width: 680px;
+  margin-top: 17px;
+  color: rgba(255,255,255,.83);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.hero-search {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.quality-item {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 18px;
-  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  padding: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: rgba(255,255,255,.45);
-  transition: border-color var(--transition), transform var(--transition);
+  gap: 13px;
+  width: min(850px, 100%);
+  margin-top: 25px;
+  padding: 7px 7px 7px 17px;
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 11px;
+  background: rgba(255,255,255,.96);
+  color: #5d625e;
+  box-shadow: 0 18px 46px rgba(0,0,0,.18);
 }
 
-.quality-count {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-weight: 800;
+.hero-search:focus-within { box-shadow: 0 22px 52px rgba(0,0,0,.24), 0 0 0 3px rgba(255,255,255,.2); }
+.hero-search input { min-width: 0; border: 0; outline: 0; background: transparent; color: #171918; font-size: 1rem; }
+.hero-search button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 19px; border: 0; border-radius: 7px; background: #1769e0; color: #fff; font-weight: 650; }
+.hero-search button:hover { background: #0d56bd; }
+
+.hero-credit { position: absolute; right: 20px; bottom: 13px; color: rgba(255,255,255,.58); font-size: .65rem; }
+.hero-credit:hover { color: #fff; }
+
+.catalog-body {
+  width: min(1440px, calc(100% - 80px));
+  margin: 0 auto;
 }
 
-.quality-arrow,
-.quick-link-arrow {
-  color: var(--color-text-muted);
+.catalog-notice { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid #deded9; color: #676a67; font-size: .82rem; }
+.stories-section { scroll-margin-top: 90px; padding: 48px 0 18px; }
+.browse-section { scroll-margin-top: 90px; padding: 72px 0 10px; }
+
+.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 24px; }
+.section-kicker { display: block; margin-bottom: 7px; color: #1769e0; font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.section-heading h2 { font-size: clamp(1.9rem, 2.6vw, 2.7rem); line-height: 1.05; letter-spacing: -.045em; }
+.section-heading > p { max-width: 520px; color: #666962; line-height: 1.55; text-align: right; }
+
+.stories-layout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.story-card { min-width: 0; overflow: hidden; border: 1px solid #dfdfda; border-radius: 14px; background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.035); transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition); }
+.story-card:hover, .story-card:focus-within { border-color: #bfc2bc; transform: translateY(-3px); box-shadow: 0 14px 38px rgba(20,24,21,.09); }
+
+.story-media { position: relative; display: block; height: 210px; overflow: hidden; color: #fff; }
+.story-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 650ms var(--ease-out); }
+.story-card:hover .story-media img, .story-card:focus-within .story-media img { transform: scale(1.035); }
+.story-media-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,11,8,.18), transparent 50%, rgba(7,11,8,.48)); }
+.story-domain { position: absolute; top: 15px; left: 15px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.42); border-radius: 999px; background: rgba(11,16,12,.28); font-size: .65rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; backdrop-filter: blur(8px); }
+.story-open { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.94); color: #171918; transition: transform var(--transition); }
+.story-card:hover .story-open { transform: translate(2px, -2px); }
+
+.story-content { display: flex; min-height: 390px; flex-direction: column; padding: 22px; }
+.story-content h3 { font-size: 1.35rem; line-height: 1.14; letter-spacing: -.03em; }
+.story-content h3 a:hover { color: #1769e0; }
+.story-content > p { min-height: 66px; margin-top: 9px; color: #666962; font-size: .84rem; line-height: 1.55; }
+
+.resource-chain { display: flex; align-items: stretch; margin: 19px -5px 0; padding: 0; list-style: none; }
+.resource-chain li { position: relative; display: flex; min-width: 0; flex: 1; align-items: center; }
+.resource-chain li > a { display: flex; min-width: 0; flex: 1; flex-direction: column; align-items: center; gap: 6px; padding: 5px 3px; border-radius: 8px; text-align: center; transition: background var(--transition), color var(--transition); }
+.resource-chain li > a:hover, .resource-chain li > a:focus-visible { background: #edf2ff; color: #1769e0; }
+.chain-icon { display: grid; place-items: center; width: 31px; height: 31px; border: 1px solid #dce5f7; border-radius: 9px; background: #f5f8ff; color: #1769e0; }
+.chain-copy { min-width: 0; }
+.chain-copy small, .chain-copy strong { display: block; }
+.chain-copy small { color: #999d96; font-size: .56rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.chain-copy strong { margin-top: 2px; color: #4f554e; font-size: .64rem; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.chain-arrow { flex: 0 0 auto; color: #aeb4ad; }
+
+.linked-records { display: grid; gap: 6px; margin-top: 18px; padding-top: 15px; border-top: 1px solid #ecece8; }
+.linked-records > span { color: #999d96; font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.linked-records a { color: #4d5664; font-size: .75rem; line-height: 1.35; }
+.linked-records a:hover { color: #1769e0; text-decoration: underline; text-underline-offset: 2px; }
+
+.story-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 18px; color: #858881; font-size: .68rem; }
+.story-footer > span { display: inline-flex; align-items: center; gap: 7px; }
+.story-footer i { width: 6px; height: 6px; border-radius: 50%; background: #1769e0; }
+.story-footer > a { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; color: #1769e0; font-weight: 650; }
+
+.browse-heading { margin-bottom: 10px; }
+.section-link { display: inline-flex; align-items: center; gap: 8px; color: #1769e0; font-weight: 600; }
+.browse-list { border-top: 1px solid #cfcfca; }
+.browse-list a { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 23px 4px; border-bottom: 1px solid #deded9; color: #62655f; transition: padding var(--transition), color var(--transition), background var(--transition); }
+.browse-list a:hover { padding-right: 12px; padding-left: 12px; background: rgba(255,255,255,.55); color: #1769e0; }
+.browse-number { color: #a5a7a2; font-size: .72rem; font-variant-numeric: tabular-nums; }
+.browse-list strong, .browse-list small { display: block; }
+.browse-list strong { color: #171918; font-size: 1.02rem; }
+.browse-list small { margin-top: 3px; color: #777a74; }
+
+.catalog-about { scroll-margin-top: 90px; display: flex; justify-content: space-between; gap: 50px; margin-top: 70px; padding: 25px 0 32px; border-top: 1px solid #deded9; color: #777a74; font-size: .76rem; }
+.catalog-about strong { color: #171918; }
+.catalog-about p { max-width: 590px; margin-top: 5px; }
+.image-credits { display: flex; max-width: 560px; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; color: #92958f; font-size: .66rem; text-align: right; }
+.image-credits a { text-decoration: underline; text-underline-offset: 2px; }
+.image-credits a:hover { color: #1769e0; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@keyframes hero-settle { from { opacity: .4; transform: scale(1.035); } to { opacity: 1; transform: scale(1); } }
+@keyframes hero-copy-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 1220px) {
+  .stories-layout { grid-template-columns: 1fr; }
+  .story-card { display: grid; grid-template-columns: minmax(280px, .65fr) minmax(0, 1.35fr); }
+  .story-media { height: 100%; min-height: 330px; }
+  .story-content { min-height: 330px; }
+  .story-content > p { min-height: 0; }
 }
 
-.quick-link {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--color-border);
-  background: rgba(255,255,255,.45);
-  transition: border-color var(--transition), transform var(--transition);
-}
-
-.quick-link-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-}
-
-.quick-link-arrow {
-  margin-left: auto;
-}
-
-.compact-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  background: rgba(255,255,255,.45);
-  transition: border-color var(--transition), transform var(--transition);
-}
-
-.empty-block {
-  padding: 22px;
-  border: 1px dashed var(--color-border);
-  border-radius: 12px;
-  background: rgba(255,255,255,.35);
-  color: var(--color-text-muted);
-  font-size: .88rem;
-  line-height: 1.6;
-}
-
-.connection-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  border-radius: var(--radius-sm);
-  margin-bottom: 20px;
-  font-size: .88rem;
-}
-
-.connection-banner.error {
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
-  border: 1px solid rgba(194, 65, 74, .28);
-}
-
-.connection-banner code {
-  background: rgba(0, 0, 0, .08);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: .82rem;
-}
-
-@media (max-width: 1180px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 720px) {
-  .page-header h1,
-  .page-header p,
-  .summary-note,
-  .item-subtitle,
-  .quick-link-desc {
-    overflow-wrap: anywhere;
-  }
-
-  .summary-grid,
-  .quality-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .activity-row {
-    grid-template-columns: 38px minmax(0, 1fr);
-  }
-
-  .activity-meta {
-    grid-column: 2;
-    align-items: flex-start;
-    flex-direction: row;
-  }
-
-  .compact-item,
-  .quick-link {
-    align-items: flex-start;
-  }
+@media (max-width: 760px) {
+  .catalog-home { margin: -20px -18px 0; }
+  .catalog-hero { min-height: 535px; }
+  .hero-inner, .catalog-body { width: min(100% - 36px, 1440px); }
+  .hero-inner { padding: 45px 0 38px; }
+  .catalog-hero h1 { font-size: clamp(3rem, 13vw, 4.5rem); }
+  .hero-search { grid-template-columns: auto minmax(0, 1fr); }
+  .hero-search button { grid-column: 1 / -1; justify-content: center; }
+  .hero-credit { display: none; }
+  .section-heading { display: block; }
+  .section-heading > p { margin-top: 10px; text-align: left; }
+  .stories-section { padding-top: 42px; }
+  .browse-section { padding-top: 55px; }
+  .story-card { display: block; }
+  .story-media { height: 220px; min-height: 0; }
+  .story-content { min-height: 0; }
+  .resource-chain { display: grid; gap: 0; margin: 18px 0 0; overflow: visible; }
+  .resource-chain li { display: grid; grid-template-columns: 1fr; min-width: 0; }
+  .resource-chain li > a { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; align-items: center; padding: 9px 7px; text-align: left; }
+  .chain-copy small { font-size: .58rem; }
+  .chain-copy strong { font-size: .75rem; overflow-wrap: normal; }
+  .chain-arrow { margin: -4px 0 -4px 17px; transform: rotate(90deg); }
+  .story-footer { align-items: flex-end; }
+  .section-link { margin-top: 13px; }
+  .catalog-about { display: block; }
+  .image-credits { justify-content: flex-start; margin-top: 18px; text-align: left; }
 }
 </style>

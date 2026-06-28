@@ -1,218 +1,50 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <RouterLink to="/" class="sidebar-logo-link" aria-label="Go to dashboard">
-        <img src="/img/logo.png" alt="Patra" class="sidebar-logo-img" />
-      </RouterLink>
+      <div class="sidebar-brand-mark">ICICLE</div>
+      <div class="sidebar-brand-copy">AI Resource Catalog</div>
     </div>
 
     <nav class="sidebar-nav">
-      <template v-if="auth.isTapisUser || auth.isAdmin">
-        <div class="sidebar-section-label">Start Here</div>
-        <RouterLink v-if="apiMode.supportsAskPatra" to="/ask-patra" class="sidebar-link" :class="{ active: $route.path === '/ask-patra' }">
-          <IconSparkles :size="20" stroke-width="1.8" />
-          <span>Ask Patra</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsAskPatra" to="/llm-test" class="sidebar-link" :class="{ active: $route.path === '/llm-test' }">
-          <IconMessages :size="20" stroke-width="1.8" />
-          <span>LLM Test</span>
-        </RouterLink>
-      </template>
-
-      <div class="sidebar-section-label">Overview</div>
+      <div class="sidebar-section-label">Public catalog</div>
       <RouterLink to="/" class="sidebar-link" :class="{ active: $route.path === '/' }">
-        <IconLayoutDashboard :size="20" stroke-width="1.8" />
-        <span>Dashboard</span>
+        <IconHomeSearch :size="20" stroke-width="1.8" />
+        <span>Home</span>
       </RouterLink>
 
-      <div class="sidebar-section-label">Explore</div>
-      <RouterLink to="/explore-model-cards" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-model-cards') }">
+      <RouterLink to="/search" class="sidebar-link" :class="{ active: $route.path === '/search' }">
         <IconSearch :size="20" stroke-width="1.8" />
-        <span>Browse Model Cards</span>
-      </RouterLink>
-      <RouterLink to="/explore-datasheets" class="sidebar-link" :class="{ active: $route.path.startsWith('/explore-datasheets') }">
-        <IconSearch :size="20" stroke-width="1.8" />
-        <span>Browse Datasheets</span>
-      </RouterLink>
-      <RouterLink to="/mcp-explorer" class="sidebar-link" :class="{ active: $route.path === '/mcp-explorer' }">
-        <IconTerminal2 :size="20" stroke-width="1.8" />
-        <span>MCP Explorer</span>
+        <span>Search</span>
       </RouterLink>
 
-      <div class="sidebar-section-label">Experiments</div>
-      <RouterLink to="/animal-ecology" class="sidebar-link" :class="{ active: $route.path === '/animal-ecology' }">
-        <IconPaw :size="20" stroke-width="1.8" />
-        <span>Animal Ecology</span>
-      </RouterLink>
-      <RouterLink to="/digital-agriculture" class="sidebar-link" :class="{ active: $route.path === '/digital-agriculture' }">
-        <IconPlant :size="20" stroke-width="1.8" />
-        <span>Digital Agriculture</span>
+      <RouterLink to="/#browse-catalog" class="sidebar-link">
+        <IconCategory :size="20" stroke-width="1.8" />
+        <span>Browse</span>
       </RouterLink>
 
-      <template v-if="auth.isTapisUser || auth.isAdmin">
-        <div class="sidebar-section-label">Contribute</div>
-        <RouterLink v-if="apiMode.supportsIntentSchema" to="/intent-schema" class="sidebar-link" :class="{ active: $route.path === '/intent-schema' }">
-          <IconSchema :size="20" stroke-width="1.8" />
-          <span>Intent Schema</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsMvpDemoReport" to="/mvp-demo-report" class="sidebar-link" :class="{ active: $route.path === '/mvp-demo-report' }">
-          <IconPresentation :size="20" stroke-width="1.8" />
-          <span>MVP Demo Report</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsAgentTools" to="/agent-tools" class="sidebar-link" :class="{ active: $route.path === '/agent-tools' }">
-          <IconSparkles :size="20" stroke-width="1.8" />
-          <span>Agent Toolkit</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsAutomatedIngestion" to="/automated-ingestion" class="sidebar-link" :class="{ active: $route.path === '/record-scrape' || $route.path === '/automated-ingestion' }">
-          <IconDatabaseSearch :size="20" stroke-width="1.8" />
-          <span>Automated Ingestion</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsEditRecords" to="/edit-records" class="sidebar-link" :class="{ active: $route.path === '/edit-records' }">
-          <IconEdit :size="20" stroke-width="1.8" />
-          <span>Edit Records</span>
-        </RouterLink>
-        <RouterLink to="/submit" class="sidebar-link" :class="{ active: $route.path === '/submit' }">
-          <IconUpload :size="20" stroke-width="1.8" />
-          <span>Submit Records</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsTickets" to="/tickets" class="sidebar-link" :class="{ active: $route.path === '/tickets' }">
-          <IconMessageCircle :size="20" stroke-width="1.8" />
-          <span>Tickets</span>
-        </RouterLink>
-      </template>
+      <RouterLink to="/#resource-stories" class="sidebar-link">
+        <IconRoute :size="20" stroke-width="1.8" />
+        <span>Resource Stories</span>
+      </RouterLink>
 
-      <template v-if="auth.isAdmin">
-        <div class="sidebar-section-label">Admin</div>
-        <RouterLink to="/models" class="sidebar-link" :class="{ active: $route.path === '/models' }">
-          <IconCube :size="20" stroke-width="1.8" />
-          <span>Models & Data</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsReviewSubmissions" to="/submissions" class="sidebar-link" :class="{ active: $route.path === '/submissions' }">
-          <IconChecklist :size="20" stroke-width="1.8" />
-          <span>Review Submissions</span>
-        </RouterLink>
-        <RouterLink v-if="apiMode.supportsManageTickets" to="/ticket-management" class="sidebar-link" :class="{ active: $route.path === '/ticket-management' }">
-          <IconListDetails :size="20" stroke-width="1.8" />
-          <span>Manage Tickets</span>
-        </RouterLink>
-
-        <div class="sidebar-section-label">System</div>
-        <RouterLink v-if="apiMode.supportsAuditLog" to="/audit-log" class="sidebar-link" :class="{ active: $route.path === '/audit-log' }">
-          <IconFileText :size="20" stroke-width="1.8" />
-          <span>Audit Log</span>
-        </RouterLink>
-        <RouterLink to="/settings" class="sidebar-link" :class="{ active: $route.path === '/settings' }">
-          <IconSettings :size="20" stroke-width="1.8" />
-          <span>Settings</span>
-        </RouterLink>
-      </template>
+      <RouterLink to="/#catalog-about" class="sidebar-link">
+        <IconHelpCircle :size="20" stroke-width="1.8" />
+        <span>About &amp; Help</span>
+      </RouterLink>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="sidebar-user" v-if="auth.isLoggedIn">
-        <div class="sidebar-avatar">{{ auth.initials }}</div>
-        <div class="sidebar-user-info">
-          <div class="sidebar-user-name">{{ auth.displayName }}</div>
-          <div class="sidebar-user-role">{{ auth.isAdmin ? 'Admin' : (auth.isTapisUser ? 'Tapis User' : 'User') }}</div>
-        </div>
-        <button class="sidebar-logout" @click="handleLogout" title="Sign out">
-          <IconLogout :size="18" stroke-width="1.8" />
-        </button>
-      </div>
-
-      <button class="sidebar-login-btn" v-else @click="showLogin = true">
-        <IconLogin :size="18" stroke-width="1.8" />
-        <span>Tapis Login</span>
-      </button>
-    </div>
-
-    <Teleport to="body">
-      <div class="modal-overlay" v-if="showLogin" @click.self="showLogin = false">
-        <div class="login-modal">
-          <div class="login-modal-header">
-            <div class="login-modal-brand">
-              <IconKey :size="20" stroke-width="2" />
-              <span>Tapis Login</span>
-            </div>
-            <button class="btn-icon" @click="closeLogin"><IconX :size="18" /></button>
-          </div>
-
-          <div class="login-modal-body">
-            <p class="login-desc">
-              Authenticate via <a href="https://tapis.readthedocs.io" target="_blank">Tapis</a> to
-              access private models and workspace features.
-            </p>
-
-            <div class="login-error" v-if="auth.error">
-              <IconAlertTriangle :size="14" stroke-width="1.8" />
-              {{ auth.error }}
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Username</label>
-              <div class="login-input-wrap">
-                <IconUser :size="16" stroke-width="1.8" />
-                <input class="login-input" v-model="loginForm.username" placeholder="tapis username" @keydown.enter="handleLogin" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Password</label>
-              <div class="login-input-wrap">
-                <IconLock :size="16" stroke-width="1.8" />
-                <input class="login-input" type="password" v-model="loginForm.password" placeholder="********" @keydown.enter="handleLogin" />
-              </div>
-            </div>
-
-            <label class="remember-row">
-              <input type="checkbox" v-model="loginForm.rememberMe" />
-              <span>Remember me for 7 days</span>
-            </label>
-            <button class="btn-login" @click="handleLogin" :disabled="!loginForm.username || !loginForm.password || auth.loading">
-              {{ auth.loading ? 'Authenticating...' : 'Get JWT Token' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </aside>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { useApiModeStore } from '../stores/apiMode'
+import { RouterLink } from 'vue-router'
 import {
-  IconLayoutDashboard, IconCube, IconDatabaseSearch, IconFileText, IconSettings, IconSearch,
-  IconMessageCircle, IconUpload,
-  IconListDetails, IconLogout, IconLogin, IconKey, IconEdit, IconChecklist,
-  IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
-  IconTerminal2, IconPaw, IconPlant, IconSchema, IconPresentation, IconMessages,
+  IconCategory,
+  IconHelpCircle,
+  IconHomeSearch,
+  IconRoute,
+  IconSearch,
 } from '@tabler/icons-vue'
-
-const auth = useAuthStore()
-const apiMode = useApiModeStore()
-const router = useRouter()
-const showLogin = ref(false)
-const loginForm = reactive({ username: '', password: '', rememberMe: true })
-
-function closeLogin() {
-  showLogin.value = false
-  loginForm.username = ''
-  loginForm.password = ''
-  loginForm.rememberMe = true
-  auth.clearError()
-}
-
-async function handleLogin() {
-  const ok = await auth.loginTapis(loginForm.username, loginForm.password, { rememberMe: loginForm.rememberMe })
-  if (ok) closeLogin()
-}
-
-function handleLogout() {
-  auth.logout()
-  router.push('/')
-}
 </script>
 
 <style scoped>
@@ -231,32 +63,13 @@ function handleLogout() {
 }
 
 .sidebar-brand {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   padding: 22px 24px 20px;
   border-bottom: 1px solid var(--color-border);
 }
 
-.sidebar-logo-img {
-  width: 100%;
-  max-width: 200px;
-  height: auto;
-  object-fit: contain;
-}
-
-.sidebar-logo-link {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  border-radius: 10px;
-  transition: opacity var(--transition), transform var(--transition);
-}
-
-.sidebar-logo-link:hover {
-  opacity: .88;
-  transform: translateY(-1px);
-}
+.sidebar-brand-mark { color: var(--color-primary); font-size: 1.25rem; font-weight: 800; letter-spacing: .04em; }
+.sidebar-brand-copy { margin-top: 2px; color: var(--color-text-muted); font-size: .72rem; letter-spacing: .04em; }
 
 .sidebar-nav {
   flex: 1;
@@ -296,7 +109,8 @@ function handleLogout() {
 .sidebar-link.active {
   background: linear-gradient(180deg, #f4f7ff 0%, var(--color-primary-bg) 100%);
   color: var(--color-primary);
-  border-color: rgba(47, 78, 162, 0.16);
+  font-weight: 600;
+  border-color: rgba(var(--color-primary-rgb), 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
@@ -304,6 +118,29 @@ function handleLogout() {
   padding: 18px;
   border-top: 1px solid var(--color-border);
   background: rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-portal-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid rgba(180, 83, 9, 0.22);
+  border-radius: 10px;
+  color: #92400e;
+  background: #fff7ed;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.sidebar-portal-error strong,
+.sidebar-portal-error span {
+  display: block;
+}
+
+.sidebar-portal-error span {
+  margin-top: 2px;
+  color: #9a5b22;
 }
 
 .sidebar-user {
@@ -356,6 +193,15 @@ function handleLogout() {
   align-items: center;
   justify-content: center;
   transition: all var(--transition);
+  flex-shrink: 0;
+}
+
+.sidebar-portal-managed {
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
   flex-shrink: 0;
 }
 
@@ -507,67 +353,5 @@ function handleLogout() {
 .btn-login:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    position: static;
-    width: 100%;
-    max-width: 100vw;
-    height: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    overflow: hidden;
-  }
-
-  .sidebar-brand {
-    justify-content: flex-start;
-    padding: 14px 16px 12px;
-  }
-
-  .sidebar-logo-link {
-    justify-content: flex-start;
-    width: auto;
-  }
-
-  .sidebar-logo-img {
-    max-width: 154px;
-  }
-
-  .sidebar-nav {
-    display: flex;
-    gap: 8px;
-    padding: 10px 12px 12px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  .sidebar-section-label {
-    display: none;
-  }
-
-  .sidebar-link {
-    flex: 0 0 auto;
-    padding: 9px 11px;
-    font-size: 0.84rem;
-    white-space: nowrap;
-    max-width: 190px;
-  }
-
-  .sidebar-link span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sidebar-link svg {
-    flex-shrink: 0;
-  }
-
-  .sidebar-footer {
-    padding: 10px 12px 12px;
-  }
 }
 </style>

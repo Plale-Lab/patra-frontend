@@ -8,8 +8,10 @@ import AuditLogView from '../views/AuditLogView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import ExploreView from '../views/ExploreView.vue'
 import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
+import CatalogSearchView from '../views/CatalogSearchView.vue'
 import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
+import ProfileAreaView from '../views/ProfileAreaView.vue'
 import AgentToolkitView from '../features/agent-toolkit/AgentToolkitView.vue'
 import AskPatraView from '../features/ask-patra/AskPatraView.vue'
 import LlmTestView from '../features/llm-test/LlmTestView.vue'
@@ -26,10 +28,20 @@ import TicketManagementView from '../views/TicketManagementView.vue'
 
 const routes = [
   { path: '/', name: 'Dashboard', component: DashboardView },
+  { path: '/search', name: 'CatalogSearch', component: CatalogSearchView },
   { path: '/explore-model-cards', name: 'ExploreModelCards', component: ExploreView },
   { path: '/explore-model-cards/:id', name: 'ModelDetail', component: ModelDetailView },
   { path: '/explore-datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
   { path: '/explore-datasheets/:id', name: 'DatasheetDetail', component: DatasheetDetailView },
+  { path: '/modelcards', redirect: { name: 'ExploreModelCards' } },
+  { path: '/modelcard/:id', redirect: (to) => ({ name: 'ModelDetail', params: { id: to.params.id } }) },
+  { path: '/datasheets', redirect: { name: 'ExploreDatasheets' } },
+  { path: '/datasheet/:id', redirect: (to) => ({ name: 'DatasheetDetail', params: { id: to.params.id } }) },
+  { path: '/my-collections', name: 'MyCollections', component: ProfileAreaView, props: { area: 'collections' }, meta: { tapis: true } },
+  { path: '/my-submissions', name: 'MySubmissions', component: ProfileAreaView, props: { area: 'submissions' }, meta: { tapis: true } },
+  { path: '/drafts', name: 'Drafts', component: ProfileAreaView, props: { area: 'drafts' }, meta: { tapis: true } },
+  { path: '/notifications', name: 'Notifications', component: ProfileAreaView, props: { area: 'notifications' }, meta: { tapis: true } },
+  { path: '/account', name: 'AccountProfile', component: ProfileAreaView, props: { area: 'account' }, meta: { tapis: true } },
   { path: '/ask-patra', name: 'AskPatra', component: AskPatraView, meta: { feature: 'askPatra', tapis: true } },
   { path: '/llm-test', name: 'LlmTest', component: LlmTestView, meta: { feature: 'askPatra', tapis: true } },
   { path: '/intent-schema', name: 'IntentSchema', component: IntentSchemaView, meta: { feature: 'intentSchema', tapis: true } },
@@ -56,6 +68,10 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to) {
+    if (to.hash) return { el: to.hash, top: 16, behavior: 'smooth' }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach((to) => {
