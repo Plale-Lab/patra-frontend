@@ -1,5 +1,227 @@
 # Frontend Dev Log
 
+## Version 0.8.0 - 2026-07-16
+
+## Summary
+
+Version `0.8.0` adds a lightweight editorial Story Portal to the existing PATRA public catalog. Contributors can key in a story through the browser, preview it against the existing resource-story template, and generate a draft page. A separate administrator workspace controls editing, publication, homepage visibility, and deletion.
+
+## Product and Design Direction
+
+- The contributor editor uses a Linear-inspired operating layout: low-noise surfaces, compact utility spacing, hairline boundaries, and one restrained blue accent.
+- The live preview retains the current warm, photography-led story treatment with a Notion-like editorial reading surface.
+- The admin workspace favors a searchable table over a decorative card grid so publication state and homepage visibility remain easy to scan.
+- Motion is limited to existing route transitions, hover feedback, and state changes.
+- Responsive testing caught and corrected a mid-width editor/preview bleed issue by reducing grid minimums and explicitly containing both panels.
+
+## Story Portal
+
+- Added `/story-portal` with browser-based fields for:
+  - story identity, summary, introduction, author, and read time
+  - cover image URL, alt text, and accent color
+  - two narrative sections and a pull quote
+  - one related model card and one related datasheet
+- Added a sticky live preview based on the existing resource-story presentation.
+- Generated stories receive collision-safe slugs, a complete detail route, related records, and a five-node evidence graph.
+- New submissions are stored as drafts and immediately open in a clearly labeled draft preview.
+- Administrators can return to the editor without changing an existing story URL or publication state.
+
+## Story Administration
+
+- Added `/story-admin` with the requested prototype credentials:
+  - username: `admin`
+  - password: `admin`
+- Added an explicit prototype-auth notice so the hardcoded credential is not mistaken for production security.
+- Added story search and All, Drafts, Published, and Homepage filters.
+- Added independent controls for publish/unpublish and homepage visibility.
+- Enforced that only published stories can be featured; unpublishing automatically removes a story from the homepage.
+- Added preview, edit, and confirmed-delete actions for every story.
+
+## Data, Homepage, and Observability
+
+- Added a Pinia Story Store backed by versioned browser `localStorage` and an admin `sessionStorage` flag.
+- Seeded the store with the three existing resource stories as published and homepage-visible.
+- Updated the homepage to render only stories that are both published and featured.
+- Updated story detail lookup and next-story navigation to use the managed story collection.
+- Added structured `[Patra UI]` logging for create, update, publish, homepage visibility, delete, admin login, and logout events.
+- Logs exclude passwords, narrative content, image URLs, and full story payloads.
+
+## Validation Performed
+
+- `npm run build` -> passed.
+- `npm test` -> passed: 9 test files, 21 tests.
+- Added store coverage for default seeds, draft behavior, publication gating, homepage visibility, hardcoded admin login, persistence, and collision-safe slugs.
+- Browser acceptance verified the complete workflow:
+  - create a story from the Portal
+  - open the generated draft detail page
+  - sign in with `admin / admin`
+  - publish the draft
+  - add it to the homepage
+  - confirm the fourth homepage story card appears
+  - delete the acceptance-test story and restore clean preview data
+- Confirmed no page-level horizontal overflow on the Story Portal or homepage at the active 1270px preview viewport.
+
+## Prototype Boundary
+
+- Story data is local to the current browser and is not shared between devices or users.
+- The hardcoded admin credential is suitable only for the requested prototype; a production rollout requires server-side authentication, authorization, persistence, validation, sanitization, and media storage.
+- Related-record selection currently accepts catalog routes and generates a standard evidence chain; it is not yet backed by a live record picker.
+
+## Local Preview
+
+- Frontend: `http://127.0.0.1:4174/story-portal`
+- Admin: `http://127.0.0.1:4174/story-admin`
+- No remote push or deployment was performed.
+
+## Version 0.7.1 - 2026-07-09
+
+## Summary
+
+Version `0.7.1` aligns this working tree with the latest public-catalog landing direction from Codex thread `019ee216-ed22-7410-94d0-93073d366057`, then corrects the first Record Map and Story-detail visual pass.
+
+## Design Sources
+
+- Latest catalog implementation reference: `dev` commit `3644123` from the maintained PATRA frontend workspace.
+- Primary visual reference: Airbnb-style photography-first browsing and dense repeated content.
+- Supporting application reference: Linear-style flat surfaces, fine hairlines, restrained blue focus, and product-workspace hierarchy.
+- Supporting editorial reference: Notion-style warm paper canvas, compact reading scale, and minimal elevation.
+- Project identity, typography, colors, routes, and content remain ICICLE-specific; no reference brand identity was copied.
+
+## Homepage
+
+- Replaced the dashboard greeting and documentation hero with the latest public-catalog shell:
+  - `Discover connected AI resources.`
+  - full-width agricultural photography
+  - primary public-resource search
+  - shared landing behavior for guests and signed-in users
+- Moved identity and login controls to the top-right header.
+- Reframed the sidebar around Home, Search, Browse, Resource Stories, Record Map, and About & Help.
+- Removed all homepage resource counts:
+  - no model-card count
+  - no datasheet count
+  - no contributor count
+  - no linked-record count inside story cards
+- Kept the three Resource Story cards image-led and routed to their dedicated editorial pages.
+
+## Record Map
+
+- Replaced the two-column list composition with a balanced orbital node-edge map.
+- Added a central non-interactive catalog index node that gives every visible record a stable relationship anchor.
+- Retained model-to-datasheet relationship edges and added a limited number of secondary reference edges.
+- Visually separated catalog membership edges from record relationships using quiet dashed versus solid strokes.
+- Updated vertical and horizontal edge routing so curves follow the dominant axis.
+- Removed the SVG minimum-width constraint and clipped the graph inside its own rounded workspace.
+- Preserved hover preview, drag, zoom, filters, keyboard selection, and the record inspector.
+
+## Story Detail
+
+- Reduced the editorial hero from near-full-screen scale to 480px desktop / 430px mobile.
+- Reduced the display-title ceiling from 5.7rem to 4rem.
+- Tightened the hero copy width, metadata spacing, corner radius, and toolbar gap so article content enters the first viewport sooner.
+
+## Navigation and Search
+
+- Added the public `/search` route and catalog search view.
+- Added identity-menu placeholders for collections, submissions, notifications, and account areas without inventing backend records.
+- Preserved standalone and embedded Tapis authentication behavior.
+
+## Validation Performed
+
+- Production build passes.
+- Vitest passes (18 tests).
+- Browser verification at 1920px, 1440px, and 390px widths:
+  - homepage contains no graph nodes or resource-count blocks
+  - Record Map contains all mock API model cards and datasheets
+  - every rendered graph node remains inside the graph boundary
+  - graph hover preview and inspector selection work
+  - homepage, Record Map, and Story page have zero page-level horizontal overflow
+  - no console or page errors were observed
+
+## Local Preview
+
+- Frontend: `http://127.0.0.1:4173/`
+- Mock API: `http://127.0.0.1:5003/`
+- No Git remote push was performed.
+
+## Development Pod Deployment - 2026-07-10
+
+- Deployed the validated `0.7.1` static build to the actual development Pod ID `patradev` at `https://patradev.pods.icicleai.tapis.io`.
+- Used the authenticated TapisV3 CLI runtime with Tapipy `25.4.0`; no production Pod was modified.
+- Transferred the 243,958-byte build through chunked Pods exec after the multipart upload endpoint returned a truncated archive.
+- Verified the remote archive before extraction with SHA-256 `54dd5d7110d9efb41a66bf8cd5e8d840af0e935d1d7f608b74d329d1090a53df`.
+- Preserved the Pod-generated `env.js`, so the deployed UI continues to use `patrabackenddev.pods.icicleai.tapis.io` rather than the production backend.
+- Published a versioned `index-DSUt2BzH.html` entry and validated the live Nginx configuration before reload.
+- Acceptance checks passed for `/`, `/index.html`, `/record-map`, the wildlife story route, JavaScript, CSS, and runtime configuration.
+- Browser acceptance found no horizontal overflow, console errors, page errors, or failed network responses.
+- The Pod remained `AVAILABLE`, networking remained live, and the container restart count remained zero.
+- The Pod image reference remains `plalelab/patra-frontend:dev-2026-06-29`; this direct filesystem deployment will revert if the Pod is restarted, so a durable rollout still requires Docker registry write access and an immutable image update.
+
+## Version 0.7.0 - 2026-07-09
+
+## Summary
+
+Version `0.7.0` moves relationship visualization out of the homepage story cards and into dedicated editorial and catalog exploration surfaces. Resource stories now open as shareable long-form pages, while the new `Record Map` gives the full model-card and datasheet catalog an interactive node-edge view.
+
+## Product Decisions
+
+- Keep the homepage focused on discovery:
+  - story image
+  - domain
+  - title and short summary
+  - number of related catalog records
+- Do not render linked graphs inside homepage cards.
+- Treat stories as editorial containers that can explain why records are related, not as alternate model-detail pages.
+- Keep story content and relationships in an isolated mock content module until a CMS or editorial API is available.
+- Build the catalog map from live normalized Pinia records when the API is available, with a visibly labeled prototype fallback for local development.
+
+## Implementation
+
+- Added three mock resource stories with:
+  - shareable `/stories/:slug` routes
+  - image-led article headers
+  - long-form editorial sections
+  - related model-card and datasheet links
+  - full workflow relationship graphs
+- Added a reusable SVG `RecordGraph` component with:
+  - node and connected-edge highlighting
+  - hover preview cards
+  - keyboard-accessible node selection
+  - drag-to-pan
+  - wheel and button zoom
+  - reduced-motion compatibility through the shared style system
+- Added `/record-map` and a sidebar entry beneath the catalog browse links.
+- Added catalog-wide model/datasheet graph construction, search, record-type filters, counts, selection inspector, and direct detail links.
+- Added mobile shell behavior so the fixed navigation collapses to an icon rail and graph canvases remain contained without page-level horizontal overflow.
+
+## Observability
+
+- Added structured, privacy-conscious `[Patra UI]` events for:
+  - story open, view, share, and related-record navigation
+  - graph node hover and selection
+  - graph zoom/reset
+  - Record Map load source, filters, inspection, and record navigation
+- Logging intentionally excludes auth data, full record payloads, and free-form user content.
+
+## Validation Performed
+
+- `npm --prefix app run build` -> passed
+- `npm --prefix app test` -> passed (17 tests)
+- Browser validation against the local mock API:
+  - homepage contains zero graph nodes
+  - all three story cards route to dedicated story pages
+  - story relationship hover previews render
+  - Record Map loads 8 model cards, 6 datasheets, and 8 prototype relationships
+  - node selection opens the record inspector
+  - model-only filtering renders 8 nodes
+  - no console or page errors on homepage, Story, or Record Map
+  - no page-level horizontal overflow at 390px viewport width
+
+## Local Preview
+
+- Frontend: `http://127.0.0.1:4173/`
+- Mock API: `http://localhost:5003/`
+- No remote push or deployment was performed.
+
 ## Version 0.6.1 - 2026-04-07
 
 ## Summary

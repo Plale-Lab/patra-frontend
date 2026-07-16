@@ -13,6 +13,12 @@ import ExploreView from '../views/ExploreView.vue'
 import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
 import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
+import CatalogSearchView from '../views/CatalogSearchView.vue'
+import ProfileAreaView from '../views/ProfileAreaView.vue'
+import RecordMapView from '../views/RecordMapView.vue'
+import StoryDetailView from '../views/StoryDetailView.vue'
+import StoryPortalView from '../views/StoryPortalView.vue'
+import StoryAdminView from '../views/StoryAdminView.vue'
 import AgentToolkitView from '../features/agent-toolkit/AgentToolkitView.vue'
 import AskPatraView from '../features/ask-patra/AskPatraView.vue'
 import ExperimentsView from '../features/experiment-domains/ExperimentsView.vue'
@@ -22,10 +28,19 @@ import SubmitView from '../views/SubmitView.vue'
 
 const routes = [
   { path: '/', name: 'Dashboard', component: DashboardView },
+  { path: '/search', name: 'CatalogSearch', component: CatalogSearchView },
   { path: '/modelcards', name: 'ExploreModelCards', component: ExploreView },
   { path: '/modelcard/:uuid', name: 'ModelDetail', component: ModelDetailView },
   { path: '/datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
   { path: '/datasheet/:uuid', name: 'DatasheetDetail', component: DatasheetDetailView },
+  { path: '/record-map', name: 'RecordMap', component: RecordMapView },
+  { path: '/story-portal', name: 'StoryPortal', component: StoryPortalView },
+  { path: '/story-admin', name: 'StoryAdmin', component: StoryAdminView },
+  { path: '/stories/:slug', name: 'ResourceStory', component: StoryDetailView },
+  { path: '/my-collections', name: 'MyCollections', component: ProfileAreaView, props: { area: 'collections' }, meta: { tapis: true } },
+  { path: '/my-submissions', name: 'MySubmissions', component: ProfileAreaView, props: { area: 'submissions' }, meta: { tapis: true } },
+  { path: '/notifications', name: 'Notifications', component: ProfileAreaView, props: { area: 'notifications' }, meta: { tapis: true } },
+  { path: '/account', name: 'AccountProfile', component: ProfileAreaView, props: { area: 'account' }, meta: { tapis: true } },
   { path: '/ask-patra', name: 'AskPatra', component: AskPatraView, meta: { feature: 'askPatra', tapis: true } },
   { path: '/agent-tools', name: 'AgentTools', component: AgentToolkitView, meta: { feature: 'agentTools', tapis: true } },
   { path: '/mcp-explorer', name: 'McpExplorer', component: McpExplorerView, meta: { feature: 'mcpExplorer' } },
@@ -41,6 +56,10 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to) {
+    if (to.hash) return { el: to.hash, top: 16, behavior: 'smooth' }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach(async (to) => {

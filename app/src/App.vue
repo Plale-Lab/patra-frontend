@@ -7,7 +7,7 @@
     <Sidebar />
     <div class="admin-main">
       <HeaderBar />
-      <div class="admin-content">
+      <div class="admin-content" :class="{ 'admin-content--catalog': route.name === 'Dashboard' }">
         <RouterView v-slot="{ Component }">
           <transition name="view" mode="out-in">
             <component :is="Component" />
@@ -19,12 +19,13 @@
 </template>
 
 <script setup>
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Sidebar from './components/Sidebar.vue'
 import HeaderBar from './components/HeaderBar.vue'
 
 const auth = useAuthStore()
+const route = useRoute()
 </script>
 
 <style>

@@ -1,5 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App.vue'
 import { useAuthStore } from './stores/auth'
@@ -11,6 +12,9 @@ describe('authentication initialization UI', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     const auth = useAuthStore()
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: { template: '<div />' } }] })
+    await router.push('/')
+    await router.isReady()
     const neverResolves = new Promise(() => {})
     void auth.initialize({
       embeddedAuthEnabled: true,
@@ -21,7 +25,7 @@ describe('authentication initialization UI', () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [pinia],
+        plugins: [pinia, router],
         stubs: {
           Sidebar: true,
           HeaderBar: true,

@@ -1,639 +1,231 @@
 <template>
-  <div>
-    <div class="connection-banner error" v-if="dashboardError">
-      <IconAlertCircle :size="18" stroke-width="1.8" />
-      <span>Some dashboard data could not be loaded from the Patra API at <code>{{ API_BASE_URL }}</code>.</span>
-    </div>
+  <main class="catalog-home">
+    <section class="catalog-hero">
+      <img
+        class="hero-image"
+        src="https://images.unsplash.com/photo-1560493676-04071c5f467b?auto=format&fit=crop&w=2200&q=88"
+        alt="Rows of crops extending across a sunlit agricultural landscape"
+      />
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <span class="hero-brand">ICICLE AI Resource Catalog</span>
+        <h1>Discover connected AI resources.</h1>
+        <p>Search models, datasets, workflows, devices, evaluations, and provenance across the ICICLE ecosystem.</p>
 
-      <section class="hero-panel">
-        <div class="hero-copy">
-          <div class="hero-eyebrow">ICICLE Knowledge Base</div>
-          <h2>Trustworthy AI starts with documentation.</h2>
-          <p>
-            Patra is the open knowledge base for AI/ML models in the ICICLE edge-cloud
-            ecosystem &mdash; capturing performance, fairness, lineage, and real-world
-            deployment behavior so models can be found, evaluated, and reused with full context.
-          </p>
-          <div class="hero-actions">
-            <RouterLink to="/modelcards" class="btn btn-primary">
-              <IconCube :size="16" stroke-width="1.8" />
-              Browse Model Cards
-            </RouterLink>
-            <RouterLink to="/datasheets" class="btn btn-outline">
-              <IconTable :size="16" stroke-width="1.8" />
-              Browse Datasheets
-            </RouterLink>
-          </div>
-          <div class="hero-stats">
-            <div class="hero-stat">
-              <span class="hero-stat-value">{{ totalModels }}</span>
-              <span class="hero-stat-label">Model Cards</span>
-            </div>
-            <div class="hero-stat">
-              <span class="hero-stat-value">{{ totalDatasheets }}</span>
-              <span class="hero-stat-label">Datasheets</span>
-            </div>
-            <div class="hero-stat">
-              <span class="hero-stat-value">{{ authorCount }}</span>
-              <span class="hero-stat-label">Contributors</span>
-            </div>
-          </div>
-        </div>
-      </section>
+        <form class="hero-search" role="search" @submit.prevent="searchCatalog">
+          <IconSearch :size="21" aria-hidden="true" />
+          <label class="sr-only" for="catalog-home-search">Search the public resource catalog</label>
+          <input
+            id="catalog-home-search"
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search models, datasets, workflows, devices, or identifiers"
+          />
+          <button type="submit">Search <IconArrowRight :size="17" aria-hidden="true" /></button>
+        </form>
+      </div>
+      <a class="hero-credit" href="https://images.unsplash.com/photo-1560493676-04071c5f467b" target="_blank" rel="noreferrer">Dan Meyers / Unsplash</a>
+    </section>
 
-      <section class="pillars-grid">
-        <article class="pillar">
-          <div class="pillar-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-            <IconCube :size="22" stroke-width="1.8" />
+    <div class="catalog-body">
+      <section id="resource-stories" class="stories-section" aria-labelledby="featured-stories">
+        <header class="section-heading">
+          <div>
+            <span class="section-kicker">Featured connections</span>
+            <h2 id="featured-stories">Resource stories</h2>
           </div>
-          <h3>Model Cards</h3>
-          <p>
-            Performance, fairness, and explainability for each model &mdash; alongside
-            the deployment context it was built for.
-          </p>
-        </article>
-        <article class="pillar">
-          <div class="pillar-icon" style="background: var(--color-info-bg); color: var(--color-info);">
-            <IconTable :size="22" stroke-width="1.8" />
-          </div>
-          <h3>Datasheets</h3>
-          <p>
-            DataCite-aligned documentation for every dataset behind a model, so
-            data provenance is part of the record, not a footnote.
-          </p>
-        </article>
-        <article class="pillar">
-          <div class="pillar-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-            <IconGitBranch :size="22" stroke-width="1.8" />
-          </div>
-          <h3>Provenance &amp; Lineage</h3>
-          <p>
-            Forward and backward links between models, datasets, and deployments &mdash;
-            including versions, alternates, and transformative reuse.
-          </p>
-        </article>
-      </section>
+          <p>Follow a use case through its documented model, data, compute, run, and result.</p>
+        </header>
 
-      <section class="how-card card">
-        <div class="card-header">
-          <span>How it works</span>
-        </div>
-        <div class="card-body">
-          <ol class="how-steps">
-            <li>
-              <div class="how-icon" style="background: var(--color-primary-bg); color: var(--color-primary);">
-                <IconUpload :size="20" stroke-width="1.8" />
-              </div>
-              <div>
-                <div class="how-title">1. Document</div>
-                <div class="how-desc">Generate model cards with the Patra Toolkit &mdash; metrics and fairness checks captured semi-automatically.</div>
-              </div>
-            </li>
-            <li>
-              <div class="how-icon" style="background: var(--color-info-bg); color: var(--color-info);">
-                <IconSearch :size="20" stroke-width="1.8" />
-              </div>
-              <div>
-                <div class="how-title">2. Discover</div>
-                <div class="how-desc">Browse the catalog UI or query the REST API to find models that match your accuracy, fairness, and deployment needs.</div>
-              </div>
-            </li>
-            <li>
-              <div class="how-icon" style="background: var(--color-success-bg); color: var(--color-success);">
-                <IconBolt :size="20" stroke-width="1.8" />
-              </div>
-              <div>
-                <div class="how-title">3. Deploy with confidence</div>
-                <div class="how-desc">Real-time deployment telemetry from CKN feeds back into the catalog so you can see how a model behaves in the wild.</div>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section class="catalog-flavor" v-if="topCategories.length">
-        <div class="flavor-label">What&rsquo;s in the catalog</div>
-        <div class="flavor-chips">
+        <div v-if="homepageStories.length" class="stories-layout">
           <RouterLink
-            v-for="cat in topCategories"
-            :key="cat.name"
-            :to="{ path: '/modelcards', query: { category: cat.name } }"
-            class="flavor-chip"
+            v-for="story in homepageStories"
+            :key="story.slug"
+            :to="`/stories/${story.slug}`"
+            class="story-card"
+            @click="logStoryOpen(story)"
           >
-            <span class="flavor-chip-name">{{ cat.name }}</span>
-            <span class="flavor-chip-count">{{ cat.count }}</span>
+            <div class="story-media">
+              <img :src="story.image" :alt="story.imageAlt" :style="{ objectPosition: story.imagePosition }" loading="lazy" />
+              <div class="story-media-shade" aria-hidden="true"></div>
+              <span class="story-domain">{{ story.domain }}</span>
+              <span class="story-open"><IconArrowUpRight :size="17" aria-hidden="true" /></span>
+            </div>
+            <div class="story-copy">
+              <h3>{{ story.title }}</h3>
+              <p>{{ story.summary }}</p>
+              <span class="story-read">Read story <IconArrowRight :size="15" aria-hidden="true" /></span>
+            </div>
           </RouterLink>
         </div>
+        <div v-else class="stories-empty">
+          <div><IconBook2 :size="22" /><span>No stories are featured yet</span></div>
+          <p>Published resource stories selected by the editorial team will appear here.</p>
+          <RouterLink to="/story-portal">Create a story <IconArrowRight :size="15" /></RouterLink>
+        </div>
       </section>
 
-      <div class="featured-grid">
-        <div class="card">
-          <div class="card-header">
-            <span>Featured Public Models</span>
-            <RouterLink to="/modelcards" class="btn btn-sm btn-outline">View All</RouterLink>
+      <section id="browse-catalog" class="browse-section" aria-labelledby="browse-heading">
+        <header class="section-heading browse-heading">
+          <div>
+            <span class="section-kicker">Browse the repository</span>
+            <h2 id="browse-heading">Explore by resource type</h2>
           </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="featuredModels.length === 0">
-              No public models are available from the current API mode.
-            </div>
-            <div v-else class="stack-list">
-              <RouterLink
-                v-for="model in featuredModels"
-                :key="model.uuid"
-                :to="`/modelcard/${model.uuid}`"
-                class="stack-item"
-              >
-                <div class="stack-item-main">
-                  <div class="stack-item-title">{{ model.name }}</div>
-                  <div class="stack-item-subtitle">{{ model.author || 'Unknown author' }}</div>
-                </div>
-                <div class="stack-item-meta">
-                  <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
-                    {{ model.is_private ? 'Private' : 'Public' }}
-                  </span>
-                  <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
-        </div>
+          <RouterLink to="/search" class="section-link">Search everything <IconArrowRight :size="17" /></RouterLink>
+        </header>
 
-        <div class="card">
-          <div class="card-header">
-            <span>Recently Added</span>
-            <RouterLink to="/modelcards" class="btn btn-sm btn-outline">View All</RouterLink>
-          </div>
-          <div class="card-body">
-            <div class="empty-block" v-if="recentModels.length === 0">
-              No recent records to display.
-            </div>
-            <div v-else class="stack-list">
-              <RouterLink
-                v-for="model in recentModels"
-                :key="model.uuid"
-                :to="`/modelcard/${model.uuid}`"
-                class="stack-item"
-              >
-                <div class="stack-item-main">
-                  <div class="stack-item-title">{{ model.name }}</div>
-                  <div class="stack-item-subtitle">{{ model.author || 'Unknown author' }}</div>
-                </div>
-                <div class="stack-item-meta">
-                  <span class="badge" :class="model.is_private ? 'badge-private' : 'badge-public'">
-                    {{ model.is_private ? 'Private' : 'Public' }}
-                  </span>
-                  <span v-if="model.is_gated" class="badge badge-accent">Gated</span>
-                </div>
-              </RouterLink>
-            </div>
-          </div>
+        <nav class="browse-list" aria-label="Catalog resource types">
+          <RouterLink to="/modelcards">
+            <span class="browse-icon"><IconCube :size="19" /></span>
+            <span><strong>Models</strong><small>Documentation, versions, metrics, and deployment context</small></span>
+            <IconArrowUpRight :size="20" />
+          </RouterLink>
+          <RouterLink to="/datasheets">
+            <span class="browse-icon"><IconDatabase :size="19" /></span>
+            <span><strong>Datasets</strong><small>Datasheets, creators, identifiers, rights, and provenance</small></span>
+            <IconArrowUpRight :size="20" />
+          </RouterLink>
+          <RouterLink to="/record-map">
+            <span class="browse-icon"><IconRoute :size="19" /></span>
+            <span><strong>Record Map</strong><small>Interactive relationships across models and datasets</small></span>
+            <IconArrowUpRight :size="20" />
+          </RouterLink>
+          <RouterLink v-if="SUPPORTS_DOMAIN_EXPERIMENTS" to="/animal-ecology">
+            <span class="browse-icon"><IconActivity :size="19" /></span>
+            <span><strong>Workflows and runs</strong><small>Operational inference, evaluations, devices, images, and power</small></span>
+            <IconArrowUpRight :size="20" />
+          </RouterLink>
+        </nav>
+      </section>
+
+      <footer id="catalog-about" class="catalog-about">
+        <div>
+          <strong>About this catalog</strong>
+          <p>Public browsing does not require a Tapis account. Sign in only for private resources and contributor tools.</p>
         </div>
-      </div>
-  </div>
+        <RouterLink to="/record-map">Explore catalog relationships <IconArrowRight :size="16" /></RouterLink>
+      </footer>
+    </div>
+  </main>
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import { useExploreStore } from '../stores/explore'
-import { useAuthStore } from '../stores/auth'
-import { API_BASE_URL } from '../config/api'
+import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { RouterLink, useRouter } from 'vue-router'
 import {
-  IconAlertCircle,
-  IconBolt,
+  IconActivity,
+  IconArrowRight,
+  IconArrowUpRight,
+  IconBook2,
   IconCube,
-  IconGitBranch,
+  IconDatabase,
+  IconRoute,
   IconSearch,
-  IconTable,
-  IconUpload,
 } from '@tabler/icons-vue'
+import { SUPPORTS_DOMAIN_EXPERIMENTS } from '../config/api'
+import { logUiEvent } from '../lib/uiLogger'
+import { useStoriesStore } from '../stores/stories'
 
-const exploreStore = useExploreStore()
-const auth = useAuthStore()
+const router = useRouter()
+const storyStore = useStoriesStore()
+const { homepageStories } = storeToRefs(storyStore)
+const searchQuery = ref('')
 
-const dashboardError = computed(() => (
-  exploreStore.error || ''
-))
-
-const totalModels = computed(() => exploreStore.models.length)
-const totalDatasheets = computed(() => exploreStore.datasheets.length)
-
-function compareUpdatedDesc(a, b) {
-  return String(b.updated_at || '').localeCompare(String(a.updated_at || ''))
+function searchCatalog() {
+  const query = searchQuery.value.trim()
+  logUiEvent('catalog-search-submit', { source: 'hero', queryLength: query.length })
+  router.push({ name: 'CatalogSearch', query: query ? { q: query } : {} })
 }
 
-const featuredModels = computed(() => (
-  [...exploreStore.models]
-    .filter(model => !model.is_private)
-    .sort(compareUpdatedDesc)
-    .slice(0, 4)
-))
-
-const recentModels = computed(() => (
-  [...exploreStore.models]
-    .sort(compareUpdatedDesc)
-    .slice(0, 4)
-))
-
-const topCategories = computed(() => {
-  const counts = new Map()
-  for (const model of exploreStore.models) {
-    const raw = model.category || model.categories
-    if (!raw) continue
-    const items = String(raw).split(',').map(s => s.trim()).filter(Boolean)
-    for (const item of items) {
-      counts.set(item, (counts.get(item) ?? 0) + 1)
-    }
-  }
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-    .map(([name, count]) => ({ name, count }))
-})
-
-const authorCount = computed(() => {
-  const authors = new Set()
-  for (const model of exploreStore.models) {
-    const name = normalizeIdentity(model.author)
-    if (name) authors.add(name)
-  }
-  for (const datasheet of exploreStore.datasheets) {
-    const name = normalizeIdentity(primaryCreatorName(datasheet))
-    if (name) authors.add(name)
-  }
-  return authors.size
-})
-
-function normalizeIdentity(value) {
-  return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ')
+function logStoryOpen(story) {
+  logUiEvent('resource-story-open', { slug: story.slug, source: 'dashboard' })
 }
-
-function primaryCreatorName(datasheet) {
-  const c = datasheet?.creator?.[0] ?? datasheet?.creators?.[0]
-  if (!c) return ''
-  if (typeof c === 'string') return c
-  return c.creatorName?.name || c.creator_name || c.givenName || c.given_name || ''
-}
-
-async function loadDashboard() {
-  const tasks = [
-    exploreStore.fetchModels(),
-    exploreStore.fetchDatasheets(),
-  ]
-
-  await Promise.allSettled(tasks)
-}
-
-onMounted(loadDashboard)
-watch(() => auth.isLoggedIn, loadDashboard)
 </script>
 
 <style scoped>
-.hero-panel {
-  margin-bottom: 24px;
+.catalog-home { margin: -32px -36px 0; color: #171918; }
+.catalog-hero { position: relative; min-height: 442px; overflow: hidden; isolation: isolate; color: #fff; background: #17211a; }
+.hero-image { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; object-position: center 58%; animation: hero-settle 900ms var(--ease-out) both; }
+.hero-shade { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, rgba(9,18,12,.9), rgba(9,18,12,.62) 43%, rgba(9,18,12,.12) 78%), linear-gradient(0deg, rgba(8,13,9,.32), transparent 55%); }
+.hero-inner { width: min(1280px, calc(100% - 80px)); margin: 0 auto; padding: 54px 0 42px; animation: hero-copy-in 650ms 80ms var(--ease-out) both; }
+.hero-brand { display: block; margin-bottom: 16px; font-size: .7rem; font-weight: 750; letter-spacing: .14em; text-transform: uppercase; }
+.catalog-hero h1 { max-width: 700px; font-size: clamp(3.2rem, 5vw, 5.1rem); font-weight: 700; line-height: .96; letter-spacing: -.06em; text-wrap: balance; }
+.catalog-hero p { max-width: 660px; margin-top: 16px; color: rgba(255,255,255,.82); font-size: .96rem; line-height: 1.55; }
+.hero-search { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 13px; width: min(820px, 100%); margin-top: 25px; padding: 7px 7px 7px 17px; border: 1px solid rgba(255,255,255,.32); border-radius: 12px; color: #60645f; background: rgba(255,255,255,.97); box-shadow: 0 16px 40px rgba(0,0,0,.16); }
+.hero-search:focus-within { box-shadow: 0 18px 44px rgba(0,0,0,.2), 0 0 0 3px rgba(255,255,255,.2); }
+.hero-search input { min-width: 0; border: 0; outline: 0; color: #171918; background: transparent; font-size: .94rem; }
+.hero-search button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 19px; border: 0; border-radius: 8px; color: #fff; background: var(--color-primary); font-weight: 650; }
+.hero-search button:hover { background: #24428f; }
+.hero-credit { position: absolute; right: 18px; bottom: 12px; color: rgba(255,255,255,.55); font-size: .62rem; }
+.hero-credit:hover { color: #fff; }
+
+.catalog-body { width: min(1280px, calc(100% - 80px)); margin: 0 auto; }
+.stories-section { scroll-margin-top: 90px; padding: 52px 0 16px; }
+.browse-section { scroll-margin-top: 90px; padding: 76px 0 8px; }
+.section-heading { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 22px; }
+.section-kicker { display: block; margin-bottom: 7px; color: #c27e16; font-size: .67rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+.section-heading h2 { font-size: clamp(2rem, 2.8vw, 2.8rem); line-height: 1.03; letter-spacing: -.05em; }
+.section-heading > p { max-width: 450px; color: #676a65; font-size: .82rem; line-height: 1.55; text-align: right; }
+
+.stories-layout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.stories-empty { display: grid; justify-items: start; gap: 8px; padding: 28px 0; border-top: 1px solid #d8d8d2; border-bottom: 1px solid #d8d8d2; }
+.stories-empty > div { display: flex; align-items: center; gap: 9px; color: #252b28; font-weight: 700; }
+.stories-empty > div svg { color: var(--color-primary); }
+.stories-empty p { color: #737771; font-size: .78rem; }
+.stories-empty a { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; color: var(--color-primary); font-size: .75rem; font-weight: 700; }
+.story-card { min-width: 0; overflow: hidden; border: 1px solid #dfdfda; border-radius: 14px; color: inherit; background: #fff; transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition); }
+.story-card:hover, .story-card:focus-visible { border-color: #bfc2bc; transform: translateY(-3px); box-shadow: 0 12px 30px rgba(20,24,21,.08); }
+.story-media { position: relative; height: 205px; overflow: hidden; color: #fff; }
+.story-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 650ms var(--ease-out); }
+.story-card:hover .story-media img { transform: scale(1.035); }
+.story-media-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,11,8,.22), transparent 55%, rgba(7,11,8,.28)); }
+.story-domain { position: absolute; top: 14px; left: 14px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.42); border-radius: 999px; background: rgba(11,16,12,.3); font-size: .62rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; backdrop-filter: blur(8px); }
+.story-open { position: absolute; top: 13px; right: 13px; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #171918; background: rgba(255,255,255,.94); transition: transform var(--transition), background var(--transition), color var(--transition); }
+.story-card:hover .story-open { color: #fff; background: var(--color-primary); transform: translate(2px,-2px); }
+.story-copy { min-height: 174px; display: flex; flex-direction: column; padding: 20px; }
+.story-copy h3 { font-size: 1.16rem; line-height: 1.2; letter-spacing: -.03em; }
+.story-copy p { margin-top: 8px; color: #666962; font-size: .79rem; line-height: 1.55; }
+.story-read { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; margin-top: auto; padding-top: 16px; color: var(--color-primary); font-size: .72rem; font-weight: 700; }
+
+.browse-heading { margin-bottom: 10px; }
+.section-link { display: inline-flex; align-items: center; gap: 8px; color: var(--color-primary); font-weight: 650; }
+.browse-list { border-top: 1px solid #cfcfca; }
+.browse-list a { display: grid; grid-template-columns: 42px minmax(0,1fr) auto; gap: 17px; align-items: center; padding: 21px 4px; border-bottom: 1px solid #deded9; color: #62655f; transition: padding var(--transition), color var(--transition), background var(--transition); }
+.browse-list a:hover { padding-right: 12px; padding-left: 12px; color: var(--color-primary); background: rgba(255,255,255,.55); }
+.browse-icon { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; color: var(--color-primary); background: var(--color-primary-bg); }
+.browse-list strong, .browse-list small { display: block; }
+.browse-list strong { color: #171918; font-size: 1rem; }
+.browse-list small { margin-top: 3px; color: #777a74; font-size: .78rem; }
+.catalog-about { scroll-margin-top: 90px; display: flex; justify-content: space-between; gap: 48px; margin-top: 68px; padding: 24px 0 30px; border-top: 1px solid #deded9; color: #777a74; font-size: .75rem; }
+.catalog-about strong { color: #171918; }
+.catalog-about p { max-width: 620px; margin-top: 4px; }
+.catalog-about > a { display: inline-flex; align-items: center; gap: 7px; align-self: center; color: var(--color-primary); font-weight: 650; white-space: nowrap; }
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@keyframes hero-settle { from { opacity: .45; transform: scale(1.03); } to { opacity: 1; transform: scale(1); } }
+@keyframes hero-copy-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 1040px) {
+  .stories-layout { grid-template-columns: 1fr; }
+  .story-card { display: grid; grid-template-columns: minmax(270px,.72fr) minmax(0,1fr); }
+  .story-media { height: 100%; min-height: 230px; }
 }
-
-.hero-copy {
-  padding: 40px 36px;
-  border-radius: var(--radius);
-  border: 1px solid var(--color-border);
-  background:
-    radial-gradient(circle at top right, rgba(47, 78, 162, 0.12), transparent 35%),
-    radial-gradient(circle at bottom left, rgba(168, 112, 31, 0.08), transparent 40%),
-    linear-gradient(135deg, #f7f9ff 0%, #fffdf7 58%, #fcf5ea 100%);
-  box-shadow: var(--shadow-sm);
-}
-
-.hero-eyebrow {
-  font-size: .74rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--color-primary);
-  margin-bottom: 14px;
-}
-
-.hero-copy h2 {
-  margin: 0 0 14px;
-  font-size: 2.4rem;
-  line-height: 1.08;
-  max-width: 18ch;
-  letter-spacing: -.04em;
-}
-
-.hero-copy p {
-  margin: 0;
-  max-width: 64ch;
-  color: var(--color-text-secondary);
-  line-height: 1.7;
-  font-size: .98rem;
-}
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-.hero-stats {
-  display: flex;
-  gap: 28px;
-  margin-top: 28px;
-  padding-top: 22px;
-  border-top: 1px solid rgba(47, 78, 162, 0.14);
-}
-
-.hero-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hero-stat-value {
-  font-size: 1.7rem;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--color-primary);
-  line-height: 1;
-}
-
-.hero-stat-label {
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.catalog-flavor {
-  margin-bottom: 24px;
-  padding: 18px 22px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.45);
-}
-
-.flavor-label {
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-  margin-bottom: 12px;
-}
-
-.flavor-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.flavor-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: #fff;
-  text-decoration: none;
-  color: var(--color-text);
-  font-size: .84rem;
-  font-weight: 500;
-  transition: border-color var(--transition), color var(--transition), transform var(--transition);
-}
-
-.flavor-chip:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-.flavor-chip-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  padding: 0 6px;
-  height: 18px;
-  border-radius: 9px;
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-  font-size: .72rem;
-  font-weight: 700;
-}
-
-.featured-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.pillars-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.pillar {
-  padding: 22px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.55);
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
-}
-
-.pillar:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.pillar-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 14px;
-}
-
-.pillar h3 {
-  margin: 0 0 8px;
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: -.01em;
-}
-
-.pillar p {
-  margin: 0;
-  font-size: .86rem;
-  color: var(--color-text-secondary);
-  line-height: 1.55;
-}
-
-.how-card {
-  margin-bottom: 24px;
-}
-
-.how-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.how-steps li {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-}
-
-.how-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.how-title {
-  font-weight: 700;
-  font-size: .94rem;
-  margin-bottom: 4px;
-}
-
-.how-desc {
-  font-size: .82rem;
-  color: var(--color-text-muted);
-  line-height: 1.55;
-}
-
-.stack-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.stack-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 14px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  background: rgba(255,255,255,.55);
-  text-decoration: none;
-  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
-}
-
-.stack-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
-.stack-item-main {
-  min-width: 0;
-}
-
-.stack-item-title {
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.stack-item-subtitle {
-  margin-top: 3px;
-  font-size: .78rem;
-  color: var(--color-text-muted);
-}
-
-.stack-item-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.stack-item-arrow {
-  font-size: .8rem;
-  color: var(--color-text-muted);
-}
-
-.empty-block {
-  padding: 22px;
-  border: 1px dashed var(--color-border);
-  border-radius: 14px;
-  background: rgba(255,255,255,.35);
-  color: var(--color-text-muted);
-  font-size: .88rem;
-  line-height: 1.6;
-}
-
-.connection-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  border-radius: var(--radius-sm);
-  margin-bottom: 20px;
-  font-size: .88rem;
-}
-
-.connection-banner.error {
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
-  border: 1px solid rgba(194, 65, 74, .28);
-}
-
-.connection-banner code {
-  background: rgba(0, 0, 0, .08);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: .82rem;
-}
-
-@media (max-width: 1180px) {
-  .pillars-grid,
-  .how-steps,
-  .featured-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .hero-copy {
-    padding: 26px 22px;
-  }
-
-  .hero-copy h2 {
-    font-size: 1.7rem;
-    max-width: none;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-  }
-
-  .hero-stats {
-    gap: 18px;
-  }
-
-  .stack-item {
-    align-items: flex-start;
-  }
-
-  .stack-item-meta {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+@media (max-width: 760px) {
+  .catalog-home { margin: -16px -12px 0; }
+  .catalog-hero { min-height: 520px; }
+  .hero-inner, .catalog-body { width: calc(100% - 32px); }
+  .hero-inner { padding: 44px 0 36px; }
+  .catalog-hero h1 { font-size: clamp(3rem,13vw,4.2rem); }
+  .hero-search { grid-template-columns: auto minmax(0,1fr); }
+  .hero-search button { grid-column: 1/-1; justify-content: center; }
+  .hero-credit { display: none; }
+  .section-heading { display: block; }
+  .section-heading > p { margin-top: 10px; text-align: left; }
+  .story-card { display: block; }
+  .story-media { height: 210px; min-height: 0; }
+  .section-link { margin-top: 12px; }
+  .catalog-about { display: block; }
+  .catalog-about > a { margin-top: 16px; }
 }
 </style>
