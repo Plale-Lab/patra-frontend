@@ -8,9 +8,8 @@
     <nav class="sidebar-nav" aria-label="Public catalog navigation">
       <div class="sidebar-section-label">Public catalog</div>
       <RouterLink to="/" class="sidebar-link" :class="{ active: $route.path === '/' }"><IconHomeSearch :size="19" /><span>Home</span></RouterLink>
-      <RouterLink to="/search" class="sidebar-link" :class="{ active: $route.path === '/search' }"><IconSearch :size="19" /><span>Search</span></RouterLink>
-      <RouterLink to="/#browse-catalog" class="sidebar-link"><IconCategory :size="19" /><span>Browse</span></RouterLink>
-      <RouterLink to="/#resource-stories" class="sidebar-link"><IconBook2 :size="19" /><span>Resource Stories</span></RouterLink>
+      <RouterLink to="/search" class="sidebar-link" :class="{ active: catalogActive }"><IconLibrary :size="19" /><span>Catalog</span></RouterLink>
+      <RouterLink to="/#resource-stories" class="sidebar-link"><IconBook2 :size="19" /><span>Stories</span></RouterLink>
       <RouterLink to="/record-map" class="sidebar-link" :class="{ active: $route.path === '/record-map' }"><IconRoute :size="19" /><span>Record Map</span></RouterLink>
       <RouterLink to="/#catalog-about" class="sidebar-link"><IconHelpCircle :size="19" /><span>About &amp; Help</span></RouterLink>
       <div class="sidebar-section-label sidebar-section-label--publishing">Publishing</div>
@@ -21,8 +20,15 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { IconBook2, IconCategory, IconHelpCircle, IconHomeSearch, IconPencilPlus, IconRoute, IconSearch, IconShieldLock } from '@tabler/icons-vue'
+import { useRoute } from 'vue-router'
+import { IconBook2, IconHelpCircle, IconHomeSearch, IconLibrary, IconPencilPlus, IconRoute, IconShieldLock } from '@tabler/icons-vue'
+
+const route = useRoute()
+const catalogActive = computed(() => ['/search', '/modelcards', '/datasheets'].includes(route.path)
+  || route.path.startsWith('/modelcard/')
+  || route.path.startsWith('/datasheet/'))
 </script>
 
 <style scoped>

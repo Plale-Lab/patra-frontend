@@ -9,8 +9,6 @@ import {
 } from '../config/api'
 
 import DashboardView from '../views/DashboardView.vue'
-import ExploreView from '../views/ExploreView.vue'
-import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
 import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
 import CatalogSearchView from '../views/CatalogSearchView.vue'
@@ -29,9 +27,9 @@ import SubmitView from '../views/SubmitView.vue'
 const routes = [
   { path: '/', name: 'Dashboard', component: DashboardView },
   { path: '/search', name: 'CatalogSearch', component: CatalogSearchView },
-  { path: '/modelcards', name: 'ExploreModelCards', component: ExploreView },
+  { path: '/modelcards', name: 'ExploreModelCards', redirect: { name: 'CatalogSearch', query: { type: 'model' } } },
   { path: '/modelcard/:uuid', name: 'ModelDetail', component: ModelDetailView },
-  { path: '/datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
+  { path: '/datasheets', name: 'ExploreDatasheets', redirect: { name: 'CatalogSearch', query: { type: 'datasheet' } } },
   { path: '/datasheet/:uuid', name: 'DatasheetDetail', component: DatasheetDetailView },
   { path: '/record-map', name: 'RecordMap', component: RecordMapView },
   { path: '/story-portal', name: 'StoryPortal', component: StoryPortalView },
@@ -48,7 +46,7 @@ const routes = [
   { path: '/digital-agriculture', name: 'DigitalAgriculture', component: ExperimentsView, props: { domain: 'digital-ag' }, meta: { feature: 'domainExperiments' } },
   { path: '/edit-records', name: 'EditRecords', component: EditRecordsView, meta: { feature: 'editRecords', tapis: true } },
   { path: '/edit-assets', redirect: { name: 'EditRecords' } },
-  { path: '/explore', redirect: { name: 'ExploreModelCards' } },
+  { path: '/explore', redirect: { name: 'CatalogSearch' } },
   { path: '/submit', name: 'Submit', component: SubmitView, meta: { tapis: true } },
   { path: '/:pathMatch(.*)*', redirect: { name: 'Dashboard' } },
 ]

@@ -7,7 +7,7 @@
     <Sidebar />
     <div class="admin-main">
       <HeaderBar />
-      <div class="admin-content" :class="{ 'admin-content--catalog': route.name === 'Dashboard' }">
+      <div class="admin-content" :class="{ 'admin-content--catalog': ['Dashboard', 'CatalogSearch'].includes(route.name) }">
         <RouterView v-slot="{ Component }">
           <transition name="view" mode="out-in">
             <component :is="Component" />
@@ -15,6 +15,7 @@
         </RouterView>
       </div>
     </div>
+    <SavedSetTray />
   </div>
 </template>
 
@@ -23,6 +24,7 @@ import { RouterView, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Sidebar from './components/Sidebar.vue'
 import HeaderBar from './components/HeaderBar.vue'
+import SavedSetTray from './components/SavedSetTray.vue'
 
 const auth = useAuthStore()
 const route = useRoute()

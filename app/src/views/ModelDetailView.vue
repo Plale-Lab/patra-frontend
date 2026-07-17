@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="top-bar">
-      <RouterLink to="/modelcards" class="back-link">
-        <IconArrowLeft :size="16" stroke-width="2" /> Back to Model Cards
+      <RouterLink to="/search?type=model" class="back-link">
+        <IconArrowLeft :size="16" stroke-width="2" /> Back to catalog
       </RouterLink>
       <div class="top-bar-actions" v-if="model && !store.loading">
         <button class="btn btn-secondary" @click="downloadJson" :disabled="downloading">
@@ -33,7 +33,7 @@
     <div class="empty-state" v-else-if="!model">
       <IconAlertCircle :size="48" stroke-width="1.2" />
       <h3>Model not found</h3>
-      <RouterLink to="/modelcards" class="btn btn-primary">Back to Model Cards</RouterLink>
+      <RouterLink to="/search?type=model" class="btn btn-primary">Back to catalog</RouterLink>
     </div>
 
     <template v-else>
@@ -118,6 +118,20 @@
           <div v-if="editError" class="edit-error">{{ editError }}</div>
         </div>
       </div>
+
+      <TrustSummary
+        v-if="!editing"
+        type="model"
+        :record-id="recordUuid"
+        :title="model.name || 'Untitled model'"
+        :subtitle="model.short_description || model.category || 'Model card'"
+        :route="`/modelcard/${recordUuid}`"
+        :access="modelAccess"
+        :steward="modelSteward"
+        :version="formatVersion(model.version || model.ai_model?.version)"
+        :rights="model.ai_model?.license || ''"
+        :updated="model.updated_at || model.modified_at || model.last_updated || ''"
+      />
 
       <div class="card edit-form-card" v-if="editing">
         <div class="card-header">
@@ -435,6 +449,7 @@ import { useRoute, RouterLink } from 'vue-router'
 import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
 import MetricBar from '../components/MetricBar.vue'
+import TrustSummary from '../components/TrustSummary.vue'
 import { apiFetch } from '../lib/api'
 import { formatVersion } from '../lib/formatVersion'
 import {
@@ -450,6 +465,8 @@ const auth = useAuthStore()
 
 const model = computed(() => store.currentModel)
 const recordUuid = computed(() => route.params.uuid)
+const modelAccess = computed(() => model.value?.is_private ? 'Private' : model.value?.is_gated ? 'Gated' : 'Public / open')
+const modelSteward = computed(() => model.value?.ai_model?.owner || model.value?.author || '')
 const uuidCopied = ref(false)
 async function copyUuid() {
   try {
@@ -873,6 +890,17 @@ watch(() => route.params.uuid, () => {
 }
 
 .history-scroll { overflow-x: auto; }
+
+@media (max-width: 760px) {
+  .top-bar { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .top-bar-actions { margin-left: auto; }
+  .detail-top { display: block; }
+  .detail-header-actions { align-items: flex-start; margin-top: 18px; }
+  .detail-accuracy-ring { width: 92px; height: 92px; }
+  .ring-value { font-size: 1.05rem; }
+  .detail-grid,.info-grid,.edit-grid { grid-template-columns: 1fr; }
+  .detail-name { font-size: 1.42rem; }
+}
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }

@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="top-bar">
-      <RouterLink to="/datasheets" class="back-link">
-        <IconArrowLeft :size="16" stroke-width="2" /> Back to Datasheets
+      <RouterLink to="/search?type=datasheet" class="back-link">
+        <IconArrowLeft :size="16" stroke-width="2" /> Back to catalog
       </RouterLink>
       <div class="top-bar-actions" v-if="ds && !store.loading">
         <button class="btn btn-secondary" @click="downloadJson" :disabled="downloading">
@@ -33,7 +33,7 @@
     <div class="empty-state" v-else-if="!ds">
       <IconAlertCircle :size="48" stroke-width="1.2" />
       <h3>Datasheet not found</h3>
-      <RouterLink to="/datasheets" class="btn btn-primary">Back to Datasheets</RouterLink>
+      <RouterLink to="/search?type=datasheet" class="btn btn-primary">Back to catalog</RouterLink>
     </div>
 
     <template v-else>
@@ -86,6 +86,20 @@
           <div v-if="editError" class="edit-error">{{ editError }}</div>
         </div>
       </div>
+
+      <TrustSummary
+        v-if="!editing"
+        type="datasheet"
+        :record-id="recordUuid"
+        :title="displayTitle"
+        :subtitle="displayDescription"
+        :route="`/datasheet/${recordUuid}`"
+        :access="ds.is_private ? 'Private' : 'Public / open'"
+        :steward="displayPublisher || displayCreator"
+        :version="formatVersion(ds.version) || String(ds.publication_year || '')"
+        :rights="trustRights"
+        :updated="ds.updated_at || ds.modified_at || ds.last_updated || ''"
+      />
 
       <div class="card edit-form-card" v-if="editing">
         <div class="card-header">
@@ -252,6 +266,7 @@ import { useExploreStore } from '../stores/explore'
 import { useAuthStore } from '../stores/auth'
 import { apiFetch } from '../lib/api'
 import { formatVersion } from '../lib/formatVersion'
+import TrustSummary from '../components/TrustSummary.vue'
 import {
   IconArrowLeft, IconLoader2, IconAlertCircle, IconPencil,
   IconUser, IconBuilding, IconCalendar, IconUsers,
@@ -265,6 +280,10 @@ const auth = useAuthStore()
 
 const ds = computed(() => store.currentDatasheet)
 const recordUuid = computed(() => route.params.uuid)
+const trustRights = computed(() => {
+  const value = ds.value?.rights?.[0]
+  return typeof value === 'object' ? value?.rights || '' : value || ''
+})
 const uuidCopied = ref(false)
 async function copyUuid() {
   try {
@@ -537,6 +556,14 @@ watch(() => route.params.uuid, () => {
 }
 
 .metric-key-cell { font-weight: 500; }
+
+@media (max-width: 760px) {
+  .top-bar { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .top-bar-actions { margin-left: auto; }
+  .detail-top { display: block; }
+  .detail-grid,.info-grid,.edit-grid { grid-template-columns: 1fr; }
+  .detail-name { font-size: 1.42rem; }
+}
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
