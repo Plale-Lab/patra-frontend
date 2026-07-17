@@ -5,6 +5,7 @@ import { logUiEvent } from '../lib/uiLogger'
 
 const STORAGE_KEY = 'patra_resource_stories_v1'
 const ADMIN_SESSION_KEY = 'patra_story_admin_session'
+const DEFAULT_AUTO_CAROUSEL = false
 
 export const STORY_ADMIN_USERNAME = 'admin'
 export const STORY_ADMIN_PASSWORD = 'admin'
@@ -26,14 +27,19 @@ function seedStories() {
   }))
 }
 
-function loadStories() {
+function loadStoryState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw === null) return seedStories()
+    if (raw === null) return { stories: seedStories(), autoCarousel: DEFAULT_AUTO_CAROUSEL }
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed?.stories) ? parsed.stories : seedStories()
+    return {
+      stories: Array.isArray(parsed?.stories) ? parsed.stories : seedStories(),
+      autoCarousel: typeof parsed?.settings?.autoCarousel === 'boolean'
+        ? parsed.settings.autoCarousel
+        : DEFAULT_AUTO_CAROUSEL,
+    }
   } catch {
-    return seedStories()
+    return { stories: seedStories(), autoCarousel: DEFAULT_AUTO_CAROUSEL }
   }
 }
 
@@ -131,7 +137,9 @@ function storyFromDraft(draft, slug) {
 }
 
 export const useStoriesStore = defineStore('stories', () => {
-  const stories = ref(loadStories())
+  const initialState = loadStoryState()
+  const stories = ref(initialState.stories)
+  const autoCarousel = ref(initialState.autoCarousel)
   const isAdmin = ref(sessionStorage.getItem(ADMIN_SESSION_KEY) === 'active')
 
   const publishedStories = computed(() => stories.value.filter((story) => story.status === 'published'))
@@ -140,7 +148,11 @@ export const useStoriesStore = defineStore('stories', () => {
 
   function persist() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, stories: stories.value }))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 2,
+        stories: stories.value,
+        settings: { autoCarousel: autoCarousel.value },
+      }))
       return true
     } catch {
       logUiEvent('story-storage-error')
@@ -225,6 +237,13 @@ export const useStoriesStore = defineStore('stories', () => {
     return true
   }
 
+  function setAutoCarousel(enabled) {
+    autoCarousel.value = Boolean(enabled)
+    persist()
+    logUiEvent('story-carousel-setting-changed', { autoCarousel: autoCarousel.value })
+    return autoCarousel.value
+  }
+
   function deleteStory(id) {
     const index = stories.value.findIndex((story) => story.id === id)
     if (index < 0) return false
@@ -259,12 +278,14 @@ export const useStoriesStore = defineStore('stories', () => {
     sortedStories,
     publishedStories,
     homepageStories,
+    autoCarousel,
     isAdmin,
     previewFromDraft,
     createStory,
     updateStory,
     setPublished,
     setFeatured,
+    setAutoCarousel,
     deleteStory,
     getBySlug,
     login,

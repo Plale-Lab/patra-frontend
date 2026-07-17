@@ -47,6 +47,18 @@ describe('story publishing store', () => {
     expect(restored.getBySlug(first.slug)?.title).toBe('Community field note')
     expect(restored.stories).toHaveLength(5)
   })
+
+  it('persists the administrator-controlled homepage carousel mode', () => {
+    const store = useStoriesStore()
+    expect(store.autoCarousel).toBe(false)
+
+    expect(store.setAutoCarousel(true)).toBe(true)
+    expect(JSON.parse(localStorage.getItem('patra_resource_stories_v1')).settings.autoCarousel).toBe(true)
+
+    setActivePinia(createPinia())
+    const restored = useStoriesStore()
+    expect(restored.autoCarousel).toBe(true)
+  })
 })
 
 function sampleDraft() {

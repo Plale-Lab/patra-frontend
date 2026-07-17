@@ -37,26 +37,71 @@
           <p>Follow a use case through its documented model, data, compute, run, and result.</p>
         </header>
 
-        <div v-if="homepageStories.length" class="stories-layout">
-          <RouterLink
-            v-for="story in homepageStories"
-            :key="story.slug"
-            :to="`/stories/${story.slug}`"
-            class="story-card"
-            @click="logStoryOpen(story)"
-          >
-            <div class="story-media">
-              <img :src="story.image" :alt="story.imageAlt" :style="{ objectPosition: story.imagePosition }" loading="lazy" />
-              <div class="story-media-shade" aria-hidden="true"></div>
-              <span class="story-domain">{{ story.domain }}</span>
-              <span class="story-open"><IconArrowUpRight :size="17" aria-hidden="true" /></span>
+        <div
+          v-if="homepageStories.length"
+          class="stories-carousel"
+          :class="{ 'has-controls': hasCarouselControls }"
+          aria-label="Featured resource stories"
+          aria-roledescription="carousel"
+          @mouseenter="carouselHovered = true"
+          @mouseleave="carouselHovered = false"
+          @focusin="carouselFocused = true"
+          @focusout="carouselFocused = false"
+        >
+          <button v-if="hasCarouselControls" type="button" class="carousel-arrow carousel-arrow--previous" aria-label="Show previous resource stories" @click="advanceCarousel(-1)">
+            <IconArrowLeft :size="21" aria-hidden="true" />
+          </button>
+
+          <div class="stories-viewport">
+            <Transition :name="carouselTransition" mode="out-in">
+              <div
+                :key="`${currentStoryIndex}-${cardsPerView}`"
+                class="stories-layout"
+                :style="{ '--story-cards-per-view': cardsPerView }"
+              >
+                <RouterLink
+                  v-for="story in visibleHomepageStories"
+                  :key="story.slug"
+                  :to="`/stories/${story.slug}`"
+                  class="story-card"
+                  @click="logStoryOpen(story)"
+                >
+                  <div class="story-media">
+                    <img :src="story.image" :alt="story.imageAlt" :style="{ objectPosition: story.imagePosition }" loading="lazy" />
+                    <div class="story-media-shade" aria-hidden="true"></div>
+                    <span class="story-domain">{{ story.domain }}</span>
+                    <span class="story-open"><IconArrowUpRight :size="17" aria-hidden="true" /></span>
+                  </div>
+                  <div class="story-copy">
+                    <h3>{{ story.title }}</h3>
+                    <p>{{ story.summary }}</p>
+                    <span class="story-read">Read story <IconArrowRight :size="15" aria-hidden="true" /></span>
+                  </div>
+                </RouterLink>
+              </div>
+            </Transition>
+          </div>
+
+          <button v-if="hasCarouselControls" type="button" class="carousel-arrow carousel-arrow--next" aria-label="Show next resource stories" @click="advanceCarousel(1)">
+            <IconArrowRight :size="21" aria-hidden="true" />
+          </button>
+
+          <div v-if="hasCarouselControls" class="carousel-meta">
+            <span class="carousel-count">{{ currentStoryIndex + 1 }} / {{ homepageStories.length }}</span>
+            <div class="carousel-dots" aria-label="Choose resource story group">
+              <button
+                v-for="(_, index) in homepageStories"
+                :key="index"
+                type="button"
+                :class="{ active: index === currentStoryIndex }"
+                :aria-label="`Show resource story group ${index + 1}`"
+                :aria-current="index === currentStoryIndex ? 'true' : undefined"
+                @click="showStoryGroup(index)"
+              ></button>
             </div>
-            <div class="story-copy">
-              <h3>{{ story.title }}</h3>
-              <p>{{ story.summary }}</p>
-              <span class="story-read">Read story <IconArrowRight :size="15" aria-hidden="true" /></span>
-            </div>
-          </RouterLink>
+            <span v-if="autoCarousel" class="carousel-auto"><span></span> Auto</span>
+          </div>
+          <p class="sr-only" aria-live="polite">{{ carouselAnnouncement }}</p>
         </div>
         <div v-else class="stories-empty">
           <div><IconBook2 :size="22" /><span>No stories are featured yet</span></div>
@@ -110,11 +155,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { RouterLink, useRouter } from 'vue-router'
 import {
   IconActivity,
+  IconArrowLeft,
   IconArrowRight,
   IconArrowUpRight,
   IconBook2,
@@ -129,8 +175,84 @@ import { useStoriesStore } from '../stores/stories'
 
 const router = useRouter()
 const storyStore = useStoriesStore()
-const { homepageStories } = storeToRefs(storyStore)
+const { autoCarousel, homepageStories } = storeToRefs(storyStore)
 const searchQuery = ref('')
+const cardsPerView = ref(3)
+const currentStoryIndex = ref(0)
+const carouselHovered = ref(false)
+const carouselFocused = ref(false)
+const carouselTransition = ref('story-window-next')
+const AUTO_CAROUSEL_INTERVAL = 6500
+let carouselTimer = null
+let lastManualInteraction = 0
+
+const hasCarouselControls = computed(() => homepageStories.value.length > cardsPerView.value)
+const carouselPaused = computed(() => carouselHovered.value || carouselFocused.value)
+const visibleHomepageStories = computed(() => {
+  const stories = homepageStories.value
+  if (!stories.length) return []
+  const visibleCount = Math.min(cardsPerView.value, stories.length)
+  return Array.from({ length: visibleCount }, (_, offset) => stories[(currentStoryIndex.value + offset) % stories.length])
+})
+const carouselAnnouncement = computed(() => {
+  const titles = visibleHomepageStories.value.map((story) => story.title).join(', ')
+  return titles ? `Showing resource stories: ${titles}` : ''
+})
+
+function updateCardsPerView() {
+  if (window.innerWidth <= 760) cardsPerView.value = 1
+  else if (window.innerWidth <= 1040) cardsPerView.value = 2
+  else cardsPerView.value = 3
+}
+
+function advanceCarousel(direction, source = 'manual') {
+  const storyCount = homepageStories.value.length
+  if (storyCount <= cardsPerView.value) return
+  carouselTransition.value = direction < 0 ? 'story-window-previous' : 'story-window-next'
+  currentStoryIndex.value = (currentStoryIndex.value + direction + storyCount) % storyCount
+  if (source === 'manual') lastManualInteraction = Date.now()
+  logUiEvent('story-carousel-slide', {
+    autoEnabled: autoCarousel.value,
+    index: currentStoryIndex.value,
+    source,
+    storyCount,
+  })
+}
+
+function showStoryGroup(index) {
+  if (index === currentStoryIndex.value) return
+  carouselTransition.value = index < currentStoryIndex.value ? 'story-window-previous' : 'story-window-next'
+  currentStoryIndex.value = index
+  lastManualInteraction = Date.now()
+  logUiEvent('story-carousel-slide', {
+    autoEnabled: autoCarousel.value,
+    index,
+    source: 'indicator',
+    storyCount: homepageStories.value.length,
+  })
+}
+
+onMounted(() => {
+  updateCardsPerView()
+  window.addEventListener('resize', updateCardsPerView)
+  carouselTimer = window.setInterval(() => {
+    const recentlyUsed = Date.now() - lastManualInteraction < AUTO_CAROUSEL_INTERVAL
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (autoCarousel.value && !carouselPaused.value && !recentlyUsed && !reducedMotion) {
+      advanceCarousel(1, 'auto')
+    }
+  }, AUTO_CAROUSEL_INTERVAL)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateCardsPerView)
+  if (carouselTimer) window.clearInterval(carouselTimer)
+})
+
+watch(() => homepageStories.value.length, (storyCount) => {
+  if (!storyCount) currentStoryIndex.value = 0
+  else currentStoryIndex.value %= storyCount
+})
 
 function searchCatalog() {
   const query = searchQuery.value.trim()
@@ -168,7 +290,25 @@ function logStoryOpen(story) {
 .section-heading h2 { font-size: clamp(2rem, 2.8vw, 2.8rem); line-height: 1.03; letter-spacing: -.05em; }
 .section-heading > p { max-width: 450px; color: #676a65; font-size: .82rem; line-height: 1.55; text-align: right; }
 
-.stories-layout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.stories-carousel { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; }
+.stories-carousel.has-controls { grid-template-columns: 44px minmax(0, 1fr) 44px; column-gap: 12px; }
+.stories-viewport { min-width: 0; overflow: hidden; border-radius: 14px; }
+.stories-layout { display: grid; grid-template-columns: repeat(var(--story-cards-per-view, 3), minmax(0, 1fr)); gap: 18px; }
+.carousel-arrow { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #d4d5d0; border-radius: 50%; color: #24324d; background: rgba(255,255,255,.9); box-shadow: 0 8px 24px rgba(20,24,21,.08); transition: color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition); }
+.carousel-arrow:hover, .carousel-arrow:focus-visible { border-color: var(--color-primary); color: #fff; background: var(--color-primary); box-shadow: 0 10px 28px rgba(var(--color-primary-rgb),.2); transform: scale(1.04); }
+.carousel-arrow--previous { grid-column: 1; }
+.stories-carousel.has-controls .stories-viewport { grid-column: 2; }
+.carousel-arrow--next { grid-column: 3; }
+.carousel-meta { grid-column: 2; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; min-height: 30px; padding: 10px 3px 0; color: #81847e; font-size: .63rem; }
+.carousel-count { font-variant-numeric: tabular-nums; letter-spacing: .06em; }
+.carousel-dots { display: flex; justify-content: center; gap: 6px; }
+.carousel-dots button { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 999px; background: #c9cac5; transition: width var(--transition), background var(--transition); }
+.carousel-dots button.active { width: 22px; background: var(--color-primary); }
+.carousel-auto { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.carousel-auto > span { width: 6px; height: 6px; border-radius: 50%; background: #3f9f6c; box-shadow: 0 0 0 3px rgba(63,159,108,.12); }
+.story-window-next-enter-active, .story-window-next-leave-active, .story-window-previous-enter-active, .story-window-previous-leave-active { transition: opacity 220ms ease, transform 300ms var(--ease-out); }
+.story-window-next-enter-from, .story-window-previous-leave-to { opacity: 0; transform: translateX(28px); }
+.story-window-next-leave-to, .story-window-previous-enter-from { opacity: 0; transform: translateX(-28px); }
 .stories-empty { display: grid; justify-items: start; gap: 8px; padding: 28px 0; border-top: 1px solid #d8d8d2; border-bottom: 1px solid #d8d8d2; }
 .stories-empty > div { display: flex; align-items: center; gap: 9px; color: #252b28; font-weight: 700; }
 .stories-empty > div svg { color: var(--color-primary); }
@@ -207,7 +347,6 @@ function logStoryOpen(story) {
 @keyframes hero-copy-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1040px) {
-  .stories-layout { grid-template-columns: 1fr; }
   .story-card { display: grid; grid-template-columns: minmax(270px,.72fr) minmax(0,1fr); }
   .story-media { height: 100%; min-height: 230px; }
 }
@@ -222,10 +361,19 @@ function logStoryOpen(story) {
   .hero-credit { display: none; }
   .section-heading { display: block; }
   .section-heading > p { margin-top: 10px; text-align: left; }
+  .stories-carousel.has-controls { grid-template-columns: minmax(0,1fr); }
+  .stories-carousel.has-controls .stories-viewport { grid-column: 1; }
+  .carousel-arrow { position: absolute; z-index: 4; top: 92px; width: 40px; height: 40px; border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.94); }
+  .carousel-arrow--previous { left: 10px; }
+  .carousel-arrow--next { right: 10px; }
+  .carousel-meta { grid-column: 1; padding-inline: 2px; }
   .story-card { display: block; }
   .story-media { height: 210px; min-height: 0; }
   .section-link { margin-top: 12px; }
   .catalog-about { display: block; }
   .catalog-about > a { margin-top: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-window-next-enter-active, .story-window-next-leave-active, .story-window-previous-enter-active, .story-window-previous-leave-active { transition: none; }
 }
 </style>

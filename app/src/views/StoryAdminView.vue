@@ -40,6 +40,20 @@
         <div class="overview-note"><IconInfoCircle :size="17" /><p><strong>Homepage rule</strong><span>A story must be published before it can be featured.</span></p></div>
       </section>
 
+      <section class="carousel-setting" aria-labelledby="carousel-setting-title">
+        <span class="carousel-setting-icon"><IconCarouselHorizontal :size="23" /></span>
+        <div class="carousel-setting-copy">
+          <span>Homepage presentation</span>
+          <h2 id="carousel-setting-title">Auto carousel</h2>
+          <p>Advance featured stories automatically. Visitors can always use the previous and next controls.</p>
+        </div>
+        <label class="setting-toggle">
+          <input :checked="stories.autoCarousel" type="checkbox" aria-label="Enable automatic homepage story carousel" @change="stories.setAutoCarousel($event.target.checked)" />
+          <span aria-hidden="true"></span>
+          <em>{{ stories.autoCarousel ? 'Automatic' : 'Manual' }}</em>
+        </label>
+      </section>
+
       <section class="story-registry">
         <header>
           <div class="registry-title"><h2>Story registry</h2><span>{{ filteredStories.length }} shown</span></div>
@@ -107,6 +121,7 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconArrowRight,
+  IconCarouselHorizontal,
   IconExternalLink,
   IconFileOff,
   IconFlask,
@@ -206,6 +221,20 @@ function formatDate(value) {
 .overview-note p { display: grid; gap: 2px; }
 .overview-note p strong { color: var(--color-text); font-size: .74rem; }
 .overview-note p span { line-height: 1.4; }
+.carousel-setting { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 14px; margin: 0 0 18px; padding: 16px 18px; border: 1px solid #d7ddea; border-radius: 9px; background: linear-gradient(115deg, rgba(240,245,255,.92), rgba(255,255,255,.76)); box-shadow: 0 10px 28px rgba(29,45,78,.04); }
+.carousel-setting-icon { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid #cdd8ee; border-radius: 10px; color: var(--color-primary); background: #fff; }
+.carousel-setting-copy { min-width: 0; }
+.carousel-setting-copy > span { color: var(--color-primary); font-size: .6rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+.carousel-setting-copy h2 { margin-top: 3px; font-size: .88rem; letter-spacing: -.01em; }
+.carousel-setting-copy p { max-width: 690px; margin-top: 3px; color: var(--color-text-muted); font-size: .68rem; line-height: 1.45; }
+.setting-toggle { display: inline-grid; grid-template-columns: auto auto; align-items: center; gap: 7px 9px; cursor: pointer; }
+.setting-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.setting-toggle > span { position: relative; width: 42px; height: 23px; border-radius: 999px; background: #cbd0da; box-shadow: inset 0 0 0 1px rgba(25,38,62,.05); transition: background var(--transition), box-shadow var(--transition); }
+.setting-toggle > span::after { content: ''; position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(21,31,48,.22); transition: transform var(--transition); }
+.setting-toggle input:checked + span { background: var(--color-primary); box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb),.1); }
+.setting-toggle input:checked + span::after { transform: translateX(19px); }
+.setting-toggle input:focus-visible + span { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.setting-toggle em { grid-column: 1 / -1; color: var(--color-text-muted); font-size: .61rem; font-style: normal; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: .08em; }
 .story-registry { overflow: hidden; border: 1px solid var(--color-border); border-radius: 9px; background: rgba(255,255,255,.72); }
 .story-registry > header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 16px 18px; border-bottom: 1px solid var(--color-border); }
 .registry-title { display: flex; align-items: baseline; gap: 9px; }
@@ -261,5 +290,5 @@ function formatDate(value) {
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 @media (max-width: 980px) { .admin-overview { grid-template-columns: repeat(3, 1fr); } .admin-overview .overview-note { grid-column: 1 / -1; border-top: 1px solid var(--color-border); } .story-registry > header { align-items: flex-start; flex-direction: column; } .registry-tools { width: 100%; justify-content: space-between; } }
-@media (max-width: 700px) { .admin-heading, .registry-tools { align-items: flex-start; flex-direction: column; } .heading-actions, .action-button, .admin-search { width: 100%; } .heading-actions { flex-direction: column-reverse; } .admin-overview { grid-template-columns: repeat(3, 1fr); } .admin-overview > div { min-width: 0; padding: 12px 10px; } .filter-tabs { max-width: 100%; overflow-x: auto; } }
+@media (max-width: 700px) { .admin-heading, .registry-tools { align-items: flex-start; flex-direction: column; } .heading-actions, .action-button, .admin-search { width: 100%; } .heading-actions { flex-direction: column-reverse; } .admin-overview { grid-template-columns: repeat(3, 1fr); } .admin-overview > div { min-width: 0; padding: 12px 10px; } .carousel-setting { grid-template-columns: auto 1fr; } .setting-toggle { grid-column: 1 / -1; grid-template-columns: auto auto; justify-content: start; margin-top: 4px; } .setting-toggle em { grid-column: 2; grid-row: 1; text-align: left; } .filter-tabs { max-width: 100%; overflow-x: auto; } }
 </style>
