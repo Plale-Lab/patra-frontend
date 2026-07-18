@@ -37,6 +37,7 @@ const modelCards = [
         input_data: 'https://archive.ics.uci.edu/dataset/2/adult',
         output_data: 'https://github.iu.edu/swithana/mcwork/tensorflow/adult_model',
         foundational_model: 'None',
+        training_datasheet_uuid: 'ds-uci-adult',
         is_private: false,
         ai_model: {
             name: 'UCI Adult tensorflow model',
@@ -66,6 +67,7 @@ const modelCards = [
         input_data: 'https://archive.ics.uci.edu/dataset/2/adult',
         output_data: 'https://github.iu.edu/swithana/mcwork/tensorflow/adult_model_v2',
         foundational_model: 'None',
+        training_datasheet_uuid: 'ds-uci-adult',
         is_private: false,
         ai_model: {
             name: 'UCI Adult tensorflow model v2',

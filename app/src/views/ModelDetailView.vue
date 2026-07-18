@@ -175,6 +175,10 @@
               <label class="info-label">Base Model</label>
               <input v-model="editForm.foundational_model" class="edit-input" placeholder="Base model" />
             </div>
+            <div class="edit-field full-width">
+              <label class="info-label">Training Datasheet UUID</label>
+              <input v-model="editForm.training_datasheet_uuid" class="edit-input" placeholder="UUID of the datasheet this model was last trained/fine-tuned on" />
+            </div>
           </div>
         </div>
       </div>
@@ -415,6 +419,11 @@
                 <span class="info-label">Output Data</span>
                 <a :href="model.output_data" class="info-link" target="_blank" rel="noopener noreferrer">{{ model.output_data }}</a>
               </div>
+              <div class="info-item">
+                <span class="info-label">Training Datasheet</span>
+                <RouterLink v-if="model.training_datasheet_uuid" :to="`/datasheet/${model.training_datasheet_uuid}`" class="info-link">{{ model.training_datasheet_uuid }}</RouterLink>
+                <span v-else class="info-value">Not linked</span>
+              </div>
             </div>
             <div class="keywords-row" v-if="model.keywords">
               <span class="info-label keywords-label">Keywords</span>
@@ -500,6 +509,7 @@ const editForm = reactive({
   citation: '',
   documentation: '',
   foundational_model: '',
+  training_datasheet_uuid: '',
   is_private: false,
   ai_model_name: '',
   ai_model_version: '',
@@ -572,6 +582,7 @@ function startEdit() {
   editForm.citation = m.citation || ''
   editForm.documentation = m.documentation || ''
   editForm.foundational_model = m.foundational_model || ''
+  editForm.training_datasheet_uuid = m.training_datasheet_uuid || ''
   editForm.is_private = Boolean(m.is_private)
   editForm.is_gated = Boolean(m.is_gated)
   editForm.ai_model_name = ai.name || ''

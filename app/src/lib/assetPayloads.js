@@ -23,6 +23,7 @@ export function buildModelCardPayload(form, { authorName = '' } = {}) {
     author,
     keywords: form.keywords.trim() || null,
     foundational_model: form.foundational_model.trim() || null,
+    training_datasheet_uuid: form.training_datasheet_uuid.trim() || null,
     input_data: form.input_data.trim() || null,
     output_data: form.output_data.trim() || null,
     citation: form.citation.trim() || null,
@@ -88,6 +89,7 @@ export function buildModelCardPatch(form, detail) {
   diffText(patch, 'input_type', form.input_type, detail.input_type)
   diffText(patch, 'output_data', form.output_data, detail.output_data)
   diffText(patch, 'foundational_model', form.foundational_model, detail.foundational_model)
+  diffText(patch, 'training_datasheet_uuid', form.training_datasheet_uuid, detail.training_datasheet_uuid)
   diffText(patch, 'category', form.category, detail.categories)
   diffText(patch, 'documentation', form.documentation, detail.documentation)
   diffBool(patch, 'is_private', form.is_private, detail.is_private)

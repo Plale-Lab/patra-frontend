@@ -136,6 +136,7 @@ const mcForm = reactive({
   name: '', version: '', short_description: '', full_description: '',
   category: '', input_type: '', author: '', keywords: '',
   framework: '', license: '', test_accuracy: '', foundational_model: '',
+  training_datasheet_uuid: '',
   input_data: '', output_data: '', citation: '', documentation: '',
   location: '',
   is_private: false, is_gated: false,

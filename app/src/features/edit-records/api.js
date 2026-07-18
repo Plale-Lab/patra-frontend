@@ -132,6 +132,7 @@ function mapModelCardDetailToForm(detail) {
     citation: detail.citation || '',
     documentation: detail.documentation || '',
     foundational_model: detail.foundational_model || '',
+    training_datasheet_uuid: detail.training_datasheet_uuid || '',
   }
 }
 

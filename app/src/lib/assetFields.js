@@ -44,6 +44,7 @@ export const MODEL_CARD_SECTIONS = [
       { key: 'license', label: 'License', type: 'text', placeholder: 'e.g. Apache 2.0, MIT' },
       { key: 'test_accuracy', label: 'Test Accuracy', type: 'number', step: '0.01', min: '0', max: '1', validate: ['accuracy'], placeholder: 'e.g. 0.95', help: 'A value between 0 and 1.' },
       { key: 'foundational_model', label: 'Foundational Model', type: 'text', placeholder: 'e.g. GPT-4, BERT' },
+      { key: 'training_datasheet_uuid', label: 'Training Datasheet UUID', type: 'text', placeholder: 'UUID of the datasheet this model was last trained/fine-tuned on', help: 'Links to the datasheet in PATRA for the dataset used to train or fine-tune this model.' },
       { key: 'input_data', label: 'Input Data URL', type: 'url', validate: ['url'], placeholder: 'https://…' },
       { key: 'output_data', label: 'Output Data URL', type: 'url', validate: ['url'], placeholder: 'https://…' },
       { key: 'documentation', label: 'Documentation URL', type: 'url', validate: ['url'], placeholder: 'https://…' },
