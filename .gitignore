@@ -3,6 +3,7 @@ dist/
 dist-ssr/
 *.log
 *.local
+.env
 .DS_Store
 
 app/node_modules/

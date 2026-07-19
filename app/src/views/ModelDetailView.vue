@@ -159,10 +159,6 @@
               <label class="info-label">Input Data URL</label>
               <input v-model="editForm.input_data" class="edit-input" placeholder="Input data URL" />
             </div>
-            <div class="edit-field">
-              <label class="info-label">Output Data URL</label>
-              <input v-model="editForm.output_data" class="edit-input" placeholder="Output data URL" />
-            </div>
             <div class="edit-field full-width">
               <label class="info-label">Citation</label>
               <input v-model="editForm.citation" class="edit-input" placeholder="Citation" />
@@ -172,11 +168,11 @@
               <input v-model="editForm.documentation" class="edit-input" placeholder="Documentation URL" />
             </div>
             <div class="edit-field">
-              <label class="info-label">Base Model</label>
-              <input v-model="editForm.foundational_model" class="edit-input" placeholder="Base model" />
+              <label class="info-label">Model Architecture</label>
+              <input v-model="editForm.foundational_model" class="edit-input" placeholder="e.g. ResNet-50, Transformer" />
             </div>
             <div class="edit-field full-width">
-              <label class="info-label">Training Datasheet UUID</label>
+              <label class="info-label">Last Dataset Trained On</label>
               <input v-model="editForm.training_datasheet_uuid" class="edit-input" placeholder="UUID of the datasheet this model was last trained/fine-tuned on" />
             </div>
           </div>
@@ -415,12 +411,8 @@
                 <span class="info-label">Input Data</span>
                 <a :href="model.input_data" class="info-link" target="_blank" rel="noopener noreferrer">{{ model.input_data }}</a>
               </div>
-              <div class="info-item" v-if="model.output_data">
-                <span class="info-label">Output Data</span>
-                <a :href="model.output_data" class="info-link" target="_blank" rel="noopener noreferrer">{{ model.output_data }}</a>
-              </div>
               <div class="info-item">
-                <span class="info-label">Training Datasheet</span>
+                <span class="info-label">Last Dataset Trained On</span>
                 <RouterLink v-if="model.training_datasheet_uuid" :to="`/datasheet/${model.training_datasheet_uuid}`" class="info-link">{{ model.training_datasheet_uuid }}</RouterLink>
                 <span v-else class="info-value">Not linked</span>
               </div>
@@ -505,7 +497,6 @@ const editForm = reactive({
   category: '',
   input_type: '',
   input_data: '',
-  output_data: '',
   citation: '',
   documentation: '',
   foundational_model: '',
@@ -578,7 +569,6 @@ function startEdit() {
   editForm.category = m.category || m.categories || ''
   editForm.input_type = m.input_type || ''
   editForm.input_data = m.input_data || ''
-  editForm.output_data = m.output_data || ''
   editForm.citation = m.citation || ''
   editForm.documentation = m.documentation || ''
   editForm.foundational_model = m.foundational_model || ''

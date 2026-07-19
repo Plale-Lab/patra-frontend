@@ -137,7 +137,7 @@ const mcForm = reactive({
   category: '', input_type: '', author: '', keywords: '',
   framework: '', license: '', test_accuracy: '', foundational_model: '',
   training_datasheet_uuid: '',
-  input_data: '', output_data: '', citation: '', documentation: '',
+  input_data: '', citation: '', documentation: '',
   location: '',
   is_private: false, is_gated: false,
 })
@@ -152,7 +152,6 @@ const dsForm = reactive({
 // omitted — it's a BibTeX/plain-text field, so it would always read "malformed".
 const LINK_FIELD_LABELS = {
   input_data: 'Input Data URL',
-  output_data: 'Output Data URL',
   documentation: 'Documentation URL',
   location: 'Model Location',
 }
@@ -242,7 +241,8 @@ function resetForm() {
     name: '', version: '', short_description: '', full_description: '',
     category: '', input_type: '', author: '', keywords: '',
     framework: '', license: '', test_accuracy: '', foundational_model: '',
-    input_data: '', output_data: '', citation: '', documentation: '',
+    training_datasheet_uuid: '',
+    input_data: '', citation: '', documentation: '',
     location: '',
     is_private: false, is_gated: false,
   })

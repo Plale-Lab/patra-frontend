@@ -123,7 +123,6 @@ function mapModelCardDetailToForm(detail) {
     framework: detail.ai_model?.framework || '',
     test_accuracy: detail.ai_model?.test_accuracy ?? '',
     input_data: detail.input_data || '',
-    output_data: detail.output_data || '',
     location: detail.ai_model?.location || '',
     keywords: detail.keywords || '',
     is_private: Boolean(detail.is_private),
