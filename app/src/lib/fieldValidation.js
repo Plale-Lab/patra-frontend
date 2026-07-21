@@ -17,6 +17,12 @@ export const validators = {
     const n = Number(value)
     return Number.isFinite(n) && n >= 0 && n <= 1 ? '' : 'Must be between 0 and 1'
   },
+  uuid(value) {
+    if (value == null || String(value).trim() === '') return ''
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value).trim())
+      ? ''
+      : 'Enter a valid UUID'
+  },
 }
 
 export function validateField(field, value, enforceRequired = true) {

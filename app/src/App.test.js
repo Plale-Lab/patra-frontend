@@ -24,7 +24,6 @@ describe('authentication initialization UI', () => {
         plugins: [pinia],
         stubs: {
           Sidebar: true,
-          HeaderBar: true,
           RouterView: true,
         },
       },

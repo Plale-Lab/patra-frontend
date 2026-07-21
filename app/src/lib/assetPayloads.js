@@ -69,6 +69,12 @@ export function buildDatasheetPayload(form, { creatorName = '' } = {}) {
       relation_type: 'IsDescribedBy',
     }]
   }
+  if (form.license.trim()) {
+    payload.rights_list = [{
+      rights: form.license.trim(),
+      rights_uri: form.license_uri.trim() || null,
+    }]
+  }
   return payload
 }
 
@@ -159,6 +165,11 @@ export function buildDatasheetPatch(form, detail) {
     patch.related_identifiers = newRelated
   }
 
+  const newRights = mergeRights(detail.rights_list || [], form.license, form.license_uri)
+  if (!arraysEqual(newRights, detail.rights_list || [])) {
+    patch.rights_list = newRights
+  }
+
   return patch
 }
 
@@ -237,6 +248,29 @@ function mergeRelatedIdentifiers(existingRelated, downloadUrl) {
   }
   if (idx >= 0) {
     next[idx] = merged
+  } else {
+    next.push(merged)
+  }
+  return next
+}
+
+function mergeRights(existingRights, license, licenseUri) {
+  const rights = normalizeText(license)
+  if (!rights) {
+    return existingRights
+  }
+
+  const next = existingRights.map((entry) => ({ ...entry }))
+  const merged = {
+    rights,
+    rights_uri: normalizeText(licenseUri) ?? next[0]?.rights_uri ?? null,
+    rights_identifier: next[0]?.rights_identifier ?? null,
+    rights_identifier_scheme: next[0]?.rights_identifier_scheme ?? null,
+    scheme_uri: next[0]?.scheme_uri ?? null,
+    lang: next[0]?.lang ?? null,
+  }
+  if (next.length) {
+    next[0] = merged
   } else {
     next.push(merged)
   }

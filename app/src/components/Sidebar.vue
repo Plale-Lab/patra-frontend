@@ -20,9 +20,13 @@
         <IconSearch :size="20" stroke-width="1.8" />
         <span>Browse Datasheets</span>
       </RouterLink>
-      <RouterLink to="/mcp-explorer" class="sidebar-link" :class="{ active: $route.path === '/mcp-explorer' }">
+      <RouterLink v-if="SUPPORTS_MCP_EXPLORER" to="/mcp-explorer" class="sidebar-link" :class="{ active: $route.path === '/mcp-explorer' }">
         <IconTerminal2 :size="20" stroke-width="1.8" />
         <span>MCP Explorer</span>
+      </RouterLink>
+      <RouterLink v-if="SUPPORTS_ASK_PATRA && (auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)" to="/ask-patra" class="sidebar-link" :class="{ active: $route.path === '/ask-patra' }">
+        <IconSparkles :size="20" stroke-width="1.8" />
+        <span>Ask Patra</span>
       </RouterLink>
 
       <template v-if="SUPPORTS_DOMAIN_EXPERIMENTS">
@@ -39,10 +43,6 @@
 
       <template v-if="auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS">
         <div class="sidebar-section-label">Contribute</div>
-        <RouterLink v-if="SUPPORTS_ASK_PATRA" to="/ask-patra" class="sidebar-link" :class="{ active: $route.path === '/ask-patra' }">
-          <IconSparkles :size="20" stroke-width="1.8" />
-          <span>Ask Patra</span>
-        </RouterLink>
         <RouterLink v-if="SUPPORTS_AGENT_TOOLS" to="/agent-tools" class="sidebar-link" :class="{ active: $route.path === '/agent-tools' }">
           <IconSparkles :size="20" stroke-width="1.8" />
           <span>Agent Toolkit</span>
@@ -58,7 +58,7 @@
       </template>
     </nav>
 
-    <div class="sidebar-footer">
+    <div class="sidebar-footer" v-if="auth.isLoggedIn || auth.portalAuthUnavailable">
       <div class="sidebar-user" v-if="auth.isLoggedIn">
         <div class="sidebar-avatar">{{ auth.initials }}</div>
         <div class="sidebar-user-info">
@@ -73,73 +73,18 @@
         </button>
       </div>
 
-      <div v-else-if="auth.portalAuthUnavailable" class="sidebar-portal-error" role="status">
+      <div v-else class="sidebar-portal-error" role="status">
         <IconAlertTriangle :size="18" stroke-width="1.8" />
         <div>
           <strong>Portal session unavailable</strong>
           <span>Refresh or sign in through the parent ICICLE/Tapis portal.</span>
         </div>
       </div>
-
-      <button class="sidebar-login-btn" v-else @click="showLogin = true">
-        <IconLogin :size="18" stroke-width="1.8" />
-        <span>Tapis Login</span>
-      </button>
     </div>
-
-    <Teleport to="body">
-      <div class="modal-overlay" v-if="showLogin" @click.self="showLogin = false">
-        <div class="login-modal">
-          <div class="login-modal-header">
-            <div class="login-modal-brand">
-              <IconKey :size="20" stroke-width="2" />
-              <span>Tapis Login</span>
-            </div>
-            <button class="btn-icon" type="button" aria-label="Close" @click="closeLogin"><IconX :size="18" /></button>
-          </div>
-
-          <div class="login-modal-body">
-            <p class="login-desc">
-              Authenticate via <a href="https://tapis.readthedocs.io" target="_blank">Tapis</a> to
-              access private models and workspace features.
-            </p>
-
-            <div class="login-error" v-if="auth.error">
-              <IconAlertTriangle :size="14" stroke-width="1.8" />
-              {{ auth.error }}
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Username</label>
-              <div class="login-input-wrap">
-                <IconUser :size="16" stroke-width="1.8" />
-                <input class="login-input" v-model="loginForm.username" placeholder="tapis username" @keydown.enter="handleLogin" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Password</label>
-              <div class="login-input-wrap">
-                <IconLock :size="16" stroke-width="1.8" />
-                <input class="login-input" type="password" v-model="loginForm.password" placeholder="********" @keydown.enter="handleLogin" />
-              </div>
-            </div>
-
-            <label class="remember-row">
-              <input type="checkbox" v-model="loginForm.rememberMe" />
-              <span>Remember me for 7 days</span>
-            </label>
-            <button class="btn-login" @click="handleLogin" :disabled="!loginForm.username || !loginForm.password || auth.loading">
-              {{ auth.loading ? 'Authenticating...' : 'Sign In' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </aside>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import {
@@ -147,33 +92,19 @@ import {
   SUPPORTS_ASK_PATRA,
   SUPPORTS_AGENT_TOOLS,
   SUPPORTS_EDIT_RECORDS,
+  SUPPORTS_MCP_EXPLORER,
   SUPPORTS_DEV_OPEN_ACCESS,
 } from '../config/api'
 import {
   IconLayoutDashboard, IconSearch,
   IconUpload,
-  IconLogout, IconLogin, IconKey, IconEdit,
-  IconUser, IconLock, IconX, IconAlertTriangle, IconSparkles,
+  IconLogout, IconEdit,
+  IconAlertTriangle, IconSparkles,
   IconTerminal2, IconPaw, IconPlant, IconShieldCheck,
 } from '@tabler/icons-vue'
 
 const auth = useAuthStore()
 const router = useRouter()
-const showLogin = ref(false)
-const loginForm = reactive({ username: '', password: '', rememberMe: true })
-
-function closeLogin() {
-  showLogin.value = false
-  loginForm.username = ''
-  loginForm.password = ''
-  loginForm.rememberMe = true
-  auth.clearError()
-}
-
-async function handleLogin() {
-  const ok = await auth.loginTapis(loginForm.username, loginForm.password, { rememberMe: loginForm.rememberMe })
-  if (ok) closeLogin()
-}
 
 function handleLogout() {
   auth.logout()
@@ -350,148 +281,4 @@ function handleLogout() {
   background: var(--color-danger-bg);
 }
 
-.sidebar-login-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 14px;
-  border: 1px dashed var(--color-border-strong);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--color-text-secondary);
-  font-size: 0.88rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.sidebar-login-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-primary-bg);
-}
-
-.login-modal {
-  width: 100%;
-  max-width: 400px;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 8px 50px rgba(90, 80, 130, 0.18);
-  overflow: hidden;
-}
-
-.login-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.login-modal-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--color-primary);
-}
-
-.login-modal-body {
-  padding: 22px;
-}
-
-.login-desc {
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
-  line-height: 1.5;
-  margin-bottom: 16px;
-}
-
-.login-desc a {
-  color: var(--color-primary);
-  text-decoration: underline;
-}
-
-.remember-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0 4px;
-  font-size: 0.84rem;
-  color: var(--color-text-secondary);
-}
-
-.remember-row input {
-  width: 16px;
-  height: 16px;
-}
-
-.login-error {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
-  font-size: 0.8rem;
-  margin-bottom: 14px;
-}
-
-.login-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  border: 1.5px solid var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text-muted);
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.login-input-wrap:focus-within {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(47, 78, 162, 0.08);
-}
-
-.login-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  padding: 10px 0;
-  font-size: 0.88rem;
-  background: transparent;
-  color: var(--color-text);
-}
-
-.login-input::placeholder {
-  color: #aeb5c2;
-}
-
-.btn-login {
-  width: 100%;
-  padding: 11px;
-  margin-top: 16px;
-  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-login:hover:not(:disabled) {
-  opacity: 0.94;
-  transform: translateY(-1px);
-}
-
-.btn-login:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 </style>

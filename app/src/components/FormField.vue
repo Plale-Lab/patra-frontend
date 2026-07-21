@@ -1,8 +1,16 @@
 <template>
   <div class="form-group">
-    <label class="form-label" :for="field.type === 'segmented' ? undefined : fieldId">
-      {{ field.label }}<span v-if="field.required" class="required"> *</span>
-    </label>
+    <div class="form-label-row">
+      <label class="form-label" :for="field.type === 'segmented' ? undefined : fieldId">
+        {{ field.label }}<span v-if="field.required" class="required"> *</span>
+      </label>
+      <span v-if="field.help" class="field-tooltip-wrap">
+        <button type="button" class="field-help-trigger" :aria-label="`About ${field.label}`" :aria-describedby="`${fieldId}-help`">
+          <IconInfoCircle :size="14" stroke-width="1.8" />
+        </button>
+        <span :id="`${fieldId}-help`" class="field-tooltip" role="tooltip">{{ field.help }}</span>
+      </span>
+    </div>
 
     <div v-if="field.type === 'segmented'" class="filter-chips" role="group" :aria-label="field.label">
       <button
@@ -58,13 +66,13 @@
       @blur="emit('blur')"
     />
 
-    <div v-if="field.help && !error" :id="`${fieldId}-help`" class="field-help">{{ field.help }}</div>
     <div v-if="error" :id="`${fieldId}-error`" class="field-error">{{ error }}</div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { IconInfoCircle } from '@tabler/icons-vue'
 
 const props = defineProps({
   field: { type: Object, required: true },

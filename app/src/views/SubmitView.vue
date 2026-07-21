@@ -36,70 +36,47 @@
       </div>
     </div>
 
-    <template v-else>
-      <div class="card type-card">
-        <div class="card-header">
-          <span>Record Type</span>
-        </div>
-        <div class="card-body">
+    <div class="card" v-else>
+      <div class="card-body">
+        <div class="form-section">
+          <div class="form-section-label">Record Type</div>
           <div class="filter-chips">
             <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="switchType('model_card')">Model Card</button>
             <button type="button" class="chip" :class="{ active: assetType === 'datasheet' }" @click="switchType('datasheet')">Datasheet</button>
           </div>
         </div>
-      </div>
 
-      <div class="card">
-        <div class="card-body">
-          <SubmitStepper :steps="steps" :current="currentStep" @goto="goToStep" />
+        <div class="form-section" v-for="section in sections" :key="section.id">
+          <div class="form-section-label">{{ section.title }}</div>
+          <div class="section-fields">
+            <FormField
+              v-for="field in section.fields"
+              :key="field.key"
+              :field="field"
+              v-model="activeForm[field.key]"
+              :error="errors[field.key]"
+              :class="{ 'field-span-2': field.type === 'textarea' || field.type === 'segmented' }"
+              @blur="validateOnBlur(field)"
+            />
+          </div>
+        </div>
 
-          <template v-if="isReviewStep">
-            <SubmitReview :sections="sections" :form="activeForm" />
+        <InlineFeedback v-if="error" type="error" :message="error" />
 
-            <div class="form-section" v-if="assetType === 'model_card'">
-              <div class="form-section-label">Link validation</div>
-              <div class="filter-chips">
-                <button type="button" class="chip" :class="{ active: validateLinks }" @click="validateLinks = true">Validate links on submit</button>
-                <button type="button" class="chip" :class="{ active: !validateLinks }" @click="validateLinks = false">Skip</button>
-              </div>
+        <div class="submit-footer">
+          <div class="link-toggle" v-if="assetType === 'model_card'">
+            <span class="link-toggle-label">Validate links on submit</span>
+            <div class="filter-chips">
+              <button type="button" class="chip" :class="{ active: validateLinks }" @click="validateLinks = true">On</button>
+              <button type="button" class="chip" :class="{ active: !validateLinks }" @click="validateLinks = false">Skip</button>
             </div>
-
-            <InlineFeedback v-if="error" type="error" :message="error" />
-
-            <div class="stepper-actions">
-              <button class="btn btn-outline back-btn" @click="prevStep">Back</button>
-              <button class="btn btn-primary" :disabled="loading" @click="handleSubmit">
-                {{ loading ? 'Creating…' : 'Create Record' }}
-              </button>
-            </div>
-          </template>
-
-          <template v-else>
-            <div class="form-section">
-              <div class="form-section-label">{{ currentSection.title }}</div>
-              <div class="section-fields">
-                <FormField
-                  v-for="field in currentSection.fields"
-                  :key="field.key"
-                  :field="field"
-                  v-model="activeForm[field.key]"
-                  :error="errors[field.key]"
-                  :class="{ 'field-span-2': field.type === 'textarea' || field.type === 'segmented' }"
-                  @blur="validateOnBlur(field)"
-                />
-              </div>
-            </div>
-
-            <InlineFeedback v-if="currentStepHasErrors" type="error" message="Please fix the highlighted fields." />
-
-            <div class="stepper-actions">
-              <button v-if="currentStep > 0" class="btn btn-outline back-btn" @click="prevStep">Back</button>
-              <button class="btn btn-primary" @click="nextStep">Continue</button>
-            </div>
-          </template>
+          </div>
+          <button class="btn btn-primary submit-btn" :disabled="loading" @click="handleSubmit">
+            {{ loading ? 'Creating…' : 'Create Record' }}
+          </button>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -116,13 +93,10 @@ import { buildModelCardPayload, buildDatasheetPayload } from '../lib/assetPayloa
 import { validateForm, validateField } from '../lib/fieldValidation'
 import FormField from '../components/FormField.vue'
 import InlineFeedback from '../components/InlineFeedback.vue'
-import SubmitStepper from './submit/SubmitStepper.vue'
-import SubmitReview from './submit/SubmitReview.vue'
 
 const auth = useAuthStore()
 
 const assetType = ref('model_card')
-const currentStep = ref(0)
 const errors = reactive({})
 const loading = ref(false)
 const error = ref('')
@@ -145,7 +119,7 @@ const mcForm = reactive({
 const dsForm = reactive({
   title: '', version: '', description: '', creator: '', publisher: '',
   resource_type: 'Dataset', publication_year: '', subjects: '',
-  download_url: '', is_private: false,
+  download_url: '', license: '', license_uri: '', is_private: false,
 })
 
 // Human labels for the validated pointer fields. `citation` is intentionally
@@ -158,13 +132,6 @@ const LINK_FIELD_LABELS = {
 
 const activeForm = computed(() => (assetType.value === 'model_card' ? mcForm : dsForm))
 const sections = computed(() => sectionsFor(assetType.value))
-const steps = computed(() => [...sections.value, { id: 'review', title: 'Review' }])
-const isReviewStep = computed(() => currentStep.value === sections.value.length)
-const currentSection = computed(() => sections.value[currentStep.value] || null)
-
-const currentStepHasErrors = computed(() => (
-  currentSection.value ? currentSection.value.fields.some((f) => errors[f.key]) : false
-))
 
 const detailLink = computed(() => {
   if (!createdUuid.value) return '/'
@@ -192,7 +159,6 @@ function clearErrors() {
 function switchType(type) {
   if (assetType.value === type) return
   assetType.value = type
-  currentStep.value = 0
   error.value = ''
   clearErrors()
 }
@@ -203,30 +169,15 @@ function validateOnBlur(field) {
   else delete errors[field.key]
 }
 
-function nextStep() {
-  const fields = currentSection.value.fields
-  const stepErrors = validateForm(fields, activeForm.value, true)
-  fields.forEach((f) => delete errors[f.key])
-  Object.assign(errors, stepErrors)
-  if (Object.keys(stepErrors).length) return
-  if (currentStep.value < steps.value.length - 1) currentStep.value += 1
-}
-
-function prevStep() {
-  error.value = ''
-  if (currentStep.value > 0) currentStep.value -= 1
-}
-
-function goToStep(index) {
-  if (index <= currentStep.value) {
-    error.value = ''
-    currentStep.value = index
-  }
-}
-
-function goToFirstError() {
-  const idx = sections.value.findIndex((s) => s.fields.some((f) => errors[f.key]))
-  if (idx >= 0) currentStep.value = idx
+function scrollToFirstError() {
+  const fields = fieldsFor(assetType.value)
+  const firstErrored = fields.find((f) => errors[f.key])
+  if (!firstErrored) return
+  const el = document.getElementById(`field-${firstErrored.key}`)
+  if (!el) return
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' })
+  el.focus({ preventScroll: true })
 }
 
 function resetForm() {
@@ -235,7 +186,6 @@ function resetForm() {
   createdUuid.value = null
   linkReport.value = null
   error.value = ''
-  currentStep.value = 0
   clearErrors()
   Object.assign(mcForm, {
     name: '', version: '', short_description: '', full_description: '',
@@ -249,7 +199,7 @@ function resetForm() {
   Object.assign(dsForm, {
     title: '', version: '', description: '', creator: '', publisher: '',
     resource_type: 'Dataset', publication_year: '', subjects: '',
-    download_url: '', is_private: false,
+    download_url: '', license: '', license_uri: '', is_private: false,
   })
 }
 
@@ -259,7 +209,7 @@ async function handleSubmit() {
   Object.assign(errors, allErrors)
   if (Object.keys(allErrors).length) {
     error.value = 'Please fix the highlighted fields.'
-    goToFirstError()
+    scrollToFirstError()
     return
   }
 
@@ -298,19 +248,30 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.type-card {
-  margin-bottom: 16px;
-}
-
-.stepper-actions {
+.submit-footer {
   display: flex;
-  gap: 10px;
-  margin-top: 22px;
+  align-items: center;
   justify-content: flex-end;
+  gap: 20px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
 }
 
-.back-btn {
+.link-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-right: auto;
+}
+
+.link-toggle-label {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.submit-btn {
+  flex-shrink: 0;
 }
 
 .success-cta {

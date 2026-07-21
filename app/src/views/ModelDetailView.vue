@@ -70,6 +70,7 @@
                 <h1 class="detail-name">{{ model.name }}</h1>
                 <div class="detail-uuid">
                   <IconFingerprint :size="14" stroke-width="1.8" />
+                  <span class="uuid-label">UUID</span>
                   <code class="uuid-value">{{ recordUuid }}</code>
                   <button class="uuid-copy-btn" type="button" @click="copyUuid"
                           :title="uuidCopied ? 'Copied!' : 'Copy UUID'"
@@ -796,6 +797,7 @@ watch(() => route.params.uuid, () => {
 .info-value { font-size: .9rem; font-weight: 500; }
 
 .detail-uuid { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 2px; color: var(--color-text-muted); }
+.detail-uuid .uuid-label { font-size: .62rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
 .detail-uuid .uuid-value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .8rem; color: var(--color-text-muted); word-break: break-all; }
 .uuid-copy-btn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 3px; border: none; background: transparent; color: var(--color-text-muted); border-radius: 5px; cursor: pointer; transition: color .15s, background .15s; }
 .uuid-copy-btn:hover { color: var(--color-primary); background: var(--color-surface-strong); }

@@ -6,7 +6,6 @@
   <div v-else class="admin-layout">
     <Sidebar />
     <div class="admin-main">
-      <HeaderBar />
       <div class="admin-content">
         <RouterView v-slot="{ Component }">
           <transition name="view" mode="out-in">
@@ -22,7 +21,6 @@
 import { RouterView } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import Sidebar from './components/Sidebar.vue'
-import HeaderBar from './components/HeaderBar.vue'
 
 const auth = useAuthStore()
 </script>

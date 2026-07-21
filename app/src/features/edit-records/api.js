@@ -46,8 +46,8 @@ export function getRecordDisplayName(record, detail) {
 
 export async function saveEditedRecord(record, form, detail) {
   const endpoint = record.assetType === 'model_card'
-    ? `/v1/assets/model-cards/${record.assetUuid}`
-    : `/v1/assets/datasheets/${record.assetUuid}`
+    ? `/v1/assets/model-cards/${record.assetId}`
+    : `/v1/assets/datasheets/${record.assetId}`
   const payload = record.assetType === 'model_card'
     ? buildModelCardPatch(form, detail)
     : buildDatasheetPatch(form, detail)
@@ -146,6 +146,8 @@ function mapDatasheetDetailToForm(detail) {
     creator: (detail.creators || []).map((item) => item.creator_name).join(', '),
     subjects: (detail.subjects || []).map((item) => item.subject).join(', '),
     download_url: pickDownloadUrl(detail.related_identifiers || []),
+    license: detail.rights_list?.[0]?.rights || '',
+    license_uri: detail.rights_list?.[0]?.rights_uri || '',
     is_private: Boolean(detail.is_private),
   }
 }

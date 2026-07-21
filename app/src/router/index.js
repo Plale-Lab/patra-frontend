@@ -5,6 +5,7 @@ import {
   SUPPORTS_ASK_PATRA,
   SUPPORTS_AGENT_TOOLS,
   SUPPORTS_EDIT_RECORDS,
+  SUPPORTS_MCP_EXPLORER,
   SUPPORTS_DOMAIN_EXPERIMENTS,
 } from '../config/api'
 
@@ -46,11 +47,11 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
   await auth.initialize()
-  if (SUPPORTS_DEV_OPEN_ACCESS) return true
-  if (to.meta.tapis && !auth.isTapisUser) return { name: 'Dashboard' }
+  if (to.meta.tapis && !SUPPORTS_DEV_OPEN_ACCESS && !auth.isTapisUser) return { name: 'Dashboard' }
   if (to.meta.feature === 'askPatra' && !SUPPORTS_ASK_PATRA) return { name: 'Dashboard' }
   if (to.meta.feature === 'agentTools' && !SUPPORTS_AGENT_TOOLS) return { name: 'Dashboard' }
   if (to.meta.feature === 'editRecords' && !SUPPORTS_EDIT_RECORDS) return { name: 'Dashboard' }
+  if (to.meta.feature === 'mcpExplorer' && !SUPPORTS_MCP_EXPLORER) return { name: 'Dashboard' }
   if (to.meta.feature === 'domainExperiments' && !SUPPORTS_DOMAIN_EXPERIMENTS) return { name: 'Dashboard' }
   return true
 })
