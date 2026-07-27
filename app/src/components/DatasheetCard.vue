@@ -13,14 +13,6 @@
         <IconUser :size="14" stroke-width="1.8" />
         <span>{{ displayCreator }}</span>
       </div>
-      <div class="meta-row">
-        <IconBuilding :size="14" stroke-width="1.8" />
-        <span>{{ displayPublisher }}</span>
-      </div>
-      <div class="meta-row">
-        <IconCalendar :size="14" stroke-width="1.8" />
-        <span>{{ ds.publication_year }}</span>
-      </div>
     </div>
     <div class="ds-card-footer">
       <span class="ds-type-badge">{{ ds.resource_type?.resourceType || 'Dataset' }}</span>
@@ -32,7 +24,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { IconUser, IconBuilding, IconCalendar, IconChevronRight } from '@tabler/icons-vue'
+import { IconUser, IconChevronRight } from '@tabler/icons-vue'
 
 const props = defineProps({
   ds: { type: Object, required: true },
@@ -60,13 +52,6 @@ const displayCreator = computed(() => {
     return c.creatorName?.name || (typeof c.creatorName === 'string' ? c.creatorName : 'Unknown')
   }
   return 'Unknown'
-})
-
-const displayPublisher = computed(() => {
-  if (props.ds.publisher && typeof props.ds.publisher === 'object') {
-    return props.ds.publisher.name || 'Unknown'
-  }
-  return props.ds.publisher || 'Unknown'
 })
 </script>
 
