@@ -43,7 +43,7 @@ const displayTitle = computed(() => {
     const t = props.ds.title[0]
     return typeof t === 'object' ? t.title : t
   }
-  return props.ds.title || 'Untitled'
+  return 'Untitled'
 })
 
 const displayDescription = computed(() => {
@@ -51,7 +51,7 @@ const displayDescription = computed(() => {
     const d = props.ds.description[0]
     return typeof d === 'object' ? d.description : d
   }
-  return props.ds.description || ''
+  return ''
 })
 
 const displayCreator = computed(() => {
