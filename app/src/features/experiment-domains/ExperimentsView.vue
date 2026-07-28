@@ -69,7 +69,7 @@
           <tbody>
             <tr v-for="row in pagedSummary" :key="row.experiment_id">
               <td>{{ row.experiment_id }}</td>
-              <td>{{ row.model_id }}</td>
+              <td>{{ row.model_name || row.model_id }}</td>
               <td>{{ row.device_id || '—' }}</td>
               <td>{{ formatDate(row.start_at) }}</td>
               <td>{{ row.total_images ?? '—' }}</td>
@@ -97,7 +97,7 @@
         <select v-model="selectedExperiment" class="domain-select" @change="onExperimentChange">
           <option :value="null">Choose an experiment</option>
           <option v-for="experiment in store.experimentList" :key="experiment.experiment_id" :value="experiment.experiment_id">
-            {{ experiment.experiment_id }} — {{ experiment.model_id }} ({{ experiment.device_id || 'unknown device' }})
+            {{ experiment.experiment_id }} — {{ experiment.model_name || experiment.model_id }} ({{ experiment.device_id || 'unknown device' }})
           </option>
         </select>
       </div>
@@ -108,7 +108,7 @@
         <div class="card">
           <div class="card-body">
             <div class="metric-label">Model</div>
-            <div class="metric-value">{{ detail.model_id }}</div>
+            <div class="metric-value">{{ detail.model_name || detail.model_id }}</div>
           </div>
         </div>
         <div class="card">
@@ -125,48 +125,50 @@
         </div>
       </div>
 
-      <details class="domain-details" open>
-        <summary>Detection Metrics</summary>
-        <div class="domain-grid">
-          <div class="domain-item"><span>Total Images</span><strong>{{ detail.total_images ?? '—' }}</strong></div>
-          <div class="domain-item"><span>Total Predictions</span><strong>{{ detail.total_predictions ?? '—' }}</strong></div>
-          <div class="domain-item"><span>Ground Truth Objects</span><strong>{{ detail.total_ground_truth_objects ?? '—' }}</strong></div>
-          <div class="domain-item"><span>True Positives</span><strong>{{ detail.true_positives ?? '—' }}</strong></div>
-          <div class="domain-item"><span>False Positives</span><strong>{{ detail.false_positives ?? '—' }}</strong></div>
-          <div class="domain-item"><span>False Negatives</span><strong>{{ detail.false_negatives ?? '—' }}</strong></div>
-        </div>
-      </details>
+      <div class="metrics-columns block-spacing">
+        <details class="domain-details" open>
+          <summary>Detection Metrics</summary>
+          <div class="domain-grid">
+            <div class="domain-item"><span>Total Images</span><strong>{{ detail.total_images ?? '—' }}</strong></div>
+            <div class="domain-item"><span>Total Predictions</span><strong>{{ detail.total_predictions ?? '—' }}</strong></div>
+            <div class="domain-item"><span>Ground Truth Objects</span><strong>{{ detail.total_ground_truth_objects ?? '—' }}</strong></div>
+            <div class="domain-item"><span>True Positives</span><strong>{{ detail.true_positives ?? '—' }}</strong></div>
+            <div class="domain-item"><span>False Positives</span><strong>{{ detail.false_positives ?? '—' }}</strong></div>
+            <div class="domain-item"><span>False Negatives</span><strong>{{ detail.false_negatives ?? '—' }}</strong></div>
+          </div>
+        </details>
 
-      <details class="domain-details" open>
-        <summary>Quality Metrics</summary>
-        <div class="bar-list">
-          <div class="bar-row">
-            <span class="bar-label">Precision</span>
-            <div class="bar-track"><div class="bar-fill" :style="{ width: pct(detail.precision) }"></div></div>
-            <span class="bar-value">{{ fmtPct(detail.precision) }}</span>
+        <details class="domain-details" open>
+          <summary>Quality Metrics</summary>
+          <div class="bar-list">
+            <div class="bar-row">
+              <span class="bar-label">Precision</span>
+              <div class="bar-track"><div class="bar-fill" :style="{ width: pct(detail.precision) }"></div></div>
+              <span class="bar-value">{{ fmtPct(detail.precision) }}</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">Recall</span>
+              <div class="bar-track"><div class="bar-fill" :style="{ width: pct(detail.recall) }"></div></div>
+              <span class="bar-value">{{ fmtPct(detail.recall) }}</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">F1 Score</span>
+              <div class="bar-track"><div class="bar-fill" :style="{ width: pct(detail.f1_score) }"></div></div>
+              <span class="bar-value">{{ fmtPct(detail.f1_score) }}</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">mAP@50</span>
+              <div class="bar-track"><div class="bar-fill bar-fill-map" :style="{ width: pct(detail.map_50) }"></div></div>
+              <span class="bar-value">{{ fmtPct(detail.map_50) }}</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">mAP@50:95</span>
+              <div class="bar-track"><div class="bar-fill bar-fill-map" :style="{ width: pct(detail.map_50_95) }"></div></div>
+              <span class="bar-value">{{ fmtPct(detail.map_50_95) }}</span>
+            </div>
           </div>
-          <div class="bar-row">
-            <span class="bar-label">Recall</span>
-            <div class="bar-track"><div class="bar-fill" :style="{ width: pct(detail.recall) }"></div></div>
-            <span class="bar-value">{{ fmtPct(detail.recall) }}</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">F1 Score</span>
-            <div class="bar-track"><div class="bar-fill" :style="{ width: pct(detail.f1_score) }"></div></div>
-            <span class="bar-value">{{ fmtPct(detail.f1_score) }}</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">mAP@50</span>
-            <div class="bar-track"><div class="bar-fill bar-fill-map" :style="{ width: pct(detail.map_50) }"></div></div>
-            <span class="bar-value">{{ fmtPct(detail.map_50) }}</span>
-          </div>
-          <div class="bar-row">
-            <span class="bar-label">mAP@50:95</span>
-            <div class="bar-track"><div class="bar-fill bar-fill-map" :style="{ width: pct(detail.map_50_95) }"></div></div>
-            <span class="bar-value">{{ fmtPct(detail.map_50_95) }}</span>
-          </div>
-        </div>
-      </details>
+        </details>
+      </div>
 
       <section v-if="store.experimentImages.length" class="card block-spacing">
         <div class="card-header"><span>Raw Image Data</span></div>
@@ -388,6 +390,30 @@ function pct(value) {
 
 .block-spacing {
   margin-bottom: 24px;
+}
+
+/* Only 3 tiles ever populate this grid here; auto-fit (vs. the shared
+   auto-fill) collapses the empty tracks so they stretch to fill the row
+   instead of clustering left. */
+.stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.metrics-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.metrics-columns .domain-details {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1024px) {
+  .metrics-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 .domain-banner-body {
