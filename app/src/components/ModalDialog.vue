@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div class="modal-overlay" @click.self="$emit('close')">
       <div class="modal-content" role="dialog" aria-modal="true" :aria-label="title || 'Dialog'">
-        <div class="modal-header">
+        <div class="modal-header" v-if="!hideHeader">
           <span>{{ title }}</span>
           <button class="btn-icon" type="button" aria-label="Close" @click="$emit('close')">
             <IconX :size="18" stroke-width="2" />
@@ -23,7 +23,10 @@
 import { onMounted, onBeforeUnmount } from 'vue'
 import { IconX } from '@tabler/icons-vue'
 
-defineProps({ title: { type: String, default: '' } })
+defineProps({
+  title: { type: String, default: '' },
+  hideHeader: { type: Boolean, default: false },
+})
 const emit = defineEmits(['close'])
 
 function onKeydown(e) {

@@ -117,7 +117,7 @@
                   :field="field"
                   v-model="editForm[field.key]"
                   :error="errors[field.key]"
-                  :class="{ 'field-span-2': field.type === 'textarea' || field.type === 'segmented' }"
+                  :class="{ 'field-span-2': field.type === 'textarea' }"
                   @blur="validateOnBlur(field)"
                 />
               </div>

@@ -40,11 +40,19 @@
       <div class="card-body">
         <div class="form-section">
           <div class="form-section-label">Record Type</div>
-          <div class="filter-chips">
-            <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="switchType('model_card')">Model Card</button>
-            <button type="button" class="chip" :class="{ active: assetType === 'datasheet' }" @click="switchType('datasheet')">Datasheet</button>
+          <div class="record-type-row">
+            <div class="filter-chips">
+              <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="switchType('model_card')">Model Card</button>
+              <button type="button" class="chip" :class="{ active: assetType === 'datasheet' }" @click="switchType('datasheet')">Datasheet</button>
+            </div>
+            <button v-if="SUPPORTS_HF_IMPORT" type="button" class="btn btn-huggingface hf-import-trigger" @click="showImportModal = true">
+              <IconHuggingFace :size="15" />
+              Import from Hugging Face
+            </button>
           </div>
         </div>
+
+        <InlineFeedback v-if="importBanner" type="success" class="import-banner" :message="importBanner" />
 
         <div class="form-section" v-for="section in sections" :key="section.id">
           <div class="form-section-label">{{ section.title }}</div>
@@ -55,7 +63,7 @@
               :field="field"
               v-model="activeForm[field.key]"
               :error="errors[field.key]"
-              :class="{ 'field-span-2': field.type === 'textarea' || field.type === 'segmented' }"
+              :class="{ 'field-span-2': field.type === 'textarea' }"
               @blur="validateOnBlur(field)"
             />
           </div>
@@ -77,6 +85,13 @@
         </div>
       </div>
     </div>
+
+    <HuggingFaceImportModal
+      v-if="showImportModal"
+      :asset-type="assetType"
+      @close="showImportModal = false"
+      @imported="handleImported"
+    />
   </div>
 </template>
 
@@ -85,7 +100,7 @@ import { computed, reactive, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { IconLock } from '@tabler/icons-vue'
 import { useAuthStore } from '../stores/auth'
-import { SUPPORTS_DEV_OPEN_ACCESS } from '../config/api'
+import { SUPPORTS_DEV_OPEN_ACCESS, SUPPORTS_HF_IMPORT } from '../config/api'
 import { apiFetch } from '../lib/api'
 import { parseErrorMessage } from '../lib/errorParsing'
 import { sectionsFor, fieldsFor } from '../lib/assetFields'
@@ -93,6 +108,8 @@ import { buildModelCardPayload, buildDatasheetPayload } from '../lib/assetPayloa
 import { validateForm, validateField } from '../lib/fieldValidation'
 import FormField from '../components/FormField.vue'
 import InlineFeedback from '../components/InlineFeedback.vue'
+import HuggingFaceImportModal from '../components/HuggingFaceImportModal.vue'
+import IconHuggingFace from '../components/icons/IconHuggingFace.vue'
 
 const auth = useAuthStore()
 
@@ -105,6 +122,8 @@ const createdId = ref(null)
 const createdUuid = ref(null)
 const validateLinks = ref(true)
 const linkReport = ref(null)
+const showImportModal = ref(false)
+const importBanner = ref('')
 
 const mcForm = reactive({
   name: '', version: '', short_description: '', full_description: '',
@@ -160,7 +179,17 @@ function switchType(type) {
   if (assetType.value === type) return
   assetType.value = type
   error.value = ''
+  importBanner.value = ''
   clearErrors()
+}
+
+function handleImported(fields) {
+  const count = Object.keys(fields || {}).length
+  Object.assign(activeForm.value, fields)
+  showImportModal.value = false
+  importBanner.value = count
+    ? `Imported ${count} field${count === 1 ? '' : 's'} from Hugging Face — review before submitting.`
+    : 'Nothing importable was found for that URL.'
 }
 
 function validateOnBlur(field) {
@@ -186,6 +215,7 @@ function resetForm() {
   createdUuid.value = null
   linkReport.value = null
   error.value = ''
+  importBanner.value = ''
   clearErrors()
   Object.assign(mcForm, {
     name: '', version: '', short_description: '', full_description: '',
@@ -248,6 +278,36 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+.record-type-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hf-import-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-huggingface {
+  background: #ffd21e;
+  color: #14120b;
+  border: 1px solid rgba(20, 18, 11, 0.08);
+}
+
+.btn-huggingface:hover {
+  background: #ffc933;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(255, 210, 30, 0.35);
+}
+
+.import-banner {
+  margin-bottom: 20px;
+}
+
 .submit-footer {
   display: flex;
   align-items: center;

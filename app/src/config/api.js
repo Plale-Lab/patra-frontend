@@ -29,6 +29,11 @@ export const SUPPORTS_DOMAIN_EXPERIMENTS = resolveFeatureFlag(
   import.meta.env.VITE_SUPPORTS_DOMAIN_EXPERIMENTS,
   false,
 )
+export const SUPPORTS_HF_IMPORT = resolveFeatureFlag(
+  runtimeConfig.SUPPORTS_HF_IMPORT,
+  import.meta.env.VITE_SUPPORTS_HF_IMPORT,
+  import.meta.env.DEV,
+)
 export const SUPPORTS_DEV_OPEN_ACCESS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_DEV_OPEN_ACCESS,
   import.meta.env.VITE_SUPPORTS_DEV_OPEN_ACCESS,
