@@ -2,31 +2,17 @@
 
 Vue 3 + Vite web interface for the [Patra Knowledge Base](https://github.com/Plale-Lab/patra-knowledge-base). Browse model cards and datasheets, submit and edit records, and explore edge-deployment experiments.
 
+**Tag**: CI4AI, PADI
+
 ## Repository Layout
 
 - `app/` — Vue 3 application (Vite, Pinia, Vue Router, Tabler Icons)
 
-## Prerequisites
+---
 
-- Node.js 20+ (Vite 7)
-- The Patra backend running on port `8000`
+## Explanation
 
-## Install
-
-```bash
-npm --prefix app install
-```
-
-## Run
-
-```bash
-cd app
-npm run dev
-```
-
-The app opens at `http://localhost:5173`.
-
-## Features
+Patra Frontend is the web interface for the Patra ModelCards framework, giving users a way to browse, search, submit, and edit model cards and datasheets without calling the [Patra Knowledge Base](https://github.com/Plale-Lab/patra-knowledge-base) API directly.
 
 - **Browse & filter** model cards and datasheets with search, category, framework, and visibility filters
 - **Detail views** with model metadata, deployment history, accuracy rings, and DataCite-style datasheet rendering
@@ -38,7 +24,51 @@ The app opens at `http://localhost:5173`.
 - **Experiments** — browse edge-deployed experiments (Animal Ecology, Digital Agriculture) with per-image scoring data and power metrics
 - **MCP Explorer** — connect to the Model Context Protocol server, browse tools, and execute them
 
-## Configuration
+### Embedded login integration
+
+When enabled inside an iframe, Patra requests a short-lived Tapis token from
+the parent portal using protocol-v1 `postMessage`. The response is accepted
+only from `window.parent`, from an exact configured origin, and with the
+matching single-use request ID. The portal token remains memory-only and takes
+precedence over a persisted standalone session.
+
+The parent portal must verify the exact Patra origin and iframe window, then
+reply with `event.source.postMessage(response, event.origin)`. Never use `"*"`,
+place tokens in URLs, persist handoff tokens, or log raw tokens.
+
+Top-level Patra deployments retain standalone login. In embedded mode, a
+failed or invalid parent handshake produces a controlled parent-session error
+instead of exposing a second Patra login prompt or reusing a stale standalone
+identity. API requests prefer `Authorization: Bearer <token>` and do not send
+browser-derived username or role headers as authoritative identity. See
+[docs/login_redesign.md](docs/login_redesign.md) for the complete protocol,
+portal handler, backend requirements, and verification checklist.
+
+---
+
+## How-To Guide
+
+### Prerequisites
+
+- Node.js 20+ (Vite 7)
+- The Patra backend running on port `8000`
+
+### Install
+
+```bash
+npm --prefix app install
+```
+
+### Run
+
+```bash
+cd app
+npm run dev
+```
+
+The app opens at `http://localhost:5173`.
+
+### Configuration
 
 Create `app/.env` (see `app/.env.example`):
 
@@ -52,13 +82,7 @@ VITE_PORTAL_AUTH_TIMEOUT_MS=3000
 
 Feature areas (Ask Patra, Agent Toolkit, MCP Explorer, Domain Experiments) are gated by `VITE_SUPPORTS_*` flags — see `app/.env.example`.
 
-## Embedded login integration
-
-When enabled inside an iframe, Patra requests a short-lived Tapis token from
-the parent portal using protocol-v1 `postMessage`. The response is accepted
-only from `window.parent`, from an exact configured origin, and with the
-matching single-use request ID. The portal token remains memory-only and takes
-precedence over a persisted standalone session.
+### Configuring embedded login for deployment
 
 Configure deployed containers at runtime:
 
@@ -68,19 +92,10 @@ PORTAL_AUTH_ORIGINS=https://portal.example.org
 PORTAL_AUTH_TIMEOUT_MS=3000
 ```
 
-The parent portal must verify the exact Patra origin and iframe window, then
-reply with `event.source.postMessage(response, event.origin)`. Never use `"*"`,
-place tokens in URLs, persist handoff tokens, or log raw tokens.
+A production runtime example for `https://icicleai.tapis.io` is provided in
+[`docs/pod-config.patra-prod.json`](docs/pod-config.patra-prod.json).
 
-Top-level Patra deployments retain standalone login. In embedded mode, a
-failed or invalid parent handshake produces a controlled parent-session error
-instead of exposing a second Patra login prompt or reusing a stale standalone
-identity. API requests prefer `Authorization: Bearer <token>` and do not send
-browser-derived username or role headers as authoritative identity. A
-production runtime example for `https://icicleai.tapis.io` is provided in
-[`docs/pod-config.patra-prod.json`](docs/pod-config.patra-prod.json). See
-[docs/login_redesign.md](docs/login_redesign.md) for the complete protocol,
-portal handler, backend requirements, and verification checklist.
+---
 
 ## License
 
@@ -88,4 +103,4 @@ BSD 3-Clause. See `LICENSE`.
 
 ## Acknowledgements
 
-Funded by the National Science Foundation (award #2112606, ICICLE) and the Data to Insight Center (D2I) at Indiana University.
+This work has been funded by grants from the National Science Foundation, including the ICICLE AI Institute (OAC 2112606), and in part through Data to Insight Center (D2I) at Indiana University.
