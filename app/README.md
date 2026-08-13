@@ -1,6 +1,6 @@
 # Patra Frontend
 
-Vue 3 + Vite frontend for the **Patra Knowledge Base** — part of the [ICICLE](https://icicle.ai) AI Institute ecosystem (NSF Award #2112606, Indiana University).
+Vue 3 + Vite frontend for the **Patra Knowledge Base** — part of the [ICICLE](https://icicle.ai) AI Institute ecosystem (NSF Award #2112606, Plale Lab at The University of Oregon).
 
 Patra catalogs AI model cards and datasheets to support transparent, accountable AI/ML deployment at the edge. This app is the web interface for the catalog: anyone can browse the public records, and signed-in Tapis users can contribute by submitting and editing model cards and datasheets.
 

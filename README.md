@@ -103,4 +103,4 @@ BSD 3-Clause. See `LICENSE`.
 
 ## Acknowledgements
 
-This work has been funded by grants from the National Science Foundation, including the ICICLE AI Institute (OAC 2112606), and in part through Data to Insight Center (D2I) at Indiana University.
+This work has been funded by grants from the National Science Foundation, including the ICICLE AI Institute (OAC 2112606), and in part through Plale Lab at The University of Oregon.
