@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main, release/1.0.0]
+  pull_request:
+    branches: [main, release/1.0.0]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm --prefix app ci
+      - run: npm --prefix app run test
+      - run: npm --prefix app run build

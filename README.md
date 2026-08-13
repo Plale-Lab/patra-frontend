@@ -1,6 +1,6 @@
 # Patra Frontend
 
-Vue 3 + Vite web interface for the [Patra Knowledge Base](https://github.com/Data-to-Insight-Center/patra-kg). Browse model cards and datasheets, submit and edit records, and explore edge-deployment experiments.
+Vue 3 + Vite web interface for the [Patra Knowledge Base](https://github.com/Plale-Lab/patra-knowledge-base). Browse model cards and datasheets, submit and edit records, and explore edge-deployment experiments.
 
 ## Repository Layout
 
@@ -84,7 +84,7 @@ portal handler, backend requirements, and verification checklist.
 
 ## License
 
-BSD 3-Clause. See `LICENSE.txt`.
+BSD 3-Clause. See `LICENSE`.
 
 ## Acknowledgements
 
