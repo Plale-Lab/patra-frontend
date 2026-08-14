@@ -19,7 +19,7 @@
               <a href="https://cyberinfrastructure-knowledge-network.readthedocs.io/en/latest/" target="_blank" class="ckn-link">
                 <IconExternalLink :size="14" stroke-width="1.8" /> Documentation
               </a>
-              <a href="https://github.com/Data-to-Insight-Center/cyberinfrastructure-knowledge-network" target="_blank" class="ckn-link">
+              <a href="https://github.com/Plale-Lab/cyberinfrastructure-knowledge-network" target="_blank" class="ckn-link">
                 <IconBrandGithub :size="14" stroke-width="1.8" /> GitHub
               </a>
               <a href="https://ieeexplore.ieee.org/document/10254827" target="_blank" class="ckn-link">
