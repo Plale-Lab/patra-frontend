@@ -1,28 +1,31 @@
 - id: PatraFrontend:1.0.0
-  name: Patra Frontend
-  status: ProductionRelease
-  website: https://github.com/Plale-Lab/patra-frontend
-  description: Vue 3 web interface for browsing, searching, submitting, and editing Patra model cards and datasheets.
   owner: Beth Plale
   primaryThrust: core/AI4CI
-  sourceCodeUrl: https://github.com/Plale-Lab/patra-frontend
-  targetIcicleRelease: 2026-08
+  name: Patra Frontend
+  status: ProductionRelease
+  description: Vue 3 web interface for browsing, searching, submitting, and editing Patra model cards and datasheets.
   componentVersion: 1.0.0
-  licenseUrl: https://github.com/Plale-Lab/patra-frontend/blob/main/LICENSE
+  targetIcicleRelease: "2026-08"
+  hasDependentComponents:
+    - related_to: PatraKnowledgeBase:1.0.0
+      relationship_type: DependsOn
+  licenseUrl: https://github.com/Plale-Lab/patra-frontend?tab=BSD-3-Clause-1-ov-file
+  publicAccess: true
+  sourceCodeUrl: https://github.com/Plale-Lab/patra-frontend
+  codeReviewConducted: true
+  testsWritten: true
+  developerDocumentationAvailable: false
+  trainingTutorialsAvailable: false
+  # Fields below aren't part of the icicle-component-info-skill schema; kept per
+  # team decision rather than dropped.
+  website: https://github.com/Plale-Lab/patra-frontend
   releaseNotesUrl: https://github.com/Plale-Lab/patra-frontend/releases/tag/v1.0.0
   doi: https://doi.org/10.1109/e-Science62913.2024.10678710
   citation: S. Withana and B. Plale, Patra ModelCards':' AI/ML Accountability in the Edge-Cloud Continuum
   pypiPackage:
   containerImage:
-  codeReviewConducted: true
-  testsWritten: true
   securityReviewConducted: false
   biasAssessmentConducted: false
   usageDocumentationAvailable: true
   usageDocumentationUrl: https://github.com/Plale-Lab/patra-frontend/blob/main/README.md
-  developerDocumentationAvailable: false
-  developerDocumentationUrl:
-  trainingTutorialsAvailable: false
-  trainingTutorialsUrl:
   usageMetricsCollected: false
-  publicAccess: true
