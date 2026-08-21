@@ -121,6 +121,7 @@ function mapModelCardDetailToForm(detail) {
     category: detail.categories || '',
     input_type: detail.input_type || '',
     framework: detail.ai_model?.framework || '',
+    model_type: detail.ai_model?.model_type || '',
     test_accuracy: detail.ai_model?.test_accuracy ?? '',
     input_data: detail.input_data || '',
     location: detail.ai_model?.location || '',
