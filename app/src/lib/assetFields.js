@@ -41,6 +41,7 @@ export const MODEL_CARD_SECTIONS = [
     title: 'AI Model & Links',
     fields: [
       { key: 'framework', label: 'Framework', type: 'text', placeholder: 'e.g. PyTorch, TensorFlow', help: 'The ML framework this model was built with.' },
+      { key: 'model_type', label: 'Model Type', type: 'text', placeholder: 'e.g. cnn, dnn, llm, rnn, gnn', help: 'The architecture family this model belongs to (cnn, dnn, llm, rnn, lstm, gnn, svm, kmeans, decision_tree, random_forest, or other).' },
       { key: 'license', label: 'License', type: 'text', placeholder: 'e.g. Apache 2.0, MIT', help: 'The usage license for this model, e.g. Apache 2.0 or MIT.' },
       { key: 'test_accuracy', label: 'Test Accuracy', type: 'number', step: '0.01', min: '0', max: '1', validate: ['accuracy'], placeholder: 'e.g. 0.95', help: 'A value between 0 and 1.' },
       { key: 'foundational_model', label: 'Model Architecture', type: 'text', placeholder: 'e.g. ResNet-50, Transformer', help: 'The underlying architecture or base model this was built on.' },
