@@ -207,7 +207,16 @@
               <thead><tr><th>Identifier</th><th>Type</th><th>Relation</th></tr></thead>
               <tbody>
                 <tr v-for="(ri, i) in ds.related_identifier" :key="i">
-                  <td class="metric-key-cell">{{ ri.relatedIdentifier }}</td>
+                  <td class="metric-key-cell">
+                    <a
+                      v-if="ri.relatedIdentifierType === 'URL'"
+                      :href="ri.relatedIdentifier"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="info-link"
+                    >{{ ri.relatedIdentifier }}</a>
+                    <span v-else>{{ ri.relatedIdentifier }}</span>
+                  </td>
                   <td>{{ ri.relatedIdentifierType }}</td>
                   <td>{{ ri.relationType }}</td>
                 </tr>

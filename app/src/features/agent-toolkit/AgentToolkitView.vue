@@ -117,7 +117,7 @@
             </div>
           </div>
 
-          <div class="card" v-if="searchResult">
+          <div class="card rise" v-if="searchResult">
             <div class="card-header">
               <span class="flex items-center gap-8"><IconListSearch :size="18" stroke-width="1.8" /> Search result</span>
             </div>
@@ -129,7 +129,7 @@
                 </div>
                 <div class="summary-chip">
                   <span>Confidence</span>
-                  <strong>{{ searchResult.extraction.confidence }}</strong>
+                  <strong class="confidence-badge" :class="confidenceClass(searchResult.extraction.confidence)">{{ searchResult.extraction.confidence }}</strong>
                 </div>
                 <div class="summary-chip">
                   <span>Winner</span>
@@ -145,7 +145,7 @@
 
               <div class="mini-section">
                 <div class="mini-section-title">Extracted field groups</div>
-                <div class="field-pill-list">
+                <div class="field-pill-list stagger">
                   <span class="field-pill" v-for="field in searchResult.extraction.grouped_fields" :key="field.canonical_name">
                     {{ field.canonical_name }}
                   </span>
@@ -183,7 +183,10 @@
                           <div class="table-title">{{ row.title }}</div>
                           <div class="table-subtitle">{{ row.source_family }} | {{ row.dataset_id }}</div>
                         </td>
-                        <td><strong>{{ formatScore(row.score) }}</strong></td>
+                        <td>
+                          <strong>{{ formatScore(row.score) }}</strong>
+                          <div class="score-bar"><span :style="{ width: scoreBarWidth(row.score) }"></span></div>
+                        </td>
                         <td>{{ row.matched_field_groups.length }}</td>
                         <td>{{ row.derivable_field_groups.length }}</td>
                         <td>{{ row.missing_field_groups.length }}</td>
@@ -245,7 +248,7 @@
             </div>
           </div>
 
-          <div class="card" v-if="missingResult">
+          <div class="card rise" v-if="missingResult">
             <div class="card-header">
               <span class="flex items-center gap-8"><IconBinaryTree2 :size="18" stroke-width="1.8" /> Feasibility result</span>
             </div>
@@ -341,7 +344,7 @@
             </div>
           </div>
 
-          <div class="card" v-if="generatedResult">
+          <div class="card rise" v-if="generatedResult">
             <div class="card-header">
               <span class="flex items-center gap-8"><IconBinaryTree2 :size="18" stroke-width="1.8" /> Synthesized dataset</span>
             </div>
@@ -406,7 +409,7 @@
           <div class="card-body">
             <div class="pool-empty" v-if="schemaPoolLoading">Loading pool...</div>
             <div class="pool-empty" v-else-if="schemaPool.length === 0">No public datasets are available from the current backend.</div>
-            <div v-else class="pool-list">
+            <div v-else class="pool-list stagger">
               <div class="pool-item" v-for="item in schemaPool" :key="item.dataset_id">
                 <div class="pool-title">{{ item.title }}</div>
                 <div class="pool-meta">{{ item.source_family }} | {{ item.public_access }}</div>
@@ -707,6 +710,18 @@ function formatScore(value) {
   return Number(value || 0).toFixed(4)
 }
 
+function scoreBarWidth(value) {
+  const pct = Math.max(0, Math.min(1, Number(value) || 0)) * 100
+  return `${pct}%`
+}
+
+function confidenceClass(value) {
+  const normalized = String(value || '').toLowerCase()
+  if (normalized === 'high') return 'confidence-high'
+  if (normalized === 'low') return 'confidence-low'
+  return 'confidence-medium'
+}
+
 function statusClass(status) {
   if (status === 'directly available') return 'status-direct'
   if (status === 'derivable with provenance') return 'status-derivable'
@@ -715,6 +730,22 @@ function statusClass(status) {
 </script>
 
 <style scoped>
+.connection-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+  font-size: .88rem;
+}
+
+.connection-banner.error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid rgba(194, 65, 74, .28);
+}
+
 .agent-layout {
   display: flex;
   gap: 24px;
@@ -763,6 +794,10 @@ function statusClass(status) {
   border-radius: var(--radius-sm);
   background: var(--color-bg);
   transition: border-color var(--transition), background-color var(--transition);
+}
+
+.upload-dropzone:hover {
+  border-color: var(--color-border-strong);
 }
 
 .upload-dropzone.active {
@@ -836,6 +871,13 @@ function statusClass(status) {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-bg);
+  cursor: pointer;
+  transition: border-color var(--transition), background-color var(--transition);
+}
+
+.derivable-option:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-bg);
 }
 
 .action-row {
@@ -880,6 +922,45 @@ function statusClass(status) {
 .summary-chip strong {
   font-size: .95rem;
   color: var(--color-text);
+}
+
+.confidence-badge {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: .8rem;
+}
+
+.confidence-high {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.confidence-medium {
+  background: var(--color-accent-bg);
+  color: #a8701f;
+}
+
+.confidence-low {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.score-bar {
+  margin-top: 6px;
+  width: 64px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.score-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
+  border-radius: 2px;
+  transition: width var(--transition-slow);
 }
 
 .result-message {
@@ -951,6 +1032,14 @@ function statusClass(status) {
   letter-spacing: .05em;
 }
 
+.results-table tbody tr {
+  transition: background-color var(--transition);
+}
+
+.results-table tbody tr:hover {
+  background: var(--color-bg-elevated);
+}
+
 .table-title {
   font-weight: 600;
   color: var(--color-text);
@@ -996,6 +1085,11 @@ function statusClass(status) {
 .pool-item {
   padding-bottom: 14px;
   border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition);
+}
+
+.pool-item:hover {
+  background: var(--color-bg-elevated);
 }
 
 .pool-title {
