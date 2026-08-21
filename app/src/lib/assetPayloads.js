@@ -30,11 +30,12 @@ export function buildModelCardPayload(form, { authorName = '' } = {}) {
     is_private: form.is_private,
     is_gated: form.is_gated,
   }
-  const hasAiModel = form.framework.trim() || form.license.trim() || form.test_accuracy || form.location.trim()
+  const hasAiModel = form.framework.trim() || form.license.trim() || form.test_accuracy || form.location.trim() || form.model_type.trim()
   if (hasAiModel) {
     payload.ai_model = {
       name: form.name.trim(),
       framework: form.framework.trim() || null,
+      model_type: form.model_type.trim() || null,
       license: form.license.trim() || null,
       test_accuracy: form.test_accuracy ? parseFloat(form.test_accuracy) : null,
       location: form.location.trim() || null,
@@ -111,6 +112,7 @@ function buildAiModelPatch(form, aiDetail) {
   const patch = {}
   diffText(patch, 'license', form.license, aiDetail.license)
   diffText(patch, 'framework', form.framework, aiDetail.framework)
+  diffText(patch, 'model_type', form.model_type, aiDetail.model_type)
   diffText(patch, 'location', form.location, aiDetail.location)
   diffNumber(patch, 'test_accuracy', form.test_accuracy, aiDetail.test_accuracy)
   return patch
