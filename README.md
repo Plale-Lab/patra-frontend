@@ -114,7 +114,7 @@ A production runtime example for `https://icicleai.tapis.io` is provided in
 
 # Explanation
 
-Patra Frontend is the web interface for the Patra ModelCards framework, giving users a way to browse, search, submit, and edit model cards and datasheets without calling the [Patra Knowledge Base](https://github.com/Plale-Lab/patra-knowledge-base) API directly.
+Patra Frontend is the web interface for the Patra AI Cards framework, giving users a way to browse, search, submit, and edit model cards and datasheets without calling the [Patra Knowledge Base](https://github.com/Plale-Lab/patra-knowledge-base) API directly.
 
 - **Browse & filter** model cards and datasheets with search, category, framework, and visibility filters
 - **Detail views** with model metadata, deployment history, accuracy rings, and DataCite-style datasheet rendering
