@@ -59,7 +59,7 @@
           <h3>Datasheets</h3>
           <p>
             DataCite-aligned documentation for every dataset behind a model, so
-            data provenance is part of the record, not a footnote.
+            data provenance is part of the card, not a footnote.
           </p>
         </article>
         <article class="pillar">
@@ -165,7 +165,7 @@
           </div>
           <div class="card-body">
             <div class="empty-block" v-if="recentModels.length === 0">
-              No recent records to display.
+              No recent cards to display.
             </div>
             <div v-else class="stack-list">
               <RouterLink
@@ -231,6 +231,7 @@ const featuredModels = computed(() => (
 
 const recentModels = computed(() => (
   [...exploreStore.models]
+    .filter(model => !featuredModels.value.some(f => f.uuid === model.uuid))
     .sort(compareUpdatedDesc)
     .slice(0, 4)
 ))

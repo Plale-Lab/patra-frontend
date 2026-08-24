@@ -1,10 +1,5 @@
 <template>
   <div class="ask-page">
-    <div class="page-header">
-      <h1>Ask Patra</h1>
-      <p>Ask about model cards, datasheets, and platform workflows in plain language. Answers cite the records they reference.</p>
-    </div>
-
     <div class="chatbot-shell card">
       <div class="card-header chatbot-topbar">
         <div>
@@ -13,7 +8,6 @@
             <span class="assistant-badge">AI Assistant</span>
             <span class="provider-chip">{{ providerLabel }}</span>
           </div>
-          <div class="chatbot-subtitle">Ask about records, workflows, Patra capabilities, or metadata lookups.</div>
         </div>
         <button class="btn btn-outline btn-sm" type="button" @click="resetConversation" :disabled="sending || isAnimating">
           Reset chat
@@ -243,12 +237,6 @@ async function resetConversation() {
   background: var(--color-bg);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
-}
-
-.chatbot-subtitle {
-  margin-top: 6px;
-  color: var(--color-text-muted);
-  font-size: .84rem;
 }
 
 .chatbot-body {

@@ -1,15 +1,10 @@
 <template>
   <div>
-    <div class="page-header">
-      <h1>Edit Records</h1>
-      <p>Select a published record, edit its visible fields, and save the updated record directly.</p>
-    </div>
-
     <div v-if="!(auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)" class="card">
       <div class="card-body">
         <div class="empty-state compact">
           <IconLock :size="34" stroke-width="1.5" />
-          <p>Sign in with the sidebar login to edit records.</p>
+          <p>Sign in with the sidebar login to edit cards.</p>
         </div>
       </div>
     </div>
@@ -19,7 +14,7 @@
         <div class="card-header">
           <span class="flex items-center gap-8">
             <IconSearch :size="18" stroke-width="1.8" />
-            Find a record
+            Find a card
           </span>
         </div>
         <div class="card-body">
@@ -45,7 +40,7 @@
           <InlineFeedback v-if="searchError" type="error" :message="searchError" class="search-feedback" />
 
           <div class="suggestions-block">
-            <div class="section-label">{{ searchQuery.trim() ? 'Matching records' : 'Suggested records' }}</div>
+            <div class="section-label">{{ searchQuery.trim() ? 'Matching cards' : 'Suggested cards' }}</div>
             <div class="record-list stagger" v-if="filteredRecords.length">
               <button
                 v-for="record in filteredRecords"
@@ -65,7 +60,7 @@
 
             <div class="empty-state compact" v-else-if="hasSearched && !searching">
               <IconSearchOff :size="32" stroke-width="1.4" />
-              <p>No matching records.</p>
+              <p>No matching cards.</p>
             </div>
           </div>
         </div>
@@ -75,14 +70,14 @@
         <div v-if="!selectedRecord" class="card-body">
           <div class="empty-state compact">
             <IconEdit :size="34" stroke-width="1.5" />
-            <p>Select a record from the list to start editing.</p>
+            <p>Select a card from the list to start editing.</p>
           </div>
         </div>
 
         <div v-else-if="detailLoading" class="card-body">
           <div class="loading-state">
             <IconLoader2 :size="30" stroke-width="1.6" class="spin" />
-            <span>Loading record…</span>
+            <span>Loading card…</span>
           </div>
         </div>
 
@@ -126,7 +121,7 @@
             <InlineFeedback v-if="submitError" type="error" :message="submitError" />
             <InlineFeedback v-else-if="saveResult" type="success">
               Saved.
-              <RouterLink v-if="savedRecordLink" :to="savedRecordLink" class="success-link">View record →</RouterLink>
+              <RouterLink v-if="savedRecordLink" :to="savedRecordLink" class="success-link">View card →</RouterLink>
             </InlineFeedback>
 
             <div class="action-row">
@@ -343,7 +338,7 @@ async function selectRecord(record) {
     snapshotForm()
   } catch (error) {
     if (myToken !== detailToken) return
-    detailError.value = error.message || 'Could not load the selected record.'
+    detailError.value = error.message || 'Could not load the selected card.'
   } finally {
     if (myToken === detailToken) detailLoading.value = false
   }

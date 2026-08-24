@@ -1,9 +1,5 @@
 <template>
   <div>
-    <div class="page-header">
-      <h1>MCP Explorer</h1>
-      <p>Inspect MCP tools, execute calls, and read resources from the configured MCP endpoint.</p>
-    </div>
 
     <div class="card mcp-connection-card">
       <div class="card-header">

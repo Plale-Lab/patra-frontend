@@ -230,7 +230,7 @@
       </div>
 
       <div class="detail-grid">
-        <div class="card">
+        <div class="card" v-if="!editing">
           <div class="card-header">
             <span class="flex items-center gap-8"><IconBrain :size="18" stroke-width="1.8" /> AI Model</span>
           </div>
@@ -402,7 +402,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" v-if="!editing">
           <div class="card-header">
             <span class="flex items-center gap-8"><IconLink :size="18" stroke-width="1.8" /> Data Links</span>
           </div>

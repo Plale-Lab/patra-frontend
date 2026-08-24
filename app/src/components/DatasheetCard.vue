@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="ds-card-footer">
-      <span class="ds-type-badge">{{ ds.resource_type?.resourceType || 'Dataset' }}</span>
+      <span v-if="ds.resource_type?.resourceType" class="ds-type-badge">{{ ds.resource_type.resourceType }}</span>
       <IconChevronRight :size="16" stroke-width="1.8" class="card-arrow" />
     </div>
   </RouterLink>
@@ -98,6 +98,6 @@ const displayCreator = computed(() => {
   letter-spacing: .5px; color: var(--color-text-muted);
   background: var(--color-bg-elevated); padding: 3px 8px; border-radius: 999px;
 }
-.card-arrow { color: var(--color-text-muted); transition: color var(--transition); }
+.card-arrow { color: var(--color-text-muted); transition: color var(--transition); margin-left: auto; }
 .ds-card:hover .card-arrow { color: var(--color-primary); }
 </style>

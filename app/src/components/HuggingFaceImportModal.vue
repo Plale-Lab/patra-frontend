@@ -2,7 +2,7 @@
   <ModalDialog title="Import from Hugging Face" hide-header @close="emit('close')">
     <p class="hf-import-intro">
       Paste a Hugging Face {{ isDataset ? 'dataset' : 'model' }} URL and we'll pre-fill the form below.
-      You can review and edit every field before creating the record.
+      You can review and edit every field before creating the card.
     </p>
 
     <div class="form-group">

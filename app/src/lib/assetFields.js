@@ -56,7 +56,7 @@ export const MODEL_CARD_SECTIONS = [
     id: 'access',
     title: 'Access',
     fields: [
-      { key: 'is_private', label: 'Visibility', type: 'segmented', options: VISIBILITY_OPTIONS, help: 'Public records are visible to everyone; private ones stay restricted.' },
+      { key: 'is_private', label: 'Visibility', type: 'segmented', options: VISIBILITY_OPTIONS, help: 'Public cards are visible to everyone; private ones stay restricted.' },
       { key: 'is_gated', label: 'Access', type: 'segmented', options: ACCESS_OPTIONS, help: 'Gated models require approval before their weights can be downloaded.' },
     ],
   },
@@ -90,7 +90,7 @@ export const DATASHEET_SECTIONS = [
     id: 'access',
     title: 'Access',
     fields: [
-      { key: 'is_private', label: 'Visibility', type: 'segmented', options: VISIBILITY_OPTIONS, help: 'Public records are visible to everyone; private ones stay restricted.' },
+      { key: 'is_private', label: 'Visibility', type: 'segmented', options: VISIBILITY_OPTIONS, help: 'Public cards are visible to everyone; private ones stay restricted.' },
     ],
   },
 ]

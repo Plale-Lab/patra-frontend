@@ -1,9 +1,5 @@
 <template>
   <div>
-    <div class="page-header">
-      <h1>Agent Toolkit</h1>
-      <p>Run code-first schema extraction, public dataset-schema search, and strict missing-attribute feasibility analysis for Patra substitution workflows across domains.</p>
-    </div>
 
     <div class="connection-banner error" v-if="errorMessage">
       <IconAlertTriangle :size="18" stroke-width="1.8" />
@@ -426,9 +422,8 @@
           <div class="card-body">
             <ul class="simple-list">
               <li>Schema search ranks dataset-backed schemas for any domain: the pool lists both public defaults and optional traces (e.g. parallel workloads) when the backend is configured with those datasets.</li>
-              <li>Feasibility analysis only allows directly supported or auditable deterministic derivations; other attributes stay rejected until rules exist.</li>
+              <li>Feasibility analysis only allows directly supported or auditable deterministic derivations — fields with no safe rule stay rejected instead of being hallucinated.</li>
               <li>Generation is limited to derivable fields, and Patra requires admin review before a synthesized dataset-schema is admitted into the shared pool.</li>
-              <li>Fields with no safe rule stay rejected instead of being hallucinated.</li>
             </ul>
           </div>
         </div>

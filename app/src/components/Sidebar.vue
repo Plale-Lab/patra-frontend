@@ -12,13 +12,9 @@
       </RouterLink>
 
       <div class="sidebar-section-label">Explore</div>
-      <RouterLink to="/modelcards" class="sidebar-link" :class="{ active: $route.path.startsWith('/modelcard') }">
+      <RouterLink to="/modelcards" class="sidebar-link" :class="{ active: $route.path.startsWith('/modelcard') || $route.path.startsWith('/datasheet') }">
         <IconSearch :size="20" stroke-width="1.8" />
-        <span>Browse Model Cards</span>
-      </RouterLink>
-      <RouterLink to="/datasheets" class="sidebar-link" :class="{ active: $route.path.startsWith('/datasheet') }">
-        <IconSearch :size="20" stroke-width="1.8" />
-        <span>Browse Datasheets</span>
+        <span>Browse Cards</span>
       </RouterLink>
       <RouterLink v-if="SUPPORTS_MCP_EXPLORER" to="/mcp-explorer" class="sidebar-link" :class="{ active: $route.path === '/mcp-explorer' }">
         <IconTerminal2 :size="20" stroke-width="1.8" />
@@ -47,13 +43,13 @@
           <IconSparkles :size="20" stroke-width="1.8" />
           <span>Agent Toolkit</span>
         </RouterLink>
-        <RouterLink v-if="SUPPORTS_EDIT_RECORDS" to="/edit-records" class="sidebar-link" :class="{ active: $route.path === '/edit-records' }">
+        <RouterLink v-if="SUPPORTS_EDIT_RECORDS" to="/edit-cards" class="sidebar-link" :class="{ active: $route.path === '/edit-cards' }">
           <IconEdit :size="20" stroke-width="1.8" />
-          <span>Edit Records</span>
+          <span>Edit Cards</span>
         </RouterLink>
         <RouterLink to="/submit" class="sidebar-link" :class="{ active: $route.path === '/submit' }">
           <IconUpload :size="20" stroke-width="1.8" />
-          <span>Submit Records</span>
+          <span>Submit Cards</span>
         </RouterLink>
       </template>
     </nav>

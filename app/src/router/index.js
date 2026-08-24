@@ -11,7 +11,6 @@ import {
 
 import DashboardView from '../views/DashboardView.vue'
 import ExploreView from '../views/ExploreView.vue'
-import ExploreDatasheetView from '../views/ExploreDatasheetView.vue'
 import ModelDetailView from '../views/ModelDetailView.vue'
 import DatasheetDetailView from '../views/DatasheetDetailView.vue'
 import AgentToolkitView from '../features/agent-toolkit/AgentToolkitView.vue'
@@ -25,14 +24,14 @@ const routes = [
   { path: '/', name: 'Dashboard', component: DashboardView },
   { path: '/modelcards', name: 'ExploreModelCards', component: ExploreView },
   { path: '/modelcard/:uuid', name: 'ModelDetail', component: ModelDetailView },
-  { path: '/datasheets', name: 'ExploreDatasheets', component: ExploreDatasheetView },
+  { path: '/datasheets', name: 'ExploreDatasheets', component: ExploreView },
   { path: '/datasheet/:uuid', name: 'DatasheetDetail', component: DatasheetDetailView },
   { path: '/ask-patra', name: 'AskPatra', component: AskPatraView, meta: { feature: 'askPatra', tapis: true } },
   { path: '/agent-tools', name: 'AgentTools', component: AgentToolkitView, meta: { feature: 'agentTools', tapis: true } },
   { path: '/mcp-explorer', name: 'McpExplorer', component: McpExplorerView, meta: { feature: 'mcpExplorer' } },
   { path: '/animal-ecology', name: 'AnimalEcology', component: ExperimentsView, props: { domain: 'animal-ecology' }, meta: { feature: 'domainExperiments' } },
   { path: '/digital-agriculture', name: 'DigitalAgriculture', component: ExperimentsView, props: { domain: 'digital-ag' }, meta: { feature: 'domainExperiments' } },
-  { path: '/edit-records', name: 'EditRecords', component: EditRecordsView, meta: { feature: 'editRecords', tapis: true } },
+  { path: '/edit-cards', name: 'EditRecords', component: EditRecordsView, meta: { feature: 'editRecords', tapis: true } },
   { path: '/edit-assets', redirect: { name: 'EditRecords' } },
   { path: '/explore', redirect: { name: 'ExploreModelCards' } },
   { path: '/submit', name: 'Submit', component: SubmitView, meta: { tapis: true } },

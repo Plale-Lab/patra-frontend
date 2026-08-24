@@ -1,15 +1,10 @@
 <template>
   <div>
-    <div class="page-header">
-      <h1>Submit Records</h1>
-      <p>Create a new model card or datasheet. Records are published immediately.</p>
-    </div>
-
     <div v-if="!(auth.isTapisUser || SUPPORTS_DEV_OPEN_ACCESS)" class="card">
       <div class="card-body">
         <div class="empty-state compact">
           <IconLock :size="34" stroke-width="1.5" />
-          <p>Sign in with the sidebar login to submit records.</p>
+          <p>Sign in with the sidebar login to submit cards.</p>
         </div>
       </div>
     </div>
@@ -17,7 +12,7 @@
     <div class="card" v-else-if="submitSuccess">
       <div class="card-body">
         <InlineFeedback type="success">
-          Record created successfully (UUID: {{ createdUuid || createdId }}).
+          Card created successfully (UUID: {{ createdUuid || createdId }}).
         </InlineFeedback>
 
         <div class="link-report" v-if="displayLinkReport.length">
@@ -30,7 +25,7 @@
         </div>
 
         <div class="success-cta">
-          <RouterLink :to="detailLink" class="btn btn-primary">View record</RouterLink>
+          <RouterLink :to="detailLink" class="btn btn-primary">View card</RouterLink>
           <button class="btn btn-outline" @click="resetForm">Submit Another</button>
         </div>
       </div>
@@ -39,7 +34,7 @@
     <div class="card" v-else>
       <div class="card-body">
         <div class="form-section">
-          <div class="form-section-label">Record Type</div>
+          <div class="form-section-label">Card Type</div>
           <div class="record-type-row">
             <div class="filter-chips">
               <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="switchType('model_card')">Model Card</button>
@@ -80,7 +75,7 @@
             </div>
           </div>
           <button class="btn btn-primary submit-btn" :disabled="loading" @click="handleSubmit">
-            {{ loading ? 'Creating…' : 'Create Record' }}
+            {{ loading ? 'Creating…' : 'Create Card' }}
           </button>
         </div>
       </div>
@@ -272,7 +267,7 @@ async function handleSubmit() {
     linkReport.value = result.link_report ?? null
     submitSuccess.value = true
   } catch (e) {
-    error.value = e.message || 'Failed to create record'
+    error.value = e.message || 'Failed to create card'
   } finally {
     loading.value = false
   }

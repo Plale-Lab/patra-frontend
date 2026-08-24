@@ -1,6 +1,6 @@
 <template>
-  <div class="inline-citations-block" v-if="citations.length" role="list" aria-label="Relevant records">
-    <div class="inline-citations-title">Relevant records</div>
+  <div class="inline-citations-block" v-if="citations.length" role="list" aria-label="Relevant cards">
+    <div class="inline-citations-title">Relevant cards</div>
     <div class="citation-list">
       <a
         v-for="citation in citations"
@@ -11,7 +11,7 @@
       >
         <div class="citation-kind">{{ citation.resource_type === 'model_card' ? 'Model Card' : 'Datasheet' }}</div>
         <div class="citation-title">{{ citation.title }}</div>
-        <div class="citation-subtitle">{{ citation.subtitle || 'Published record' }}</div>
+        <div class="citation-subtitle">{{ citation.subtitle || 'Published card' }}</div>
         <div class="citation-description" v-if="citation.description">{{ citation.description }}</div>
         <div class="citation-match" v-if="citation.matched_on?.length">Matched on: {{ citation.matched_on.join(', ') }}</div>
       </a>

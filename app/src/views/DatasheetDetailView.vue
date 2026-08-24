@@ -149,11 +149,11 @@
                 <span class="info-label">Resource Type</span>
                 <span class="info-value">{{ ds.resource_type.resourceType }} ({{ ds.resource_type.resourceTypeGeneral }})</span>
               </div>
-              <div class="info-item" v-if="ds.publication_year">
+              <div class="info-item" v-if="!editing && ds.publication_year">
                 <span class="info-label">Publication Year</span>
                 <span class="info-value">{{ ds.publication_year }}</span>
               </div>
-              <div class="info-item" v-if="ds.version">
+              <div class="info-item" v-if="!editing && ds.version">
                 <span class="info-label">Version</span>
                 <span class="info-value">{{ ds.version }}</span>
               </div>

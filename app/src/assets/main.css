@@ -534,23 +534,6 @@ input, select, textarea {
   margin-bottom: 28px;
 }
 
-.page-header {
-  margin-bottom: 28px;
-}
-
-.page-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  letter-spacing: -0.03em;
-}
-
-.page-header p {
-  color: var(--color-text-secondary);
-  font-size: 0.98rem;
-  max-width: 72ch;
-}
-
 .expand-panel {
   background: var(--color-bg-elevated);
   border-radius: var(--radius-sm);
@@ -812,10 +795,6 @@ input, select, textarea {
 @media (max-width: 1024px) {
   .admin-content {
     padding: 24px 24px 32px;
-  }
-
-  .page-header h1 {
-    font-size: 1.75rem;
   }
 }
 

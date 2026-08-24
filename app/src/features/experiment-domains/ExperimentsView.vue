@@ -1,9 +1,5 @@
 <template>
   <div>
-    <div class="page-header">
-      <h1>{{ pageTitle }}</h1>
-    </div>
-
     <div class="ckn-banner card block-spacing">
       <div class="card-body">
         <div class="ckn-banner-inner">
@@ -280,7 +276,6 @@ const DOMAIN_LABELS = {
 }
 
 const domainLabel = computed(() => DOMAIN_LABELS[props.domain] || props.domain)
-const pageTitle = computed(() => `${domainLabel.value} Experiments`)
 
 const store = useExperimentsStore()
 const selectedUser = ref(null)
