@@ -24,7 +24,7 @@ describe('router guard', () => {
     await router.push('/agent-tools')
     expect(router.currentRoute.value.name).toBe('Dashboard')
 
-    await router.push('/submit')
+    await router.push('/create-cards')
     expect(router.currentRoute.value.name).toBe('Submit')
   })
 
@@ -39,7 +39,7 @@ describe('router guard', () => {
 
     const { default: router } = await import('./index')
 
-    await router.push('/submit')
+    await router.push('/create-cards')
     expect(router.currentRoute.value.name).toBe('Dashboard')
   })
 })

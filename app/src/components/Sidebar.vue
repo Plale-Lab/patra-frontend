@@ -47,9 +47,9 @@
           <IconEdit :size="20" stroke-width="1.8" />
           <span>Edit Cards</span>
         </RouterLink>
-        <RouterLink to="/submit" class="sidebar-link" :class="{ active: $route.path === '/submit' }">
+        <RouterLink to="/create-cards" class="sidebar-link" :class="{ active: $route.path === '/create-cards' }">
           <IconUpload :size="20" stroke-width="1.8" />
-          <span>Submit Cards</span>
+          <span>Create Cards</span>
         </RouterLink>
       </template>
     </nav>

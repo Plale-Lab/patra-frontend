@@ -4,7 +4,7 @@
       <div class="card-body">
         <div class="empty-state compact">
           <IconLock :size="34" stroke-width="1.5" />
-          <p>Sign in with the sidebar login to submit cards.</p>
+          <p>Sign in with the sidebar login to create cards.</p>
         </div>
       </div>
     </div>
@@ -26,7 +26,7 @@
 
         <div class="success-cta">
           <RouterLink :to="detailLink" class="btn btn-primary">View card</RouterLink>
-          <button class="btn btn-outline" @click="resetForm">Submit Another</button>
+          <button class="btn btn-outline" @click="resetForm">Create Another</button>
         </div>
       </div>
     </div>
@@ -35,49 +35,63 @@
       <div class="card-body">
         <div class="form-section">
           <div class="form-section-label">Card Type</div>
-          <div class="record-type-row">
-            <div class="filter-chips">
-              <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="switchType('model_card')">Model Card</button>
-              <button type="button" class="chip" :class="{ active: assetType === 'datasheet' }" @click="switchType('datasheet')">Datasheet</button>
+          <div class="filter-chips">
+            <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="chooseType('model_card')">Model Card</button>
+            <button type="button" class="chip" :class="{ active: assetType === 'datasheet' }" @click="chooseType('datasheet')">Datasheet</button>
+          </div>
+        </div>
+
+        <div class="form-section" :class="{ 'chooser-inert': !assetType }">
+          <div class="form-section-label">Source</div>
+          <div class="filter-chips">
+            <button
+              v-if="SUPPORTS_HF_IMPORT"
+              type="button"
+              class="chip chip-huggingface"
+              :class="{ active: startMode === 'prefill' }"
+              @click="chooseStart('prefill')"
+            >
+              <IconHuggingFace :size="13" />
+              Pre-fill from Hugging Face
+            </button>
+            <button type="button" class="chip" :class="{ active: startMode === 'manual' }" @click="chooseStart('manual')">Fill in manually</button>
+            <button v-if="showForm" type="button" class="start-over-link" @click="resetForm">Start over</button>
+          </div>
+        </div>
+
+        <template v-if="showForm">
+          <InlineFeedback v-if="importBanner" type="success" class="import-banner" :message="importBanner" />
+
+          <div class="form-section" v-for="section in sections" :key="section.id">
+            <div class="form-section-label">{{ section.title }}</div>
+            <div class="section-fields">
+              <FormField
+                v-for="field in section.fields"
+                :key="field.key"
+                :field="field"
+                v-model="activeForm[field.key]"
+                :error="errors[field.key]"
+                :class="{ 'field-span-2': field.type === 'textarea' }"
+                @blur="validateOnBlur(field)"
+              />
             </div>
-            <button v-if="SUPPORTS_HF_IMPORT" type="button" class="btn btn-huggingface hf-import-trigger" @click="showImportModal = true">
-              <IconHuggingFace :size="15" />
-              Import from Hugging Face
+          </div>
+
+          <InlineFeedback v-if="error" type="error" :message="error" />
+
+          <div class="submit-footer">
+            <div class="link-toggle" v-if="assetType === 'model_card'">
+              <span class="link-toggle-label">Validate links on submit</span>
+              <div class="filter-chips">
+                <button type="button" class="chip" :class="{ active: validateLinks }" @click="validateLinks = true">On</button>
+                <button type="button" class="chip" :class="{ active: !validateLinks }" @click="validateLinks = false">Skip</button>
+              </div>
+            </div>
+            <button class="btn btn-primary submit-btn" :disabled="loading" @click="handleSubmit">
+              {{ loading ? 'Creating…' : 'Create Card' }}
             </button>
           </div>
-        </div>
-
-        <InlineFeedback v-if="importBanner" type="success" class="import-banner" :message="importBanner" />
-
-        <div class="form-section" v-for="section in sections" :key="section.id">
-          <div class="form-section-label">{{ section.title }}</div>
-          <div class="section-fields">
-            <FormField
-              v-for="field in section.fields"
-              :key="field.key"
-              :field="field"
-              v-model="activeForm[field.key]"
-              :error="errors[field.key]"
-              :class="{ 'field-span-2': field.type === 'textarea' }"
-              @blur="validateOnBlur(field)"
-            />
-          </div>
-        </div>
-
-        <InlineFeedback v-if="error" type="error" :message="error" />
-
-        <div class="submit-footer">
-          <div class="link-toggle" v-if="assetType === 'model_card'">
-            <span class="link-toggle-label">Validate links on submit</span>
-            <div class="filter-chips">
-              <button type="button" class="chip" :class="{ active: validateLinks }" @click="validateLinks = true">On</button>
-              <button type="button" class="chip" :class="{ active: !validateLinks }" @click="validateLinks = false">Skip</button>
-            </div>
-          </div>
-          <button class="btn btn-primary submit-btn" :disabled="loading" @click="handleSubmit">
-            {{ loading ? 'Creating…' : 'Create Card' }}
-          </button>
-        </div>
+        </template>
       </div>
     </div>
 
@@ -108,7 +122,8 @@ import IconHuggingFace from '../components/icons/IconHuggingFace.vue'
 
 const auth = useAuthStore()
 
-const assetType = ref('model_card')
+const assetType = ref(null)
+const startMode = ref(null)
 const errors = reactive({})
 const loading = ref(false)
 const error = ref('')
@@ -147,6 +162,7 @@ const LINK_FIELD_LABELS = {
 
 const activeForm = computed(() => (assetType.value === 'model_card' ? mcForm : dsForm))
 const sections = computed(() => sectionsFor(assetType.value))
+const showForm = computed(() => assetType.value !== null && startMode.value !== null)
 
 const detailLink = computed(() => {
   if (!createdUuid.value) return '/'
@@ -171,12 +187,21 @@ function clearErrors() {
   Object.keys(errors).forEach((key) => delete errors[key])
 }
 
-function switchType(type) {
+function chooseType(type) {
   if (assetType.value === type) return
   assetType.value = type
+  startMode.value = null
   error.value = ''
   importBanner.value = ''
   clearErrors()
+}
+
+function chooseStart(mode) {
+  startMode.value = mode
+  error.value = ''
+  if (mode === 'prefill') {
+    showImportModal.value = true
+  }
 }
 
 function handleImported(fields) {
@@ -212,6 +237,8 @@ function resetForm() {
   linkReport.value = null
   error.value = ''
   importBanner.value = ''
+  assetType.value = null
+  startMode.value = null
   clearErrors()
   Object.assign(mcForm, {
     name: '', version: '', short_description: '', full_description: '',
@@ -275,30 +302,38 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.record-type-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+.chooser-inert {
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity var(--transition);
 }
 
-.hf-import-trigger {
+.chip-huggingface {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
-.btn-huggingface {
-  background: #ffd21e;
-  color: #14120b;
-  border: 1px solid rgba(20, 18, 11, 0.08);
+.chip-huggingface.active,
+.chip-huggingface:hover {
+  background: #fff3c4;
+  border-color: #ffd21e;
+  color: #7a5c05;
 }
 
-.btn-huggingface:hover {
-  background: #ffc933;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 18px rgba(255, 210, 30, 0.35);
+.start-over-link {
+  background: none;
+  border: none;
+  padding: 5px 4px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.start-over-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .import-banner {

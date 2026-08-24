@@ -34,7 +34,7 @@ const routes = [
   { path: '/edit-cards', name: 'EditRecords', component: EditRecordsView, meta: { feature: 'editRecords', tapis: true } },
   { path: '/edit-assets', redirect: { name: 'EditRecords' } },
   { path: '/explore', redirect: { name: 'ExploreModelCards' } },
-  { path: '/submit', name: 'Submit', component: SubmitView, meta: { tapis: true } },
+  { path: '/create-cards', name: 'Submit', component: SubmitView, meta: { tapis: true } },
   { path: '/:pathMatch(.*)*', redirect: { name: 'Dashboard' } },
 ]
 
