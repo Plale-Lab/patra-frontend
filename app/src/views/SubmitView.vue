@@ -33,30 +33,24 @@
 
     <div class="card" v-else>
       <div class="card-body">
-        <div class="form-section">
-          <div class="form-section-label">Card Type</div>
-          <div class="filter-chips">
-            <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="chooseType('model_card')">Model Card</button>
-            <button type="button" class="chip" :class="{ active: assetType === 'datasheet' }" @click="chooseType('datasheet')">Datasheet</button>
+        <div class="form-section-header">
+          <div class="form-section">
+            <div class="form-section-label">Card Type</div>
+            <div class="filter-chips">
+              <button type="button" class="chip" :class="{ active: assetType === 'model_card' }" @click="chooseType('model_card')">Model Card</button>
+              <button type="button" class="chip" :class="{ active: assetType === 'datasheet' }" @click="chooseType('datasheet')">Datasheet</button>
+            </div>
           </div>
-        </div>
-
-        <div class="form-section" :class="{ 'chooser-inert': !assetType }">
-          <div class="form-section-label">Source</div>
-          <div class="filter-chips">
-            <button
-              v-if="SUPPORTS_HF_IMPORT"
-              type="button"
-              class="chip chip-huggingface"
-              :class="{ active: startMode === 'prefill' }"
-              @click="chooseStart('prefill')"
-            >
-              <IconHuggingFace :size="13" />
-              Pre-fill from Hugging Face
-            </button>
-            <button type="button" class="chip" :class="{ active: startMode === 'manual' }" @click="chooseStart('manual')">Fill in manually</button>
-            <button v-if="showForm" type="button" class="start-over-link" @click="resetForm">Start over</button>
-          </div>
+          <button
+            v-if="SUPPORTS_HF_IMPORT"
+            type="button"
+            class="chip chip-huggingface"
+            :class="{ 'chooser-inert': !assetType }"
+            @click="showImportModal = true"
+          >
+            <IconHuggingFace :size="13" />
+            Pre-fill from Hugging Face
+          </button>
         </div>
 
         <template v-if="showForm">
@@ -123,7 +117,6 @@ import IconHuggingFace from '../components/icons/IconHuggingFace.vue'
 const auth = useAuthStore()
 
 const assetType = ref(null)
-const startMode = ref(null)
 const errors = reactive({})
 const loading = ref(false)
 const error = ref('')
@@ -162,7 +155,7 @@ const LINK_FIELD_LABELS = {
 
 const activeForm = computed(() => (assetType.value === 'model_card' ? mcForm : dsForm))
 const sections = computed(() => sectionsFor(assetType.value))
-const showForm = computed(() => assetType.value !== null && startMode.value !== null)
+const showForm = computed(() => assetType.value !== null)
 
 const detailLink = computed(() => {
   if (!createdUuid.value) return '/'
@@ -190,18 +183,9 @@ function clearErrors() {
 function chooseType(type) {
   if (assetType.value === type) return
   assetType.value = type
-  startMode.value = null
   error.value = ''
   importBanner.value = ''
   clearErrors()
-}
-
-function chooseStart(mode) {
-  startMode.value = mode
-  error.value = ''
-  if (mode === 'prefill') {
-    showImportModal.value = true
-  }
 }
 
 function handleImported(fields) {
@@ -238,7 +222,6 @@ function resetForm() {
   error.value = ''
   importBanner.value = ''
   assetType.value = null
-  startMode.value = null
   clearErrors()
   Object.assign(mcForm, {
     name: '', version: '', short_description: '', full_description: '',
@@ -308,6 +291,13 @@ async function handleSubmit() {
   transition: opacity var(--transition);
 }
 
+.form-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
 .chip-huggingface {
   display: inline-flex;
   align-items: center;
@@ -319,21 +309,6 @@ async function handleSubmit() {
   background: #fff3c4;
   border-color: #ffd21e;
   color: #7a5c05;
-}
-
-.start-over-link {
-  background: none;
-  border: none;
-  padding: 5px 4px;
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: color var(--transition);
-}
-
-.start-over-link:hover {
-  color: var(--color-primary);
-  text-decoration: underline;
 }
 
 .import-banner {
