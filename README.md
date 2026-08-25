@@ -1,6 +1,6 @@
 # Patra Frontend
 
-Vue 3 + Vite web interface for the [Patra Knowledge Base](https://github.com/Plale-Lab/patra-knowledge-base). Browse model cards and datasheets, submit and edit records, and explore edge-deployment experiments.
+Vue 3 + Vite web interface for the [Patra Knowledge Base](https://github.com/Plale-Lab/patra-knowledge-base) — the frontend component of the Patra AI Cards framework. Browse model cards and datasheets, submit and edit records, and explore edge-deployment experiments.
 
 **Tags:** CI4AI, PADI
 

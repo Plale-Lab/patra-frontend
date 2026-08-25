@@ -1,13 +1,13 @@
-- id: PatraFrontend:1.0.0
+- id: PatraAICardsFrontend:1.0.0
   owner: Beth Plale
   primaryThrust: core/AI4CI
-  name: Patra Frontend
+  name: Patra AI Cards Frontend
   status: ProductionRelease
   description: Vue 3 web interface for browsing, searching, submitting, and editing Patra model cards and datasheets.
   componentVersion: 1.0.0
   targetIcicleRelease: "2026-08"
   hasDependentComponents:
-    - related_to: PatraKnowledgeBase:1.0.0
+    - related_to: PatraAICardsKnowledgeBase:1.0.0
       relationship_type: DependsOn
   licenseUrl: https://github.com/Plale-Lab/patra-frontend?tab=BSD-3-Clause-1-ov-file
   publicAccess: true
