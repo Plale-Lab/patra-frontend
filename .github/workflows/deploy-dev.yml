@@ -23,7 +23,12 @@ jobs:
       # in sync. Already scoped to dev only (IMAGE=plalelab/patra-dev:latest,
       # TARGET_PODS=patra-dev are its defaults) -- do not point this at
       # build-push-backend.sh's pattern of a hardcoded prod-inclusive pod list.
-      - name: Build, push, and restart patra-dev
+      #
+      # The pod's image field was one-time raw-PUT to plalelab/patra-dev:latest
+      # on 2026-08-26 (tapipy's update_pod(image=...) silently no-ops, so this
+      # required a raw HTTP PUT) -- this script's build+push+restart is
+      # sufficient going forward without further intervention.
+      - name: Build, push, and restart patradev
         env:
           TAPIS_PODS_BASE_URL: ${{ secrets.TAPIS_PODS_BASE_URL }}
           TAPIS_USERNAME: ${{ secrets.TAPIS_USERNAME }}

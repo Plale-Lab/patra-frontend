@@ -30,7 +30,7 @@ echo "Done: $IMAGE"
 
 TAPIS_VENV="${TAPIS_VENV:-$HOME/.venvs/tapis}"
 TAPIS_PODS_BASE_URL="${TAPIS_PODS_BASE_URL:-}"
-TARGET_PODS="${TARGET_PODS:-patra-dev}"
+TARGET_PODS="${TARGET_PODS:-patradev}"
 
 if [[ -n "$TAPIS_PODS_BASE_URL" && -n "${TAPIS_USERNAME:-}" && -n "${TAPIS_PASSWORD:-}" ]]; then
   if [[ ! -x "$TAPIS_VENV/bin/python3" ]]; then
@@ -51,14 +51,19 @@ t = Tapis(
 )
 t.get_tokens()
 
-pods = [item.strip() for item in os.environ.get("TARGET_PODS", "patra-dev").split(",") if item.strip()]
+pods = [item.strip() for item in os.environ.get("TARGET_PODS", "patradev").split(",") if item.strip()]
+failed = 0
 for pod_id in pods:
     try:
         result = t.pods.restart_pod(pod_id=pod_id)
         status = getattr(result, "status_requested", "unknown")
         print(f"  {pod_id}: restart requested (status_requested={status})")
     except Exception as exc:
+        failed += 1
         print(f"  {pod_id}: FAILED - {exc}", file=sys.stderr)
+
+if failed:
+    sys.exit(1)
 PY
 else
   echo "TAPIS credentials not set; skipping Tapis Pod restarts." >&2
