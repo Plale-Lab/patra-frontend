@@ -129,6 +129,110 @@ describe('auth store', () => {
     expect(auth.isPortalUser).toBe(false)
     expect(auth.portalAuthUnavailable).toBe(true)
   })
+
+  describe('redirect login', () => {
+    it('begins redirect login by navigating to the authorize URL and storing state', async () => {
+      const auth = useAuthStore()
+      await auth.initialize({ embeddedAuthEnabled: false })
+      const navigate = vi.fn()
+      const storeState = vi.fn()
+
+      const ok = auth.beginRedirectLogin({
+        clientId: 'patra-client',
+        tenantBaseUrl: 'https://icicleai.tapis.io',
+        redirectUri: 'https://patra.example/auth/callback',
+        createState: () => 'nonce-1',
+        storeState,
+        navigate,
+      })
+
+      expect(ok).toBe(true)
+      expect(storeState).toHaveBeenCalledWith('nonce-1')
+      expect(navigate).toHaveBeenCalledWith(
+        'https://icicleai.tapis.io/v3/oauth2/authorize?client_id=patra-client&redirect_uri=https%3A%2F%2Fpatra.example%2Fauth%2Fcallback&response_type=code&state=nonce-1',
+      )
+    })
+
+    it('does not navigate and sets an error when no client ID is configured', async () => {
+      const auth = useAuthStore()
+      await auth.initialize({ embeddedAuthEnabled: false })
+      const navigate = vi.fn()
+
+      const ok = auth.beginRedirectLogin({ clientId: '', navigate })
+
+      expect(ok).toBe(false)
+      expect(navigate).not.toHaveBeenCalled()
+      expect(auth.error).toMatch(/not configured/)
+    })
+
+    it('completes redirect login and establishes a standalone session', async () => {
+      const auth = useAuthStore()
+      await auth.initialize({ embeddedAuthEnabled: false })
+      const token = makeJwt('redirect-user', Date.now() + 300_000)
+
+      const ok = await auth.completeRedirectLogin(
+        { code: 'abc123', state: 'nonce-1' },
+        {
+          consumeState: () => 'nonce-1',
+          exchangeTapisAuthCode: vi.fn().mockResolvedValue({ accessToken: token, username: 'redirect-user' }),
+        },
+      )
+
+      expect(ok).toBe(true)
+      expect(auth.source).toBe('standalone')
+      expect(auth.displayName).toBe('redirect-user')
+      expect(localStorage.getItem('patra_token')).toBe(token)
+    })
+
+    it('rejects on state mismatch without establishing a session', async () => {
+      const auth = useAuthStore()
+      await auth.initialize({ embeddedAuthEnabled: false })
+      const exchange = vi.fn()
+
+      const ok = await auth.completeRedirectLogin(
+        { code: 'abc123', state: 'nonce-1' },
+        { consumeState: () => 'different-nonce', exchangeTapisAuthCode: exchange },
+      )
+
+      expect(ok).toBe(false)
+      expect(auth.source).toBe('guest')
+      expect(exchange).not.toHaveBeenCalled()
+    })
+
+    it('short-circuits on a provider error without consuming state or exchanging', async () => {
+      const auth = useAuthStore()
+      await auth.initialize({ embeddedAuthEnabled: false })
+      const consumeState = vi.fn()
+      const exchange = vi.fn()
+
+      const ok = await auth.completeRedirectLogin(
+        { error: 'access_denied' },
+        { consumeState, exchangeTapisAuthCode: exchange },
+      )
+
+      expect(ok).toBe(false)
+      expect(auth.error).toMatch(/access_denied/)
+      expect(consumeState).not.toHaveBeenCalled()
+      expect(exchange).not.toHaveBeenCalled()
+    })
+
+    it('surfaces an exchange rejection without establishing a session', async () => {
+      const auth = useAuthStore()
+      await auth.initialize({ embeddedAuthEnabled: false })
+
+      const ok = await auth.completeRedirectLogin(
+        { code: 'abc123', state: 'nonce-1' },
+        {
+          consumeState: () => 'nonce-1',
+          exchangeTapisAuthCode: vi.fn().mockRejectedValue(new Error('Tapis authentication failed')),
+        },
+      )
+
+      expect(ok).toBe(false)
+      expect(auth.source).toBe('guest')
+      expect(auth.error).toBe('Tapis authentication failed')
+    })
+  })
 })
 
 function seedStandaloneSession(username, token) {

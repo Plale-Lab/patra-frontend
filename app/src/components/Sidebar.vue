@@ -77,10 +77,19 @@
         </div>
       </div>
 
-      <button class="sidebar-login-btn" v-else @click="showLogin = true">
-        <IconLogin :size="18" stroke-width="1.8" />
-        <span>Tapis Login</span>
-      </button>
+      <template v-else>
+        <div v-if="STANDALONE_AUTH_MODE === 'redirect' && auth.error" class="sidebar-portal-error" role="status">
+          <IconAlertTriangle :size="18" stroke-width="1.8" />
+          <div>
+            <strong>Sign-in unavailable</strong>
+            <span>{{ auth.error }}</span>
+          </div>
+        </div>
+        <button class="sidebar-login-btn" @click="handleLoginButtonClick">
+          <IconLogin :size="18" stroke-width="1.8" />
+          <span>{{ STANDALONE_AUTH_MODE === 'redirect' ? 'Sign in with Tapis' : 'Tapis Login' }}</span>
+        </button>
+      </template>
     </div>
 
     <Teleport to="body">
@@ -145,6 +154,7 @@ import {
   SUPPORTS_EDIT_RECORDS,
   SUPPORTS_MCP_EXPLORER,
   SUPPORTS_DEV_OPEN_ACCESS,
+  STANDALONE_AUTH_MODE,
 } from '../config/api'
 import {
   IconLayoutDashboard, IconSearch,
@@ -175,6 +185,14 @@ async function handleLogin() {
 function handleLogout() {
   auth.logout()
   router.push('/')
+}
+
+function handleLoginButtonClick() {
+  if (STANDALONE_AUTH_MODE === 'redirect') {
+    auth.beginRedirectLogin()
+  } else {
+    showLogin.value = true
+  }
 }
 </script>
 

@@ -42,4 +42,11 @@ describe('router guard', () => {
     await router.push('/create-cards')
     expect(router.currentRoute.value.name).toBe('Dashboard')
   })
+
+  it('the Tapis auth callback route is reachable while unauthenticated', async () => {
+    const { default: router } = await import('./index')
+
+    await router.push('/auth/callback?code=abc123&state=nonce-1')
+    expect(router.currentRoute.value.name).toBe('TapisAuthCallback')
+  })
 })

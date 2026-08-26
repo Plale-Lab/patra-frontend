@@ -5,9 +5,20 @@ import {
     PORTAL_AUTH_ORIGINS,
     PORTAL_AUTH_TIMEOUT_MS,
     SUPPORTS_DEV_OPEN_ACCESS,
+    TAPIS_OAUTH_CLIENT_ID,
+    TAPIS_TENANT_BASE_URL,
 } from '../config/api'
 import { requestPortalAuth } from '../lib/portalAuth'
 import { clearRuntimeAuth, setRuntimeAuth } from '../lib/runtimeAuth'
+import {
+    buildTapisAuthorizeUrl,
+    consumeTapisAuthState,
+    createTapisAuthState,
+    exchangeTapisAuthCode,
+    storeTapisAuthState,
+    TapisRedirectAuthError,
+    validateTapisAuthState,
+} from '../lib/tapisRedirectAuth'
 
 const TAPIS_BASE_URL = 'https://tacc.tapis.io'
 const TAPIS_TOKEN_URL = `${TAPIS_BASE_URL}/v3/oauth2/tokens`
@@ -299,6 +310,61 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
+    function beginRedirectLogin(options = {}) {
+        error.value = null
+        const clientId = options.clientId ?? TAPIS_OAUTH_CLIENT_ID
+        if (!clientId) {
+            error.value = 'Tapis redirect login is not configured for this deployment'
+            return false
+        }
+        const redirectUri = options.redirectUri ?? `${window.location.origin}/auth/callback`
+        const state = (options.createState ?? createTapisAuthState)()
+        ;(options.storeState ?? storeTapisAuthState)(state)
+        const authorizeUrl = buildTapisAuthorizeUrl({
+            tenantBaseUrl: options.tenantBaseUrl ?? TAPIS_TENANT_BASE_URL,
+            clientId,
+            redirectUri,
+            state,
+        })
+        const navigate = options.navigate ?? ((url) => { window.location.assign(url) })
+        navigate(authorizeUrl)
+        return true
+    }
+
+    async function completeRedirectLogin({ code, state, error: oauthError } = {}, options = {}) {
+        loading.value = true
+        error.value = null
+        try {
+            if (oauthError) {
+                throw new TapisRedirectAuthError('provider_error', `Tapis sign-in was cancelled or failed (${oauthError})`)
+            }
+            if (!code) {
+                throw new TapisRedirectAuthError('missing_code', 'Tapis did not return an authorization code')
+            }
+            const storedState = (options.consumeState ?? consumeTapisAuthState)()
+            validateTapisAuthState(state, storedState)
+
+            const redirectUri = options.redirectUri ?? `${window.location.origin}/auth/callback`
+            const exchange = options.exchangeTapisAuthCode ?? exchangeTapisAuthCode
+            const { accessToken, username } = await exchange({ code, redirectUri })
+
+            standaloneSession = {
+                user: makeTapisUser(username, 'standalone'),
+                token: accessToken,
+            }
+            persistStandalone(standaloneSession, options.rememberMe ?? true)
+            stopPortalRefresh()
+            setActiveSession(standaloneSession, 'standalone')
+            initializationState.value = 'ready'
+            return true
+        } catch (reason) {
+            error.value = reason instanceof Error ? reason.message : 'Tapis authentication failed'
+            return false
+        } finally {
+            loading.value = false
+        }
+    }
+
     async function refreshPortalAuth() {
         if (source.value !== 'portal' || !portalRequestOptions) return false
         try {
@@ -366,6 +432,8 @@ export const useAuthStore = defineStore('auth', () => {
         initials,
         initialize,
         loginTapis,
+        beginRedirectLogin,
+        completeRedirectLogin,
         refreshPortalAuth,
         logout,
         clearError,

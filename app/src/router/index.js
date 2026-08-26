@@ -19,6 +19,7 @@ import ExperimentsView from '../features/experiment-domains/ExperimentsView.vue'
 import EditRecordsView from '../features/edit-records/EditRecordsView.vue'
 import McpExplorerView from '../features/mcp-explorer/McpExplorerView.vue'
 import SubmitView from '../views/SubmitView.vue'
+import AuthCallbackView from '../views/AuthCallbackView.vue'
 
 const routes = [
   { path: '/', name: 'Dashboard', component: DashboardView },
@@ -35,6 +36,7 @@ const routes = [
   { path: '/edit-assets', redirect: { name: 'EditRecords' } },
   { path: '/explore', redirect: { name: 'ExploreModelCards' } },
   { path: '/create-cards', name: 'Submit', component: SubmitView, meta: { tapis: true } },
+  { path: '/auth/callback', name: 'TapisAuthCallback', component: AuthCallbackView },
   { path: '/:pathMatch(.*)*', redirect: { name: 'Dashboard' } },
 ]
 

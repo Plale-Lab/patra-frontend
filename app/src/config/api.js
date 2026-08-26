@@ -1,6 +1,7 @@
 const runtimeConfig = typeof window !== 'undefined' ? window.__PATRA_CONFIG__ || {} : {}
 
 const DEFAULT_API_BASE_URL = import.meta.env.DEV ? 'http://127.0.0.1:8002' : 'http://localhost:8000'
+const STANDALONE_AUTH_MODES = new Set(['password', 'redirect'])
 
 export const SUPPORTS_AGENT_TOOLS = resolveFeatureFlag(
   runtimeConfig.SUPPORTS_AGENT_TOOLS,
@@ -52,6 +53,16 @@ export const PORTAL_AUTH_TIMEOUT_MS = parsePositiveInteger(
   runtimeConfig.PORTAL_AUTH_TIMEOUT_MS,
   import.meta.env.VITE_PORTAL_AUTH_TIMEOUT_MS,
   3000,
+)
+export const STANDALONE_AUTH_MODE = resolveStandaloneAuthMode(
+  runtimeConfig.STANDALONE_AUTH_MODE,
+  import.meta.env.VITE_STANDALONE_AUTH_MODE,
+)
+export const TAPIS_TENANT_BASE_URL = normalizeBaseUrl(
+  firstSet(runtimeConfig.TAPIS_TENANT_BASE_URL, import.meta.env.VITE_TAPIS_TENANT_BASE_URL) || 'https://icicleai.tapis.io',
+)
+export const TAPIS_OAUTH_CLIENT_ID = String(
+  firstSet(runtimeConfig.TAPIS_CLIENT_ID, import.meta.env.VITE_TAPIS_CLIENT_ID) || '',
 )
 
 export function getAssetOrg() {
@@ -134,4 +145,11 @@ function normalizeOrigin(value) {
 function parsePositiveInteger(runtimeValue, envValue, fallback) {
   const parsed = Number.parseInt(firstSet(runtimeValue, envValue), 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+// Unknown/unset always falls back to 'password' (current ROPC form) so an
+// unrecognized value can't accidentally disable standalone login.
+function resolveStandaloneAuthMode(runtimeValue, envValue) {
+  const value = String(firstSet(runtimeValue, envValue) || 'password').trim().toLowerCase()
+  return STANDALONE_AUTH_MODES.has(value) ? value : 'password'
 }
