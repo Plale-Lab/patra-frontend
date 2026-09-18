@@ -11,7 +11,11 @@
     <div class="ds-card-meta">
       <div class="meta-row">
         <IconUser :size="14" stroke-width="1.8" />
-        <span>{{ displayCreator }}</span>
+        <span>Author: {{ displayCreator }}</span>
+      </div>
+      <div class="meta-row" v-if="ds.creator_name || ds.creator_tapis_id">
+        <IconUser :size="14" stroke-width="1.8" />
+        <span>Creator: {{ ds.creator_name || ds.creator_tapis_id }}<template v-if="ds.creator_name && ds.creator_tapis_id"> ({{ ds.creator_tapis_id }})</template></span>
       </div>
       <div class="meta-row">
         <IconBuilding :size="14" stroke-width="1.8" />

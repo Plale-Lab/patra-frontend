@@ -21,6 +21,8 @@ export function buildModelCardPayload(form, { authorName = '' } = {}) {
     category: form.category.trim() || null,
     input_type: form.input_type.trim() || null,
     author,
+    creator_tapis_id: form.creator_tapis_id.trim(),
+    creator_name: form.creator_name.trim(),
     keywords: form.keywords.trim() || null,
     foundational_model: form.foundational_model.trim() || null,
     input_data: form.input_data.trim() || null,
@@ -44,8 +46,8 @@ export function buildModelCardPayload(form, { authorName = '' } = {}) {
   return payload
 }
 
-export function buildDatasheetPayload(form, { creatorName = '' } = {}) {
-  const creator = form.creator.trim() || creatorName
+export function buildDatasheetPayload(form, { authorName = '' } = {}) {
+  const author = form.author.trim() || authorName
   const subjects = form.subjects.split(',').map((s) => s.trim()).filter(Boolean)
   const payload = {
     version: form.version.trim() || null,
@@ -53,7 +55,9 @@ export function buildDatasheetPayload(form, { creatorName = '' } = {}) {
     publication_year: form.publication_year ? parseInt(form.publication_year) : null,
     is_private: form.is_private,
     titles: [{ title: form.title.trim() }],
-    creators: [{ creator_name: creator }],
+    creators: [{ creator_name: author }],
+    creator_tapis_id: form.creator_tapis_id.trim(),
+    creator_name: form.creator_name.trim(),
     subjects: subjects.map((s) => ({ subject: s })),
     descriptions: form.description.trim()
       ? [{ description: form.description.trim(), description_type: 'Abstract' }]
@@ -83,6 +87,8 @@ export function buildModelCardPatch(form, detail) {
   diffText(patch, 'full_description', form.full_description, detail.full_description)
   diffText(patch, 'keywords', form.keywords, detail.keywords)
   diffText(patch, 'author', form.author, detail.author)
+  diffText(patch, 'creator_tapis_id', form.creator_tapis_id, detail.creator_tapis_id)
+  diffText(patch, 'creator_name', form.creator_name, detail.creator_name)
   diffText(patch, 'citation', form.citation, detail.citation)
   diffText(patch, 'input_data', form.input_data, detail.input_data)
   diffText(patch, 'input_type', form.input_type, detail.input_type)
@@ -117,6 +123,8 @@ export function buildDatasheetPatch(form, detail) {
   diffText(patch, 'resource_type', form.resource_type, detail.resource_type)
   diffInteger(patch, 'publication_year', form.publication_year, detail.publication_year)
   diffBool(patch, 'is_private', form.is_private, detail.is_private)
+  diffText(patch, 'creator_tapis_id', form.creator_tapis_id, detail.creator_tapis_id)
+  diffText(patch, 'creator_name', form.creator_name, detail.creator_name)
 
   const formPublisherName = normalizeText(form.publisher)
   const detailPublisherName = normalizeText(detail.publisher?.name)
@@ -144,7 +152,7 @@ export function buildDatasheetPatch(form, detail) {
     patch.descriptions = newDescriptions
   }
 
-  const newCreators = mergeCreators(detail.creators || [], form.creator)
+  const newCreators = mergeCreators(detail.creators || [], form.author)
   if (!arraysEqual(newCreators, detail.creators || [])) {
     patch.creators = newCreators
   }
@@ -190,8 +198,8 @@ function mergeDescription(existingDescriptions, editedDescription) {
   )
 }
 
-function mergeCreators(existingCreators, formCreatorList) {
-  const names = String(formCreatorList || '')
+function mergeCreators(existingCreators, formAuthorList) {
+  const names = String(formAuthorList || '')
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean)

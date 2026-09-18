@@ -77,7 +77,8 @@
               </template>
 
               <div class="detail-meta" v-if="!editing">
-                <span v-if="displayCreator"><IconUser :size="14" stroke-width="1.8" /> {{ displayCreator }}</span>
+                <span v-if="displayCreator"><IconUser :size="14" stroke-width="1.8" /> Author: {{ displayCreator }}</span>
+                <span v-if="ds.creator_name || ds.creator_tapis_id"><IconUser :size="14" stroke-width="1.8" /> Creator: {{ ds.creator_name || ds.creator_tapis_id }}<template v-if="ds.creator_name && ds.creator_tapis_id"> ({{ ds.creator_tapis_id }})</template></span>
                 <span v-if="displayPublisher"><IconBuilding :size="14" stroke-width="1.8" /> {{ displayPublisher }}</span>
                 <span v-if="ds.publication_year"><IconCalendar :size="14" stroke-width="1.8" /> {{ ds.publication_year }}</span>
               </div>
@@ -115,6 +116,14 @@
               <label class="info-label">Publication Year</label>
               <input v-model.number="editForm.publication_year" class="edit-input" type="number" placeholder="e.g. 2026" />
             </div>
+            <div class="edit-field">
+              <label class="info-label">Creator Tapis ID</label>
+              <input v-model="editForm.creator_tapis_id" class="edit-input" placeholder="Creator Tapis ID" />
+            </div>
+            <div class="edit-field">
+              <label class="info-label">Creator Name</label>
+              <input v-model="editForm.creator_name" class="edit-input" placeholder="Creator Name" />
+            </div>
           </div>
         </div>
       </div>
@@ -122,7 +131,7 @@
       <div class="detail-grid">
         <div class="card" v-if="ds.creator && ds.creator.length">
           <div class="card-header">
-            <span class="flex items-center gap-8"><IconUsers :size="18" stroke-width="1.8" /> Creators</span>
+            <span class="flex items-center gap-8"><IconUsers :size="18" stroke-width="1.8" /> Authors</span>
           </div>
           <div class="card-body" style="padding: 0;">
             <table class="data-table">
@@ -326,6 +335,8 @@ const editForm = reactive({
   version: '',
   publication_year: null,
   is_private: false,
+  creator_tapis_id: '',
+  creator_name: '',
 })
 
 function startEdit() {
@@ -335,6 +346,8 @@ function startEdit() {
   editForm.version = ds.value.version || ''
   editForm.publication_year = ds.value.publication_year || null
   editForm.is_private = Boolean(ds.value.is_private)
+  editForm.creator_tapis_id = ds.value.creator_tapis_id || ''
+  editForm.creator_name = ds.value.creator_name || ''
   editError.value = ''
   editing.value = true
 }

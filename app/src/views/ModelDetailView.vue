@@ -83,6 +83,7 @@
 
               <div class="detail-meta" v-if="!editing">
                 <span><IconUser :size="14" stroke-width="1.8" /> {{ model.author }}</span>
+                <span v-if="model.creator_name || model.creator_tapis_id"><IconUser :size="14" stroke-width="1.8" /> Creator: {{ model.creator_name || model.creator_tapis_id }}<template v-if="model.creator_name && model.creator_tapis_id"> ({{ model.creator_tapis_id }})</template></span>
                 <span><IconTag :size="14" stroke-width="1.8" /> {{ model.category }}</span>
                 <span><IconFileText :size="14" stroke-width="1.8" /> {{ model.input_type }}</span>
                 <span v-if="model.foundational_model && model.foundational_model !== 'None'">
@@ -146,6 +147,14 @@
             <div class="edit-field">
               <label class="info-label">Author</label>
               <input v-model="editForm.author" class="edit-input" placeholder="Author" />
+            </div>
+            <div class="edit-field">
+              <label class="info-label">Creator Tapis ID</label>
+              <input v-model="editForm.creator_tapis_id" class="edit-input" placeholder="Creator Tapis ID" />
+            </div>
+            <div class="edit-field">
+              <label class="info-label">Creator Name</label>
+              <input v-model="editForm.creator_name" class="edit-input" placeholder="Creator Name" />
             </div>
             <div class="edit-field">
               <label class="info-label">Category</label>
@@ -212,8 +221,8 @@
               <textarea v-model="editForm.ai_model_description" class="edit-input" rows="2" placeholder="Model description"></textarea>
             </div>
             <div class="edit-field">
-              <label class="info-label">Owner</label>
-              <input v-model="editForm.ai_model_owner" class="edit-input" placeholder="Owner" />
+              <label class="info-label">Model Owner</label>
+              <input v-model="editForm.ai_model_owner" class="edit-input" placeholder="Model Owner" />
             </div>
             <div class="edit-field">
               <label class="info-label">Repository URL</label>
@@ -266,7 +275,7 @@
                 <span class="info-value">{{ model.ai_model?.license }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">Owner</span>
+                <span class="info-label">Model Owner</span>
                 <span class="info-value">{{ model.ai_model?.owner }}</span>
               </div>
               <div class="info-item">
@@ -510,6 +519,8 @@ const editForm = reactive({
   full_description: '',
   keywords: '',
   author: '',
+  creator_tapis_id: '',
+  creator_name: '',
   category: '',
   input_type: '',
   input_data: '',
@@ -582,6 +593,8 @@ function startEdit() {
   editForm.full_description = m.full_description || ''
   editForm.keywords = m.keywords || ''
   editForm.author = m.author || ''
+  editForm.creator_tapis_id = m.creator_tapis_id || ''
+  editForm.creator_name = m.creator_name || ''
   editForm.category = m.category || m.categories || ''
   editForm.input_type = m.input_type || ''
   editForm.input_data = m.input_data || ''

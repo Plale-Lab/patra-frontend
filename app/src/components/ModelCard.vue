@@ -14,6 +14,10 @@
         <IconUser :size="14" stroke-width="1.8" />
         <span>{{ model.author }}</span>
       </div>
+      <div class="meta-row" v-if="model.creator_name || model.creator_tapis_id">
+        <IconUser :size="14" stroke-width="1.8" />
+        <span>Creator: {{ model.creator_name || model.creator_tapis_id }}<template v-if="model.creator_name && model.creator_tapis_id"> ({{ model.creator_tapis_id }})</template></span>
+      </div>
       <div class="meta-row" v-if="model.category">
         <IconTag :size="14" stroke-width="1.8" />
         <span>{{ model.category }}</span>

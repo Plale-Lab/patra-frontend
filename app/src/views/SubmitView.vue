@@ -104,7 +104,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { IconLock } from '@tabler/icons-vue'
 import { useAuthStore } from '../stores/auth'
@@ -135,6 +135,7 @@ const linkReport = ref(null)
 const mcForm = reactive({
   name: '', version: '', short_description: '', full_description: '',
   category: '', input_type: '', author: '', keywords: '',
+  creator_tapis_id: '', creator_name: '',
   framework: '', license: '', test_accuracy: '', foundational_model: '',
   input_data: '', output_data: '', citation: '', documentation: '',
   location: '',
@@ -142,10 +143,15 @@ const mcForm = reactive({
 })
 
 const dsForm = reactive({
-  title: '', version: '', description: '', creator: '', publisher: '',
+  title: '', version: '', description: '', author: '', creator_tapis_id: '', creator_name: '', publisher: '',
   resource_type: 'Dataset', publication_year: '', subjects: '',
   download_url: '', is_private: false,
 })
+
+watch(() => auth.user?.username, () => {
+  populateCreatorIdentity(mcForm)
+  populateCreatorIdentity(dsForm)
+}, { immediate: true })
 
 // Human labels for the validated pointer fields. `citation` is intentionally
 // omitted — it's a BibTeX/plain-text field, so it would always read "malformed".
@@ -195,6 +201,14 @@ function switchType(type) {
   currentStep.value = 0
   error.value = ''
   clearErrors()
+  populateCreatorIdentity(type === 'model_card' ? mcForm : dsForm)
+}
+
+function populateCreatorIdentity(form) {
+  const tapisId = String(auth.user?.username || '').trim()
+  if (!tapisId) return
+  if (!form.creator_tapis_id) form.creator_tapis_id = tapisId
+  if (!form.creator_name) form.creator_name = tapisId
 }
 
 function validateOnBlur(field) {
@@ -240,16 +254,19 @@ function resetForm() {
   Object.assign(mcForm, {
     name: '', version: '', short_description: '', full_description: '',
     category: '', input_type: '', author: '', keywords: '',
+    creator_tapis_id: '', creator_name: '',
     framework: '', license: '', test_accuracy: '', foundational_model: '',
     input_data: '', output_data: '', citation: '', documentation: '',
     location: '',
     is_private: false, is_gated: false,
   })
   Object.assign(dsForm, {
-    title: '', version: '', description: '', creator: '', publisher: '',
+    title: '', version: '', description: '', author: '', creator_tapis_id: '', creator_name: '', publisher: '',
     resource_type: 'Dataset', publication_year: '', subjects: '',
     download_url: '', is_private: false,
   })
+  populateCreatorIdentity(mcForm)
+  populateCreatorIdentity(dsForm)
 }
 
 async function handleSubmit() {
@@ -273,7 +290,7 @@ async function handleSubmit() {
     }
     const payload = isModelCard
       ? buildModelCardPayload(mcForm, { authorName: auth.displayName })
-      : buildDatasheetPayload(dsForm, { creatorName: auth.displayName })
+      : buildDatasheetPayload(dsForm, { authorName: auth.displayName })
     const res = await apiFetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
